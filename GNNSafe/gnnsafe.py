@@ -2,6 +2,8 @@ import sys
 
 import faiss
 from argparse import Namespace
+
+import torch
 from torch.distributions import MultivariateNormal
 from torch_geometric.utils import degree
 
@@ -171,7 +173,7 @@ class GNNSafe(nn.Module):
             # 特征的纬度 932
             depth=penultimate_dim
         )
-        sample_point_label = torch.zeros(sample_point.shape[0], device="cuda:0").view(-1)
+        sample_point_label = torch.zeros(sample_point.shape[0], dtype=torch.long, device="cuda:0").view(-1)
         sample_point_edge = torch.randint(
             low=0,
             high=len(sample_point_label) - 1,
@@ -179,13 +181,8 @@ class GNNSafe(nn.Module):
             device="cuda:0"
         )
         sample_point_logits_out = self.encoder(sample_point, sample_point_edge)
-        # 假设采样合成4个 sample_point_logits_out torch.Size([4, 5])
-
-        sample_point_out = - args.T * torch.logsumexp(sample_point_logits_out / args.T, dim=-1)
-        sample_point_loss = torch.mean(
-            F.relu(sample_point_out - args.m_in) ** 2 + F.relu(args.m_out - sample_point_out) ** 2)
-        # sample_point_loss tensor(10.1965, device='cuda:0', grad_fn=<MeanBackward0>)
-        # sample_point_loss = criterion_BCE(sample_point_logits_out.view(-1), sample_point_label)
+        sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
+        sample_sup_loss = criterion(sample_point_out, sample_point_label)
 
         train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
         # train_in_idx torch.Size([760])
@@ -195,6 +192,11 @@ class GNNSafe(nn.Module):
         if args.dataset in ('proteins', 'ppi'):
             sup_loss = criterion(logits_in[train_in_idx], dataset_ind.y[train_in_idx].to(device).to(torch.float))
         else:
+            """
+            torch.Size([7600, 5])
+            torch.Size([760])
+            torch.Size([760, 5])
+            """
             pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
             sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
 
@@ -228,6 +230,8 @@ class GNNSafe(nn.Module):
         else:
             loss = sup_loss
 
+        # print("loss", loss)
+        # print("sample_point_loss", sample_sup_loss)
         # 加入采样的loss
-        loss += sample_point_loss
+        loss += 0.1 * sample_sup_loss
         return loss

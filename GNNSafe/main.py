@@ -1,6 +1,5 @@
 import argparse
 import random
-from pprint import pprint
 
 from baselines import *
 from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
@@ -22,9 +21,7 @@ def fix_seed(seed):
 parser = argparse.ArgumentParser(description='General Training Pipeline')
 parser_add_main_args(parser)
 args = parser.parse_args()
-# state = {k: v for k, v in args._get_kwargs()}
-# pprint(args)
-pprint(args)
+print(args)
 fix_seed(args.seed)
 
 if args.cpu:
@@ -77,6 +74,7 @@ print(
     + f"classes {c} | feats {d}")
 print(
     f"ood tr dataset {args.dataset}: all nodes {dataset_ood_tr.num_nodes} | centered nodes {dataset_ood_tr.node_idx.shape[0]} | edges {dataset_ood_tr.edge_index.size(1)}")
+
 if isinstance(dataset_ood_te, list):
     for i, data in enumerate(dataset_ood_te):
         print(
@@ -96,9 +94,8 @@ elif args.method == "ODIN":
 elif args.method == "Mahalanobis":
     model = Mahalanobis(d, c, args).to(device)
 else:
-    model = None
+    raise ValueError(f"Unknown method: {args.method}")
 
-# loss function #
 if args.dataset in ('proteins', 'ppi'):  # multi-label binary classification
     criterion = nn.BCEWithLogitsLoss()
 else:
@@ -124,7 +121,6 @@ for run in range(args.runs):
     model.reset_parameters()
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    best_val = float('-inf')
 
     for epoch in range(args.epochs):
         model.train()

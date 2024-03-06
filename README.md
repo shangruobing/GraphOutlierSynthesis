@@ -1,1 +1,2 @@
-# Graph Outlier Synthesis: Out-of-Distribution Detection for Graph Neural Networks
+# Graph Outlier Synthesis
+***Out-of-Distribution Detection for Graph Neural Networks***
