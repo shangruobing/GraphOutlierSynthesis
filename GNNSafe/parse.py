@@ -1,4 +1,3 @@
-
 def parser_add_main_args(parser):
     # setup and protocol
     parser.add_argument('--dataset', type=str, default='cora')
@@ -59,5 +58,5 @@ def parser_add_main_args(parser):
                         help='print args for hyper-parameter searching')
     parser.add_argument('--mode', type=str, default='detect', choices=['classify', 'detect'])
 
-
-
+    # generate outliers
+    parser.add_argument('--generate_ood', type=bool, default=True)

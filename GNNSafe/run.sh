@@ -1,5 +1,7 @@
 ### Cora with structure ood
 
+conda deactivate && cd RuobingShang && source venv/bin/activate && cd GraphOOD-GNNSafe/GNNSafe
+
 python main.py --method msp --backbone gcn --dataset cora --ood_type structure --mode detect --use_bn --device 0
 
 python main.py --method gnnsafe --backbone gcn --dataset actor --ood_type structure --mode detect --use_bn --device 0
@@ -12,8 +14,8 @@ python main.py --method gnnsafe --backbone gcn --dataset cora --ood_type structu
 
 ### Cora with feature ood
 
-python main.py --method msp --backbone gcn --dataset cora --ood_type feature --mode detect --use_bn --device 1
-python main.py --method gnnsafe --backbone gcn --dataset cora --ood_type feature --mode detect --use_bn --device 1
+python main.py --method msp --backbone gcn --dataset cora --ood_type feature --mode detect --use_bn --device 0 --epochs 500 --cpu
+python main.py --method gnnsafe --backbone gcn --dataset cora --ood_type feature --mode detect --use_bn --device 0 --epochs 500 --cpu
 python main.py --method gnnsafe --backbone gcn --dataset cora --ood_type feature --mode detect --use_bn --use_reg --m_in -5 --m_out -1 --lamda 0.01 --device 1
 python main.py --method gnnsafe --backbone gcn --dataset cora --ood_type feature --mode detect --use_bn --use_prop --device 1
 python main.py --method gnnsafe --backbone gcn --dataset cora --ood_type feature --mode detect --use_bn --use_prop --use_reg --m_in -5 --m_out -1 --lamda 0.01 --device 1

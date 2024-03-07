@@ -240,7 +240,6 @@ def load_graph_dataset(data_dir, dataname, ood_type):
     if dataname in ('cora', 'citeseer', 'pubmed'):
         torch_dataset = Planetoid(root=f'{data_dir}Planetoid', split='public',
                                   name=dataname, transform=transform)
-        print("torch_dataset", torch_dataset)
         dataset = torch_dataset[0]
         print("dataset", dataset)
         tensor_split_idx = {}

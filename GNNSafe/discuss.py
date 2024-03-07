@@ -1,37 +1,27 @@
 import argparse
-import random
 import time
-
 from baselines import *
 from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
 from dataset import load_dataset
 from gnnsafe import *
 from logger import Logger_classify, Logger_detect
 from parse import parser_add_main_args
-
+from OutliersGenerate.utils import get_device, fix_seed
 
 # NOTE: for consistent data splits, see data_utils.rand_train_test_idx
-def fix_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
 
 ### Parse args ###
 parser = argparse.ArgumentParser(description='Discussion Pipeline (Hyper-parameter, Efficiency, Visualization)')
 parser_add_main_args(parser)
-parser.add_argument('--dis_type', type=str, default='margin', choices=['margin', 'lamda', 'prop', 'backbone', 'time', 'vis_energy'])
+parser.add_argument('--dis_type', type=str, default='margin',
+                    choices=['margin', 'lamda', 'prop', 'backbone', 'time', 'vis_energy'])
 
 args = parser.parse_args()
 print(args)
 
 fix_seed(args.seed)
 
-if args.cpu:
-    device = torch.device("cpu")
-else:
-    device = torch.device("cuda:" + str(args.device)) if torch.cuda.is_available() else torch.device("cpu")
+device = get_device(args)
 
 ### Load and preprocess data ###
 dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
@@ -85,7 +75,6 @@ if args.mode == 'classify':
 else:
     logger = Logger_detect(args.runs, args)
 
-
 model.train()
 print('MODEL:', model)
 
@@ -119,7 +108,8 @@ for run in range(args.runs):
                       f'Valid: {100 * result[1]:.2f}%, '
                       f'Test: {100 * result[2]:.2f}%')
         else:
-            result, test_in_score, test_ood_score = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device, return_score=True)
+            result, test_in_score, test_ood_score = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion,
+                                                                    eval_func, args, device, return_score=True)
             logger.add_result(run, result)
 
             if result[-1] < val_loss_min:
@@ -144,6 +134,7 @@ if args.dis_type == 'time':
 
 ### Save results ###
 import os
+
 if not os.path.exists(f'results/discuss'):
     os.makedirs(f'results/discuss')
 if args.dis_type == 'vis_energy':

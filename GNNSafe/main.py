@@ -1,5 +1,8 @@
 import argparse
-import random
+import sys
+from pprint import pprint
+
+sys.path.append('..')
 
 from baselines import *
 from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
@@ -8,26 +11,15 @@ from gnnsafe import *
 from logger import Logger_classify, Logger_detect, save_result
 from parse import parser_add_main_args
 
+from OutliersGenerate.utils import get_device, fix_seed
 
-def fix_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-
-
-# Parse args #
 parser = argparse.ArgumentParser(description='General Training Pipeline')
 parser_add_main_args(parser)
 args = parser.parse_args()
-print(args)
-fix_seed(args.seed)
+pprint(vars(args))
 
-if args.cpu:
-    device = torch.device("cpu")
-else:
-    device = torch.device("cuda:" + str(args.device)) if torch.cuda.is_available() else torch.device("cpu")
+fix_seed(args.seed)
+device = get_device(args)
 
 dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
 """

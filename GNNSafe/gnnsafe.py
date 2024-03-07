@@ -1,15 +1,16 @@
-import sys
+# import sys
 
 import faiss
 from argparse import Namespace
 
-import torch
 from torch.distributions import MultivariateNormal
 from torch_geometric.utils import degree
 
+from OutliersGenerate.utils import get_device
 from backbone import *
+import torch
 
-sys.path.append('..')
+# sys.path.append('..')
 from OutliersGenerate.KNN import generate_outliers
 
 
@@ -137,52 +138,58 @@ class GNNSafe(nn.Module):
         logits_out torch.Size([7600, 5])
         """
 
-        res = faiss.StandardGpuResources()
-        # penultimate_dim为数据集的features数
-        # Actor 的特征数目为932
-        penultimate_dim = dataset_ind.x.shape[1]
-        KNN_index = faiss.GpuIndexFlatL2(res, penultimate_dim)
-        ID = x_in
+        if args.generate_ood:
 
-        # Standard Gaussian distribution
-        # 创建一个高斯分布然后进行随机采样
-        new_dis = MultivariateNormal(torch.zeros(penultimate_dim).to("cuda:0"),
-                                     torch.eye(penultimate_dim).to("cuda:0"))
+            device = get_device(args)
+            res = faiss.StandardGpuResources()
+            # penultimate_dim为数据集的features数
+            # Actor 的特征数目为932
+            penultimate_dim = dataset_ind.x.shape[1]
+            KNN_index = faiss.GpuIndexFlatL2(res, penultimate_dim)
+            ID = x_in
 
-        # @issue 先固定采样600个
-        negative_samples = new_dis.rsample((600,))
-        sample_point = generate_outliers(
-            # 分布内数据 x_in torch.Size([7600, 932])
-            ID,
-            # Faiss 向量搜索
-            input_index=KNN_index,
-            # 进行随机采样得到负样本 torch.Size([600, 932])
-            negative_samples=negative_samples,
-            # 从选择的分布内数据抽取的边界样本 2
-            ID_points_num=2,
-            # KNN距离 300
-            K=300,
-            # 多少ID样本用来定义边界 200
-            select=200,
-            # 采样范围0.1
-            cov_mat=0.1,
-            # 采样率 1
-            sampling_ratio=1.0,
-            # 挑选用于生成异常值的ID样本数
-            pic_nums=2,
-            # 特征的纬度 932
-            depth=penultimate_dim
-        )
-        sample_point_label = torch.zeros(sample_point.shape[0], dtype=torch.long, device="cuda:0").view(-1)
-        sample_point_edge = torch.randint(
-            low=0,
-            high=len(sample_point_label) - 1,
-            size=(2, len(sample_point_label)),
-            device="cuda:0"
-        )
-        sample_point_logits_out = self.encoder(sample_point, sample_point_edge)
-        sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-        sample_sup_loss = criterion(sample_point_out, sample_point_label)
+            # Standard Gaussian distribution
+            # 创建一个高斯分布然后进行随机采样
+            new_dis = MultivariateNormal(torch.zeros(penultimate_dim, device=device),
+                                         torch.eye(penultimate_dim, device=device))
+            # @issue 先固定采样600个
+            negative_samples = new_dis.rsample((600,))
+            sample_point = generate_outliers(
+                # 分布内数据 x_in torch.Size([7600, 932])
+                ID,
+                # Faiss 向量搜索
+                input_index=KNN_index,
+                # 进行随机采样得到负样本 torch.Size([600, 932])
+                negative_samples=negative_samples,
+                # 从选择的分布内数据抽取的边界样本 2
+                ID_points_num=2,
+                # KNN距离 300
+                K=300,
+                # 多少ID样本用来定义边界 200
+                select=200,
+                # 采样范围0.1
+                cov_mat=0.1,
+                # 采样率 1
+                sampling_ratio=1.0,
+                # 挑选用于生成异常值的ID样本数
+                pic_nums=2,
+                # 特征的纬度 932
+                depth=penultimate_dim,
+                # 设备
+                device=device
+            )
+            sample_point_label = torch.zeros(sample_point.shape[0], dtype=torch.long, device=device).view(-1)
+            sample_point_edge = torch.randint(
+                low=0,
+                high=len(sample_point_label) - 1,
+                size=(2, len(sample_point_label)),
+                device=device
+            )
+            sample_point_logits_out = self.encoder(sample_point, sample_point_edge)
+            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
+            sample_sup_loss = criterion(sample_point_out, sample_point_label)
+        else:
+            sample_sup_loss = 0
 
         train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
         # train_in_idx torch.Size([760])
@@ -233,5 +240,6 @@ class GNNSafe(nn.Module):
         # print("loss", loss)
         # print("sample_point_loss", sample_sup_loss)
         # 加入采样的loss
-        loss += 0.1 * sample_sup_loss
+        if args.generate_ood:
+            loss += 0.001 * sample_sup_loss
         return loss

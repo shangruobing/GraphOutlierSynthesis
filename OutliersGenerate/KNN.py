@@ -52,7 +52,7 @@ def KNN_dis_search_distance(target, index, K=50, num_points=10, length=2000, dep
 
 
 def generate_outliers(ID, input_index, negative_samples, ID_points_num=2, K=20, select=1, cov_mat=0.1,
-                      sampling_ratio=1.0, pic_nums=30, depth=342):
+                      sampling_ratio=1.0, pic_nums=30, depth=342, device=torch.device("cpu")):
     """
     ID: the input data 分布内数据 torch.Size([1000, 512])
     input_index: Faiss Index
@@ -91,7 +91,7 @@ def generate_outliers(ID, input_index, negative_samples, ID_points_num=2, K=20, 
     minD_idx = minD_idx[np.random.choice(select, int(pic_nums), replace=False)]
     data_point_list = torch.cat([ID[i:i + 1].repeat(length, 1) for i in minD_idx])
     # data_point_list torch.Size([1200, 932])
-    negative_sample_cov = cov_mat * negative_samples.to("cuda:0").repeat(pic_nums, 1)
+    negative_sample_cov = cov_mat * negative_samples.to(device).repeat(pic_nums, 1)
     # negative_sample_cov torch.Size([1200, 932])
     negative_sample_list = negative_sample_cov + data_point_list
     # negative_sample_list torch.Size([1200, 932])
