@@ -56,7 +56,7 @@ def even_quantile_labels(vals, nclasses, verbose=True):
     second class is less than the 2/nclasses quantile, and so on
     
     vals is np array
-    returns an np array of int class labels
+    returns a np array of int class labels
     """
     label = -1 * np.ones(vals.shape[0], dtype=np.int)
     interval_lst = []

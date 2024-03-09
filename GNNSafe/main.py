@@ -8,10 +8,11 @@ from baselines import *
 from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
 from dataset import load_dataset
 from gnnsafe import *
-from logger import Logger_classify, Logger_detect, save_result
+from logger import ClassifyLogger, DetectLogger
 from parse import parser_add_main_args
 
 from OutliersGenerate.utils import get_device, fix_seed
+from OutliersGenerate.recorder import insert_row
 
 parser = argparse.ArgumentParser(description='General Training Pipeline')
 parser_add_main_args(parser)
@@ -101,14 +102,14 @@ else:
 
 # logger for result report #
 if args.mode == 'classify':
-    logger = Logger_classify(args.runs, args)
+    logger = ClassifyLogger(args.runs, args)
 else:
-    logger = Logger_detect(args.runs, args)
+    logger = DetectLogger(args.runs, args)
 
 model.train()
 print('MODEL:', model)
 
-# Training loop #
+epoch_info = ""
 for run in range(args.runs):
     model.reset_parameters()
     model.to(device)
@@ -126,26 +127,33 @@ for run in range(args.runs):
             logger.add_result(run, result)
 
             if epoch % args.display_step == 0:
-                print(f'Epoch: {epoch:02d}, '
-                      f'Loss: {loss:.4f}, '
-                      f'Train: {100 * result[0]:.2f}%, '
-                      f'Valid: {100 * result[1]:.2f}%, '
-                      f'Test: {100 * result[2]:.2f}%')
+                info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Train: {100 * result[0]:.2f}%, Valid: {100 * result[1]:.2f}%, Test: {100 * result[2]:.2f}%'
+                epoch_info += info + '\n'
+                print(info)
         else:
             result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
             logger.add_result(run, result)
 
             if epoch % args.display_step == 0:
-                print(f'Epoch: {epoch:02d}, '
-                      f'Loss: {loss:.4f}, '
-                      f'AUROC: {100 * result[0]:.2f}%, '
-                      f'AUPR: {100 * result[1]:.2f}%, '
-                      f'FPR95: {100 * result[2]:.2f}%, '
-                      f'Test Score: {100 * result[-2]:.2f}%')
+                info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Test Score: {100 * result[-2]:.2f}%'
+                epoch_info += info + '\n'
+                print(info)
     logger.print_statistics(run)
 
 results = logger.print_statistics()
 
 # Save results #
-if args.mode == 'detect':
-    save_result(results, args)
+# if args.mode == 'detect':
+#     save_result(results, args)
+
+
+metrics = logger.get_statistics()
+insert_row(
+    args=args,
+    model=str(model),
+    epoch_info=epoch_info,
+    AUROC=metrics.get("AUROC"),
+    AUPR=metrics.get("AUPR"),
+    FPR=metrics.get("FPR"),
+    SCORE=metrics.get("SCORE")
+)

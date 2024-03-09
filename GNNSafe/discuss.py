@@ -4,7 +4,7 @@ from baselines import *
 from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
 from dataset import load_dataset
 from gnnsafe import *
-from logger import Logger_classify, Logger_detect
+from logger import ClassifyLogger, DetectLogger
 from parse import parser_add_main_args
 from OutliersGenerate.utils import get_device, fix_seed
 
@@ -71,9 +71,9 @@ else:
 
 ### logger for result report ###
 if args.mode == 'classify':
-    logger = Logger_classify(args.runs, args)
+    logger = ClassifyLogger(args.runs, args)
 else:
-    logger = Logger_detect(args.runs, args)
+    logger = DetectLogger(args.runs, args)
 
 model.train()
 print('MODEL:', model)

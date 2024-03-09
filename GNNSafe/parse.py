@@ -59,4 +59,4 @@ def parser_add_main_args(parser):
     parser.add_argument('--mode', type=str, default='detect', choices=['classify', 'detect'])
 
     # generate outliers
-    parser.add_argument('--generate_ood', type=bool, default=True)
+    parser.add_argument('--generate_ood', action='store_true')

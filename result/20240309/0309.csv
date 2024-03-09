@@ -1,0 +1,1483 @@
+﻿args,generate_ood,method,backbone,dataset,ood_type,mode,epochs,model,epoch_info,time,AUROC,AUPR,FPR,SCORE
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'gcn',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': True,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",True,gnnsafe,gcn,cora,structure,detect,100,"GNNSafe(
+  (encoder): GCN(
+    (convs): ModuleList(
+      (0): GCNConv(1433, 64)
+      (1): GCNConv(64, 7)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+)","Epoch: 00, Loss: 2.1792, AUROC: 49.20%, AUPR: 26.69%, FPR95: 95.35%, Test Score: 44.20%
+Epoch: 01, Loss: 0.5409, AUROC: 41.15%, AUPR: 25.82%, FPR95: 99.08%, Test Score: 50.00%
+Epoch: 02, Loss: 0.2154, AUROC: 39.52%, AUPR: 26.17%, FPR95: 99.70%, Test Score: 53.40%
+Epoch: 03, Loss: 0.1175, AUROC: 40.50%, AUPR: 26.70%, FPR95: 99.70%, Test Score: 53.30%
+Epoch: 04, Loss: 0.0756, AUROC: 41.97%, AUPR: 27.27%, FPR95: 99.45%, Test Score: 52.50%
+Epoch: 05, Loss: 0.0539, AUROC: 44.62%, AUPR: 28.57%, FPR95: 99.30%, Test Score: 53.20%
+Epoch: 06, Loss: 0.0412, AUROC: 48.20%, AUPR: 30.36%, FPR95: 98.89%, Test Score: 54.70%
+Epoch: 07, Loss: 0.0334, AUROC: 51.54%, AUPR: 32.16%, FPR95: 98.78%, Test Score: 55.80%
+Epoch: 08, Loss: 0.0284, AUROC: 53.50%, AUPR: 33.35%, FPR95: 98.45%, Test Score: 58.10%
+Epoch: 09, Loss: 0.0253, AUROC: 53.83%, AUPR: 33.67%, FPR95: 98.56%, Test Score: 58.00%
+Epoch: 10, Loss: 0.0233, AUROC: 54.67%, AUPR: 34.34%, FPR95: 98.63%, Test Score: 61.20%
+Epoch: 11, Loss: 0.0222, AUROC: 54.80%, AUPR: 34.60%, FPR95: 98.74%, Test Score: 62.00%
+Epoch: 12, Loss: 0.0216, AUROC: 55.59%, AUPR: 35.14%, FPR95: 98.74%, Test Score: 63.70%
+Epoch: 13, Loss: 0.0215, AUROC: 55.59%, AUPR: 35.24%, FPR95: 98.93%, Test Score: 64.50%
+Epoch: 14, Loss: 0.0217, AUROC: 56.90%, AUPR: 36.10%, FPR95: 98.63%, Test Score: 67.50%
+Epoch: 15, Loss: 0.0224, AUROC: 59.39%, AUPR: 37.65%, FPR95: 98.15%, Test Score: 70.40%
+Epoch: 16, Loss: 0.0232, AUROC: 62.76%, AUPR: 39.75%, FPR95: 95.42%, Test Score: 74.10%
+Epoch: 17, Loss: 0.0244, AUROC: 64.73%, AUPR: 40.64%, FPR95: 92.32%, Test Score: 73.30%
+Epoch: 18, Loss: 0.0258, AUROC: 67.01%, AUPR: 41.69%, FPR95: 89.92%, Test Score: 72.70%
+Epoch: 19, Loss: 0.0274, AUROC: 68.36%, AUPR: 42.35%, FPR95: 87.48%, Test Score: 72.80%
+Epoch: 20, Loss: 0.0288, AUROC: 68.39%, AUPR: 42.26%, FPR95: 86.23%, Test Score: 71.60%
+Epoch: 21, Loss: 0.0303, AUROC: 67.89%, AUPR: 41.99%, FPR95: 87.44%, Test Score: 73.50%
+Epoch: 22, Loss: 0.0318, AUROC: 68.06%, AUPR: 42.13%, FPR95: 86.85%, Test Score: 75.60%
+Epoch: 23, Loss: 0.0330, AUROC: 67.59%, AUPR: 41.73%, FPR95: 88.22%, Test Score: 76.40%
+Epoch: 24, Loss: 0.0340, AUROC: 67.79%, AUPR: 41.85%, FPR95: 88.70%, Test Score: 77.30%
+Epoch: 25, Loss: 0.0348, AUROC: 67.51%, AUPR: 41.62%, FPR95: 88.77%, Test Score: 76.30%
+Epoch: 26, Loss: 0.0353, AUROC: 68.30%, AUPR: 42.12%, FPR95: 87.89%, Test Score: 77.30%
+Epoch: 27, Loss: 0.0355, AUROC: 70.47%, AUPR: 43.27%, FPR95: 81.57%, Test Score: 76.70%
+Epoch: 28, Loss: 0.0356, AUROC: 71.34%, AUPR: 43.82%, FPR95: 80.32%, Test Score: 78.20%
+Epoch: 29, Loss: 0.0354, AUROC: 71.87%, AUPR: 43.97%, FPR95: 79.62%, Test Score: 75.20%
+Epoch: 30, Loss: 0.0351, AUROC: 72.28%, AUPR: 44.05%, FPR95: 77.73%, Test Score: 72.90%
+Epoch: 31, Loss: 0.0347, AUROC: 71.38%, AUPR: 43.41%, FPR95: 80.54%, Test Score: 72.40%
+Epoch: 32, Loss: 0.0344, AUROC: 70.06%, AUPR: 42.58%, FPR95: 83.23%, Test Score: 73.60%
+Epoch: 33, Loss: 0.0339, AUROC: 70.56%, AUPR: 42.89%, FPR95: 81.87%, Test Score: 74.30%
+Epoch: 34, Loss: 0.0334, AUROC: 70.34%, AUPR: 42.72%, FPR95: 81.68%, Test Score: 74.90%
+Epoch: 35, Loss: 0.0331, AUROC: 69.87%, AUPR: 42.47%, FPR95: 81.87%, Test Score: 76.60%
+Epoch: 36, Loss: 0.0328, AUROC: 70.07%, AUPR: 42.56%, FPR95: 82.61%, Test Score: 78.40%
+Epoch: 37, Loss: 0.0326, AUROC: 71.86%, AUPR: 43.73%, FPR95: 80.32%, Test Score: 78.90%
+Epoch: 38, Loss: 0.0323, AUROC: 73.05%, AUPR: 44.42%, FPR95: 76.96%, Test Score: 77.80%
+Epoch: 39, Loss: 0.0324, AUROC: 74.02%, AUPR: 44.98%, FPR95: 72.08%, Test Score: 74.70%
+Epoch: 40, Loss: 0.0323, AUROC: 73.82%, AUPR: 44.83%, FPR95: 72.64%, Test Score: 73.80%
+Epoch: 41, Loss: 0.0324, AUROC: 73.51%, AUPR: 44.58%, FPR95: 72.78%, Test Score: 74.90%
+Epoch: 42, Loss: 0.0325, AUROC: 74.44%, AUPR: 45.26%, FPR95: 70.68%, Test Score: 76.30%
+Epoch: 43, Loss: 0.0326, AUROC: 74.03%, AUPR: 44.98%, FPR95: 73.01%, Test Score: 75.90%
+Epoch: 44, Loss: 0.0328, AUROC: 73.42%, AUPR: 44.50%, FPR95: 74.04%, Test Score: 76.20%
+Epoch: 45, Loss: 0.0329, AUROC: 72.43%, AUPR: 43.78%, FPR95: 76.37%, Test Score: 77.00%
+Epoch: 46, Loss: 0.0331, AUROC: 73.48%, AUPR: 44.38%, FPR95: 73.60%, Test Score: 76.00%
+Epoch: 47, Loss: 0.0332, AUROC: 73.15%, AUPR: 44.24%, FPR95: 74.19%, Test Score: 76.70%
+Epoch: 48, Loss: 0.0335, AUROC: 73.25%, AUPR: 44.54%, FPR95: 74.30%, Test Score: 77.30%
+Epoch: 49, Loss: 0.0336, AUROC: 73.67%, AUPR: 44.96%, FPR95: 73.78%, Test Score: 76.00%
+Epoch: 50, Loss: 0.0337, AUROC: 74.42%, AUPR: 45.48%, FPR95: 73.30%, Test Score: 75.70%
+Epoch: 51, Loss: 0.0339, AUROC: 73.98%, AUPR: 45.08%, FPR95: 73.45%, Test Score: 75.60%
+Epoch: 52, Loss: 0.0339, AUROC: 73.60%, AUPR: 44.94%, FPR95: 74.82%, Test Score: 77.00%
+Epoch: 53, Loss: 0.0341, AUROC: 74.20%, AUPR: 45.29%, FPR95: 73.30%, Test Score: 75.70%
+Epoch: 54, Loss: 0.0341, AUROC: 73.90%, AUPR: 45.03%, FPR95: 74.34%, Test Score: 75.90%
+Epoch: 55, Loss: 0.0342, AUROC: 73.81%, AUPR: 44.90%, FPR95: 72.75%, Test Score: 76.40%
+Epoch: 56, Loss: 0.0344, AUROC: 73.13%, AUPR: 44.50%, FPR95: 75.33%, Test Score: 77.20%
+Epoch: 57, Loss: 0.0346, AUROC: 72.89%, AUPR: 44.37%, FPR95: 76.70%, Test Score: 76.50%
+Epoch: 58, Loss: 0.0346, AUROC: 72.24%, AUPR: 43.90%, FPR95: 79.47%, Test Score: 76.00%
+Epoch: 59, Loss: 0.0348, AUROC: 72.86%, AUPR: 44.35%, FPR95: 78.25%, Test Score: 74.20%
+Epoch: 60, Loss: 0.0349, AUROC: 73.30%, AUPR: 44.74%, FPR95: 76.14%, Test Score: 74.70%
+Epoch: 61, Loss: 0.0351, AUROC: 73.47%, AUPR: 45.00%, FPR95: 75.92%, Test Score: 76.60%
+Epoch: 62, Loss: 0.0352, AUROC: 73.47%, AUPR: 44.96%, FPR95: 75.07%, Test Score: 75.80%
+Epoch: 63, Loss: 0.0353, AUROC: 72.88%, AUPR: 44.50%, FPR95: 77.33%, Test Score: 74.70%
+Epoch: 64, Loss: 0.0355, AUROC: 72.48%, AUPR: 44.13%, FPR95: 78.62%, Test Score: 75.80%
+Epoch: 65, Loss: 0.0357, AUROC: 72.15%, AUPR: 43.90%, FPR95: 78.29%, Test Score: 75.40%
+Epoch: 66, Loss: 0.0358, AUROC: 72.42%, AUPR: 44.02%, FPR95: 77.47%, Test Score: 74.40%
+Epoch: 67, Loss: 0.0359, AUROC: 72.17%, AUPR: 43.95%, FPR95: 77.95%, Test Score: 74.80%
+Epoch: 68, Loss: 0.0360, AUROC: 72.20%, AUPR: 43.82%, FPR95: 76.59%, Test Score: 73.30%
+Epoch: 69, Loss: 0.0360, AUROC: 72.08%, AUPR: 43.79%, FPR95: 77.62%, Test Score: 73.70%
+Epoch: 70, Loss: 0.0361, AUROC: 71.34%, AUPR: 43.23%, FPR95: 77.73%, Test Score: 72.40%
+Epoch: 71, Loss: 0.0362, AUROC: 71.41%, AUPR: 43.21%, FPR95: 79.03%, Test Score: 71.80%
+Epoch: 72, Loss: 0.0363, AUROC: 70.69%, AUPR: 42.63%, FPR95: 80.28%, Test Score: 71.20%
+Epoch: 73, Loss: 0.0363, AUROC: 71.34%, AUPR: 43.09%, FPR95: 78.84%, Test Score: 72.50%
+Epoch: 74, Loss: 0.0364, AUROC: 71.11%, AUPR: 42.93%, FPR95: 79.95%, Test Score: 72.20%
+Epoch: 75, Loss: 0.0364, AUROC: 70.32%, AUPR: 42.48%, FPR95: 80.39%, Test Score: 72.00%
+Epoch: 76, Loss: 0.0364, AUROC: 70.23%, AUPR: 42.68%, FPR95: 83.68%, Test Score: 75.00%
+Epoch: 77, Loss: 0.0365, AUROC: 70.59%, AUPR: 42.94%, FPR95: 81.68%, Test Score: 74.30%
+Epoch: 78, Loss: 0.0365, AUROC: 70.50%, AUPR: 42.97%, FPR95: 84.19%, Test Score: 75.20%
+Epoch: 79, Loss: 0.0366, AUROC: 70.24%, AUPR: 42.88%, FPR95: 84.23%, Test Score: 75.80%
+Epoch: 80, Loss: 0.0366, AUROC: 70.74%, AUPR: 42.96%, FPR95: 81.20%, Test Score: 75.00%
+Epoch: 81, Loss: 0.0366, AUROC: 70.56%, AUPR: 42.87%, FPR95: 82.57%, Test Score: 75.60%
+Epoch: 82, Loss: 0.0366, AUROC: 69.69%, AUPR: 42.38%, FPR95: 84.75%, Test Score: 75.50%
+Epoch: 83, Loss: 0.0366, AUROC: 70.11%, AUPR: 42.54%, FPR95: 80.80%, Test Score: 73.80%
+Epoch: 84, Loss: 0.0365, AUROC: 70.34%, AUPR: 42.79%, FPR95: 79.73%, Test Score: 74.00%
+Epoch: 85, Loss: 0.0366, AUROC: 70.12%, AUPR: 42.69%, FPR95: 81.43%, Test Score: 75.80%
+Epoch: 86, Loss: 0.0365, AUROC: 69.98%, AUPR: 42.57%, FPR95: 82.53%, Test Score: 73.60%
+Epoch: 87, Loss: 0.0366, AUROC: 70.01%, AUPR: 42.58%, FPR95: 81.02%, Test Score: 73.60%
+Epoch: 88, Loss: 0.0366, AUROC: 68.95%, AUPR: 41.86%, FPR95: 83.31%, Test Score: 72.50%
+Epoch: 89, Loss: 0.0366, AUROC: 69.43%, AUPR: 42.16%, FPR95: 83.86%, Test Score: 73.40%
+Epoch: 90, Loss: 0.0365, AUROC: 68.31%, AUPR: 41.37%, FPR95: 85.82%, Test Score: 72.60%
+Epoch: 91, Loss: 0.0365, AUROC: 68.68%, AUPR: 41.67%, FPR95: 85.52%, Test Score: 73.90%
+Epoch: 92, Loss: 0.0365, AUROC: 68.88%, AUPR: 41.90%, FPR95: 84.97%, Test Score: 74.10%
+Epoch: 93, Loss: 0.0365, AUROC: 68.28%, AUPR: 41.62%, FPR95: 87.70%, Test Score: 75.00%
+Epoch: 94, Loss: 0.0365, AUROC: 68.40%, AUPR: 41.71%, FPR95: 87.44%, Test Score: 76.40%
+Epoch: 95, Loss: 0.0363, AUROC: 68.37%, AUPR: 41.61%, FPR95: 86.30%, Test Score: 75.20%
+Epoch: 96, Loss: 0.0363, AUROC: 68.54%, AUPR: 41.71%, FPR95: 85.04%, Test Score: 74.40%
+Epoch: 97, Loss: 0.0363, AUROC: 68.70%, AUPR: 41.90%, FPR95: 84.97%, Test Score: 74.30%
+Epoch: 98, Loss: 0.0363, AUROC: 68.72%, AUPR: 41.80%, FPR95: 85.86%, Test Score: 74.40%
+Epoch: 99, Loss: 0.0363, AUROC: 68.47%, AUPR: 41.62%, FPR95: 86.60%, Test Score: 74.60%
+",20240309 191544,71.8608,43.7335,80.3176,78.9
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'mlp',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': True,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",True,gnnsafe,mlp,cora,structure,detect,100,"GNNSafe(
+  (encoder): MLP(
+    (lins): ModuleList(
+      (0): Linear(in_features=1433, out_features=64, bias=True)
+      (1): Linear(in_features=64, out_features=7, bias=True)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+)","Epoch: 00, Loss: 2.0019, AUROC: 50.24%, AUPR: 26.86%, FPR95: 94.76%, Test Score: 6.40%
+Epoch: 01, Loss: 0.8316, AUROC: 50.30%, AUPR: 26.74%, FPR95: 94.28%, Test Score: 13.50%
+Epoch: 02, Loss: 0.2454, AUROC: 50.30%, AUPR: 26.55%, FPR95: 95.20%, Test Score: 12.90%
+Epoch: 03, Loss: 0.0817, AUROC: 50.16%, AUPR: 26.47%, FPR95: 95.38%, Test Score: 15.30%
+Epoch: 04, Loss: 0.0317, AUROC: 50.09%, AUPR: 26.41%, FPR95: 95.01%, Test Score: 18.60%
+Epoch: 05, Loss: 0.0162, AUROC: 49.98%, AUPR: 26.34%, FPR95: 95.13%, Test Score: 21.80%
+Epoch: 06, Loss: 0.0104, AUROC: 49.85%, AUPR: 26.24%, FPR95: 94.90%, Test Score: 26.00%
+Epoch: 07, Loss: 0.0078, AUROC: 49.74%, AUPR: 26.15%, FPR95: 94.98%, Test Score: 30.80%
+Epoch: 08, Loss: 0.0065, AUROC: 49.63%, AUPR: 26.08%, FPR95: 95.38%, Test Score: 35.20%
+Epoch: 09, Loss: 0.0059, AUROC: 49.52%, AUPR: 26.00%, FPR95: 95.57%, Test Score: 37.50%
+Epoch: 10, Loss: 0.0055, AUROC: 49.39%, AUPR: 25.92%, FPR95: 95.46%, Test Score: 40.90%
+Epoch: 11, Loss: 0.0054, AUROC: 49.23%, AUPR: 25.84%, FPR95: 95.64%, Test Score: 42.40%
+Epoch: 12, Loss: 0.0053, AUROC: 49.00%, AUPR: 25.73%, FPR95: 95.38%, Test Score: 43.50%
+Epoch: 13, Loss: 0.0054, AUROC: 48.75%, AUPR: 25.61%, FPR95: 95.61%, Test Score: 44.70%
+Epoch: 14, Loss: 0.0056, AUROC: 48.54%, AUPR: 25.51%, FPR95: 95.53%, Test Score: 45.70%
+Epoch: 15, Loss: 0.0058, AUROC: 48.38%, AUPR: 25.40%, FPR95: 95.27%, Test Score: 46.50%
+Epoch: 16, Loss: 0.0061, AUROC: 48.26%, AUPR: 25.33%, FPR95: 95.09%, Test Score: 47.00%
+Epoch: 17, Loss: 0.0065, AUROC: 48.15%, AUPR: 25.27%, FPR95: 95.42%, Test Score: 48.70%
+Epoch: 18, Loss: 0.0069, AUROC: 48.08%, AUPR: 25.22%, FPR95: 95.24%, Test Score: 48.70%
+Epoch: 19, Loss: 0.0074, AUROC: 48.00%, AUPR: 25.18%, FPR95: 95.13%, Test Score: 49.70%
+Epoch: 20, Loss: 0.0080, AUROC: 47.97%, AUPR: 25.16%, FPR95: 95.38%, Test Score: 49.30%
+Epoch: 21, Loss: 0.0086, AUROC: 47.97%, AUPR: 25.18%, FPR95: 95.13%, Test Score: 50.80%
+Epoch: 22, Loss: 0.0093, AUROC: 47.96%, AUPR: 25.19%, FPR95: 95.16%, Test Score: 51.00%
+Epoch: 23, Loss: 0.0099, AUROC: 47.89%, AUPR: 25.18%, FPR95: 95.61%, Test Score: 51.50%
+Epoch: 24, Loss: 0.0106, AUROC: 47.87%, AUPR: 25.18%, FPR95: 95.24%, Test Score: 51.00%
+Epoch: 25, Loss: 0.0112, AUROC: 47.88%, AUPR: 25.22%, FPR95: 95.46%, Test Score: 51.10%
+Epoch: 26, Loss: 0.0118, AUROC: 47.93%, AUPR: 25.27%, FPR95: 95.13%, Test Score: 50.80%
+Epoch: 27, Loss: 0.0123, AUROC: 47.98%, AUPR: 25.31%, FPR95: 94.83%, Test Score: 50.10%
+Epoch: 28, Loss: 0.0128, AUROC: 48.04%, AUPR: 25.36%, FPR95: 94.68%, Test Score: 50.00%
+Epoch: 29, Loss: 0.0132, AUROC: 48.13%, AUPR: 25.41%, FPR95: 94.79%, Test Score: 50.10%
+Epoch: 30, Loss: 0.0136, AUROC: 48.16%, AUPR: 25.42%, FPR95: 94.83%, Test Score: 49.60%
+Epoch: 31, Loss: 0.0140, AUROC: 48.18%, AUPR: 25.43%, FPR95: 94.72%, Test Score: 50.30%
+Epoch: 32, Loss: 0.0143, AUROC: 48.16%, AUPR: 25.42%, FPR95: 95.05%, Test Score: 50.60%
+Epoch: 33, Loss: 0.0145, AUROC: 48.16%, AUPR: 25.43%, FPR95: 95.09%, Test Score: 51.10%
+Epoch: 34, Loss: 0.0148, AUROC: 48.10%, AUPR: 25.40%, FPR95: 95.16%, Test Score: 51.50%
+Epoch: 35, Loss: 0.0149, AUROC: 47.98%, AUPR: 25.38%, FPR95: 95.46%, Test Score: 50.60%
+Epoch: 36, Loss: 0.0150, AUROC: 48.03%, AUPR: 25.44%, FPR95: 95.57%, Test Score: 49.80%
+Epoch: 37, Loss: 0.0150, AUROC: 48.02%, AUPR: 25.43%, FPR95: 95.86%, Test Score: 48.00%
+Epoch: 38, Loss: 0.0150, AUROC: 47.94%, AUPR: 25.39%, FPR95: 95.61%, Test Score: 47.80%
+Epoch: 39, Loss: 0.0149, AUROC: 47.87%, AUPR: 25.35%, FPR95: 95.90%, Test Score: 49.30%
+Epoch: 40, Loss: 0.0149, AUROC: 47.77%, AUPR: 25.30%, FPR95: 95.72%, Test Score: 49.00%
+Epoch: 41, Loss: 0.0148, AUROC: 47.78%, AUPR: 25.28%, FPR95: 95.94%, Test Score: 49.40%
+Epoch: 42, Loss: 0.0148, AUROC: 47.72%, AUPR: 25.24%, FPR95: 95.83%, Test Score: 47.90%
+Epoch: 43, Loss: 0.0148, AUROC: 47.62%, AUPR: 25.19%, FPR95: 95.68%, Test Score: 46.70%
+Epoch: 44, Loss: 0.0148, AUROC: 47.68%, AUPR: 25.14%, FPR95: 95.53%, Test Score: 49.40%
+Epoch: 45, Loss: 0.0148, AUROC: 47.66%, AUPR: 25.08%, FPR95: 95.68%, Test Score: 49.60%
+Epoch: 46, Loss: 0.0148, AUROC: 47.71%, AUPR: 25.05%, FPR95: 95.97%, Test Score: 48.80%
+Epoch: 47, Loss: 0.0149, AUROC: 47.67%, AUPR: 25.15%, FPR95: 95.42%, Test Score: 48.20%
+Epoch: 48, Loss: 0.0151, AUROC: 47.79%, AUPR: 25.29%, FPR95: 95.68%, Test Score: 43.30%
+Epoch: 49, Loss: 0.0152, AUROC: 47.72%, AUPR: 25.27%, FPR95: 95.49%, Test Score: 42.30%
+Epoch: 50, Loss: 0.0152, AUROC: 47.73%, AUPR: 25.26%, FPR95: 95.57%, Test Score: 42.30%
+Epoch: 51, Loss: 0.0153, AUROC: 47.66%, AUPR: 25.20%, FPR95: 95.61%, Test Score: 42.90%
+Epoch: 52, Loss: 0.0154, AUROC: 47.59%, AUPR: 25.14%, FPR95: 95.38%, Test Score: 42.80%
+Epoch: 53, Loss: 0.0156, AUROC: 47.51%, AUPR: 25.07%, FPR95: 95.46%, Test Score: 42.60%
+Epoch: 54, Loss: 0.0158, AUROC: 47.45%, AUPR: 25.01%, FPR95: 95.24%, Test Score: 45.00%
+Epoch: 55, Loss: 0.0160, AUROC: 47.39%, AUPR: 24.94%, FPR95: 95.27%, Test Score: 46.80%
+Epoch: 56, Loss: 0.0162, AUROC: 47.42%, AUPR: 24.91%, FPR95: 95.24%, Test Score: 48.50%
+Epoch: 57, Loss: 0.0164, AUROC: 47.47%, AUPR: 24.90%, FPR95: 95.31%, Test Score: 47.70%
+Epoch: 58, Loss: 0.0166, AUROC: 47.42%, AUPR: 24.86%, FPR95: 95.57%, Test Score: 47.10%
+Epoch: 59, Loss: 0.0168, AUROC: 47.34%, AUPR: 24.80%, FPR95: 95.42%, Test Score: 47.90%
+Epoch: 60, Loss: 0.0171, AUROC: 47.35%, AUPR: 24.79%, FPR95: 95.38%, Test Score: 48.10%
+Epoch: 61, Loss: 0.0172, AUROC: 47.38%, AUPR: 24.76%, FPR95: 95.20%, Test Score: 47.80%
+Epoch: 62, Loss: 0.0174, AUROC: 47.37%, AUPR: 24.75%, FPR95: 95.31%, Test Score: 46.20%
+Epoch: 63, Loss: 0.0176, AUROC: 47.43%, AUPR: 24.76%, FPR95: 94.98%, Test Score: 44.10%
+Epoch: 64, Loss: 0.0177, AUROC: 47.49%, AUPR: 24.73%, FPR95: 94.87%, Test Score: 41.40%
+Epoch: 65, Loss: 0.0179, AUROC: 47.41%, AUPR: 24.71%, FPR95: 95.13%, Test Score: 41.70%
+Epoch: 66, Loss: 0.0181, AUROC: 47.48%, AUPR: 24.74%, FPR95: 95.16%, Test Score: 41.60%
+Epoch: 67, Loss: 0.0182, AUROC: 47.49%, AUPR: 24.75%, FPR95: 95.35%, Test Score: 40.80%
+Epoch: 68, Loss: 0.0181, AUROC: 47.49%, AUPR: 24.72%, FPR95: 95.24%, Test Score: 41.00%
+Epoch: 69, Loss: 0.0182, AUROC: 47.45%, AUPR: 24.69%, FPR95: 95.42%, Test Score: 42.00%
+Epoch: 70, Loss: 0.0183, AUROC: 47.65%, AUPR: 24.79%, FPR95: 94.61%, Test Score: 42.80%
+Epoch: 71, Loss: 0.0185, AUROC: 47.85%, AUPR: 24.85%, FPR95: 94.98%, Test Score: 42.30%
+Epoch: 72, Loss: 0.0186, AUROC: 47.90%, AUPR: 24.85%, FPR95: 94.94%, Test Score: 42.60%
+Epoch: 73, Loss: 0.0187, AUROC: 47.92%, AUPR: 24.84%, FPR95: 95.01%, Test Score: 42.90%
+Epoch: 74, Loss: 0.0187, AUROC: 47.89%, AUPR: 24.81%, FPR95: 95.05%, Test Score: 44.00%
+Epoch: 75, Loss: 0.0188, AUROC: 48.03%, AUPR: 24.87%, FPR95: 95.01%, Test Score: 40.80%
+Epoch: 76, Loss: 0.0189, AUROC: 47.99%, AUPR: 24.86%, FPR95: 94.72%, Test Score: 36.70%
+Epoch: 77, Loss: 0.0190, AUROC: 47.91%, AUPR: 24.82%, FPR95: 94.31%, Test Score: 32.60%
+Epoch: 78, Loss: 0.0190, AUROC: 47.92%, AUPR: 24.78%, FPR95: 94.65%, Test Score: 33.80%
+Epoch: 79, Loss: 0.0190, AUROC: 47.93%, AUPR: 24.77%, FPR95: 94.17%, Test Score: 34.00%
+Epoch: 80, Loss: 0.0192, AUROC: 48.00%, AUPR: 24.74%, FPR95: 94.50%, Test Score: 38.60%
+Epoch: 81, Loss: 0.0191, AUROC: 48.02%, AUPR: 24.70%, FPR95: 95.20%, Test Score: 42.30%
+Epoch: 82, Loss: 0.0191, AUROC: 48.00%, AUPR: 24.67%, FPR95: 95.13%, Test Score: 43.20%
+Epoch: 83, Loss: 0.0191, AUROC: 47.94%, AUPR: 24.62%, FPR95: 95.38%, Test Score: 42.90%
+Epoch: 84, Loss: 0.0191, AUROC: 47.90%, AUPR: 24.59%, FPR95: 95.38%, Test Score: 42.80%
+Epoch: 85, Loss: 0.0192, AUROC: 47.89%, AUPR: 24.56%, FPR95: 95.35%, Test Score: 42.70%
+Epoch: 86, Loss: 0.0193, AUROC: 47.90%, AUPR: 24.56%, FPR95: 95.13%, Test Score: 42.40%
+Epoch: 87, Loss: 0.0194, AUROC: 47.87%, AUPR: 24.53%, FPR95: 95.35%, Test Score: 41.50%
+Epoch: 88, Loss: 0.0195, AUROC: 47.85%, AUPR: 24.52%, FPR95: 95.20%, Test Score: 41.50%
+Epoch: 89, Loss: 0.0196, AUROC: 47.81%, AUPR: 24.50%, FPR95: 95.09%, Test Score: 41.20%
+Epoch: 90, Loss: 0.0196, AUROC: 47.79%, AUPR: 24.49%, FPR95: 95.13%, Test Score: 41.40%
+Epoch: 91, Loss: 0.0197, AUROC: 47.89%, AUPR: 24.54%, FPR95: 95.57%, Test Score: 42.60%
+Epoch: 92, Loss: 0.0198, AUROC: 47.86%, AUPR: 24.58%, FPR95: 95.31%, Test Score: 44.90%
+Epoch: 93, Loss: 0.0199, AUROC: 47.66%, AUPR: 24.54%, FPR95: 95.20%, Test Score: 44.80%
+Epoch: 94, Loss: 0.0199, AUROC: 47.57%, AUPR: 24.55%, FPR95: 95.20%, Test Score: 46.00%
+Epoch: 95, Loss: 0.0198, AUROC: 47.44%, AUPR: 24.50%, FPR95: 95.01%, Test Score: 43.90%
+Epoch: 96, Loss: 0.0197, AUROC: 47.39%, AUPR: 24.47%, FPR95: 95.20%, Test Score: 41.30%
+Epoch: 97, Loss: 0.0197, AUROC: 47.39%, AUPR: 24.47%, FPR95: 94.90%, Test Score: 40.80%
+Epoch: 98, Loss: 0.0197, AUROC: 47.60%, AUPR: 24.56%, FPR95: 95.61%, Test Score: 40.80%
+Epoch: 99, Loss: 0.0197, AUROC: 47.67%, AUPR: 24.61%, FPR95: 95.38%, Test Score: 40.50%
+",20240309 191609,47.9785,25.3808,95.4579,50.6
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'gat',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': True,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",True,gnnsafe,gat,cora,structure,detect,100,"GNNSafe(
+  (encoder): GAT(
+    (convs): ModuleList(
+      (0): GATConv(1433, 64, heads=2)
+      (1): GATConv(128, 7, heads=1)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+)","Epoch: 00, Loss: 2.1558, AUROC: 49.49%, AUPR: 27.34%, FPR95: 95.49%, Test Score: 19.60%
+Epoch: 01, Loss: 0.1409, AUROC: 51.67%, AUPR: 29.55%, FPR95: 96.23%, Test Score: 26.60%
+Epoch: 02, Loss: 0.0406, AUROC: 53.33%, AUPR: 31.89%, FPR95: 95.79%, Test Score: 31.70%
+Epoch: 03, Loss: 0.0195, AUROC: 54.79%, AUPR: 33.84%, FPR95: 95.90%, Test Score: 36.20%
+Epoch: 04, Loss: 0.0146, AUROC: 56.36%, AUPR: 35.55%, FPR95: 95.35%, Test Score: 41.50%
+Epoch: 05, Loss: 0.0124, AUROC: 57.91%, AUPR: 36.98%, FPR95: 95.49%, Test Score: 45.10%
+Epoch: 06, Loss: 0.0115, AUROC: 59.75%, AUPR: 38.37%, FPR95: 95.61%, Test Score: 49.70%
+Epoch: 07, Loss: 0.0108, AUROC: 61.10%, AUPR: 39.47%, FPR95: 95.46%, Test Score: 52.40%
+Epoch: 08, Loss: 0.0104, AUROC: 61.84%, AUPR: 39.98%, FPR95: 94.46%, Test Score: 52.90%
+Epoch: 09, Loss: 0.0105, AUROC: 62.99%, AUPR: 40.57%, FPR95: 92.91%, Test Score: 51.30%
+Epoch: 10, Loss: 0.0108, AUROC: 64.08%, AUPR: 41.34%, FPR95: 91.03%, Test Score: 53.10%
+Epoch: 11, Loss: 0.0114, AUROC: 64.97%, AUPR: 42.14%, FPR95: 90.95%, Test Score: 52.90%
+Epoch: 12, Loss: 0.0126, AUROC: 65.39%, AUPR: 42.69%, FPR95: 90.58%, Test Score: 52.50%
+Epoch: 13, Loss: 0.0141, AUROC: 66.84%, AUPR: 43.84%, FPR95: 89.14%, Test Score: 58.90%
+Epoch: 14, Loss: 0.0158, AUROC: 67.19%, AUPR: 44.08%, FPR95: 89.18%, Test Score: 59.70%
+Epoch: 15, Loss: 0.0178, AUROC: 66.92%, AUPR: 44.07%, FPR95: 89.51%, Test Score: 59.60%
+Epoch: 16, Loss: 0.0197, AUROC: 68.13%, AUPR: 44.81%, FPR95: 87.70%, Test Score: 63.30%
+Epoch: 17, Loss: 0.0215, AUROC: 69.08%, AUPR: 45.25%, FPR95: 85.64%, Test Score: 64.70%
+Epoch: 18, Loss: 0.0230, AUROC: 69.76%, AUPR: 45.62%, FPR95: 84.16%, Test Score: 64.70%
+Epoch: 19, Loss: 0.0246, AUROC: 70.84%, AUPR: 46.20%, FPR95: 81.87%, Test Score: 67.40%
+Epoch: 20, Loss: 0.0258, AUROC: 71.32%, AUPR: 46.44%, FPR95: 81.35%, Test Score: 69.50%
+Epoch: 21, Loss: 0.0266, AUROC: 72.08%, AUPR: 46.71%, FPR95: 81.24%, Test Score: 70.50%
+Epoch: 22, Loss: 0.0269, AUROC: 73.10%, AUPR: 47.22%, FPR95: 80.61%, Test Score: 73.90%
+Epoch: 23, Loss: 0.0269, AUROC: 72.63%, AUPR: 46.91%, FPR95: 82.75%, Test Score: 71.70%
+Epoch: 24, Loss: 0.0267, AUROC: 72.80%, AUPR: 46.86%, FPR95: 83.09%, Test Score: 71.40%
+Epoch: 25, Loss: 0.0260, AUROC: 71.99%, AUPR: 46.14%, FPR95: 83.27%, Test Score: 69.60%
+Epoch: 26, Loss: 0.0255, AUROC: 72.77%, AUPR: 46.32%, FPR95: 82.46%, Test Score: 69.80%
+Epoch: 27, Loss: 0.0248, AUROC: 73.36%, AUPR: 46.59%, FPR95: 82.16%, Test Score: 72.30%
+Epoch: 28, Loss: 0.0243, AUROC: 74.45%, AUPR: 47.01%, FPR95: 77.22%, Test Score: 74.40%
+Epoch: 29, Loss: 0.0237, AUROC: 74.67%, AUPR: 46.92%, FPR95: 76.81%, Test Score: 73.70%
+Epoch: 30, Loss: 0.0231, AUROC: 74.33%, AUPR: 46.64%, FPR95: 77.70%, Test Score: 73.60%
+Epoch: 31, Loss: 0.0229, AUROC: 74.38%, AUPR: 46.49%, FPR95: 77.18%, Test Score: 73.30%
+Epoch: 32, Loss: 0.0227, AUROC: 73.83%, AUPR: 46.07%, FPR95: 79.28%, Test Score: 72.10%
+Epoch: 33, Loss: 0.0226, AUROC: 74.39%, AUPR: 46.48%, FPR95: 78.47%, Test Score: 73.80%
+Epoch: 34, Loss: 0.0227, AUROC: 74.95%, AUPR: 46.93%, FPR95: 79.14%, Test Score: 73.40%
+Epoch: 35, Loss: 0.0227, AUROC: 74.67%, AUPR: 46.67%, FPR95: 77.36%, Test Score: 73.90%
+Epoch: 36, Loss: 0.0229, AUROC: 74.91%, AUPR: 46.62%, FPR95: 74.52%, Test Score: 74.20%
+Epoch: 37, Loss: 0.0230, AUROC: 74.99%, AUPR: 46.55%, FPR95: 73.89%, Test Score: 73.30%
+Epoch: 38, Loss: 0.0230, AUROC: 74.39%, AUPR: 46.16%, FPR95: 76.37%, Test Score: 72.90%
+Epoch: 39, Loss: 0.0232, AUROC: 74.53%, AUPR: 46.22%, FPR95: 74.56%, Test Score: 73.10%
+Epoch: 40, Loss: 0.0231, AUROC: 74.52%, AUPR: 46.16%, FPR95: 74.89%, Test Score: 72.90%
+Epoch: 41, Loss: 0.0230, AUROC: 74.34%, AUPR: 45.99%, FPR95: 74.59%, Test Score: 72.70%
+Epoch: 42, Loss: 0.0236, AUROC: 74.04%, AUPR: 45.86%, FPR95: 76.92%, Test Score: 71.20%
+Epoch: 43, Loss: 0.0235, AUROC: 74.08%, AUPR: 45.99%, FPR95: 76.96%, Test Score: 71.60%
+Epoch: 44, Loss: 0.0237, AUROC: 74.19%, AUPR: 46.09%, FPR95: 78.18%, Test Score: 71.30%
+Epoch: 45, Loss: 0.0236, AUROC: 73.60%, AUPR: 45.87%, FPR95: 79.32%, Test Score: 69.90%
+Epoch: 46, Loss: 0.0239, AUROC: 72.93%, AUPR: 45.62%, FPR95: 82.53%, Test Score: 67.30%
+Epoch: 47, Loss: 0.0239, AUROC: 73.53%, AUPR: 45.82%, FPR95: 79.80%, Test Score: 69.30%
+Epoch: 48, Loss: 0.0242, AUROC: 74.36%, AUPR: 46.25%, FPR95: 75.78%, Test Score: 70.80%
+Epoch: 49, Loss: 0.0245, AUROC: 73.51%, AUPR: 45.74%, FPR95: 78.66%, Test Score: 68.50%
+Epoch: 50, Loss: 0.0247, AUROC: 73.67%, AUPR: 45.94%, FPR95: 77.33%, Test Score: 68.70%
+Epoch: 51, Loss: 0.0247, AUROC: 74.38%, AUPR: 46.32%, FPR95: 74.11%, Test Score: 69.70%
+Epoch: 52, Loss: 0.0249, AUROC: 74.23%, AUPR: 46.24%, FPR95: 75.15%, Test Score: 69.40%
+Epoch: 53, Loss: 0.0252, AUROC: 73.84%, AUPR: 46.21%, FPR95: 77.29%, Test Score: 68.60%
+Epoch: 54, Loss: 0.0253, AUROC: 73.11%, AUPR: 46.04%, FPR95: 80.06%, Test Score: 67.30%
+Epoch: 55, Loss: 0.0254, AUROC: 73.06%, AUPR: 46.22%, FPR95: 82.61%, Test Score: 66.60%
+Epoch: 56, Loss: 0.0256, AUROC: 73.70%, AUPR: 46.53%, FPR95: 79.10%, Test Score: 68.50%
+Epoch: 57, Loss: 0.0259, AUROC: 73.95%, AUPR: 46.76%, FPR95: 78.80%, Test Score: 68.50%
+Epoch: 58, Loss: 0.0260, AUROC: 74.24%, AUPR: 46.86%, FPR95: 78.06%, Test Score: 69.00%
+Epoch: 59, Loss: 0.0263, AUROC: 73.95%, AUPR: 46.67%, FPR95: 79.03%, Test Score: 68.10%
+Epoch: 60, Loss: 0.0264, AUROC: 74.64%, AUPR: 47.16%, FPR95: 76.85%, Test Score: 69.40%
+Epoch: 61, Loss: 0.0267, AUROC: 74.48%, AUPR: 47.14%, FPR95: 78.32%, Test Score: 68.90%
+Epoch: 62, Loss: 0.0270, AUROC: 74.42%, AUPR: 47.12%, FPR95: 78.14%, Test Score: 69.30%
+Epoch: 63, Loss: 0.0272, AUROC: 74.43%, AUPR: 47.18%, FPR95: 77.47%, Test Score: 69.90%
+Epoch: 64, Loss: 0.0273, AUROC: 74.03%, AUPR: 46.90%, FPR95: 79.80%, Test Score: 67.60%
+Epoch: 65, Loss: 0.0278, AUROC: 73.57%, AUPR: 46.72%, FPR95: 81.02%, Test Score: 66.30%
+Epoch: 66, Loss: 0.0279, AUROC: 73.89%, AUPR: 46.88%, FPR95: 79.21%, Test Score: 66.60%
+Epoch: 67, Loss: 0.0281, AUROC: 73.73%, AUPR: 46.84%, FPR95: 79.54%, Test Score: 65.40%
+Epoch: 68, Loss: 0.0283, AUROC: 73.73%, AUPR: 46.87%, FPR95: 80.72%, Test Score: 65.40%
+Epoch: 69, Loss: 0.0285, AUROC: 73.03%, AUPR: 46.54%, FPR95: 83.49%, Test Score: 64.20%
+Epoch: 70, Loss: 0.0286, AUROC: 72.99%, AUPR: 46.49%, FPR95: 83.23%, Test Score: 64.20%
+Epoch: 71, Loss: 0.0291, AUROC: 73.40%, AUPR: 46.76%, FPR95: 81.50%, Test Score: 65.40%
+Epoch: 72, Loss: 0.0290, AUROC: 72.93%, AUPR: 46.60%, FPR95: 83.75%, Test Score: 64.70%
+Epoch: 73, Loss: 0.0292, AUROC: 72.93%, AUPR: 46.59%, FPR95: 84.45%, Test Score: 64.50%
+Epoch: 74, Loss: 0.0295, AUROC: 72.66%, AUPR: 46.35%, FPR95: 82.98%, Test Score: 63.70%
+Epoch: 75, Loss: 0.0297, AUROC: 72.43%, AUPR: 46.31%, FPR95: 84.23%, Test Score: 64.10%
+Epoch: 76, Loss: 0.0298, AUROC: 72.76%, AUPR: 46.41%, FPR95: 83.31%, Test Score: 64.00%
+Epoch: 77, Loss: 0.0300, AUROC: 72.68%, AUPR: 46.30%, FPR95: 83.12%, Test Score: 63.30%
+Epoch: 78, Loss: 0.0302, AUROC: 72.17%, AUPR: 46.05%, FPR95: 84.12%, Test Score: 62.60%
+Epoch: 79, Loss: 0.0304, AUROC: 72.58%, AUPR: 46.38%, FPR95: 82.83%, Test Score: 64.40%
+Epoch: 80, Loss: 0.0306, AUROC: 72.07%, AUPR: 46.07%, FPR95: 84.49%, Test Score: 62.10%
+Epoch: 81, Loss: 0.0306, AUROC: 72.36%, AUPR: 46.26%, FPR95: 83.31%, Test Score: 62.90%
+Epoch: 82, Loss: 0.0308, AUROC: 72.24%, AUPR: 46.06%, FPR95: 81.98%, Test Score: 62.10%
+Epoch: 83, Loss: 0.0308, AUROC: 71.33%, AUPR: 45.41%, FPR95: 84.16%, Test Score: 59.10%
+Epoch: 84, Loss: 0.0310, AUROC: 71.63%, AUPR: 45.65%, FPR95: 84.75%, Test Score: 60.20%
+Epoch: 85, Loss: 0.0312, AUROC: 71.68%, AUPR: 45.50%, FPR95: 83.71%, Test Score: 59.60%
+Epoch: 86, Loss: 0.0312, AUROC: 71.70%, AUPR: 45.47%, FPR95: 83.01%, Test Score: 59.70%
+Epoch: 87, Loss: 0.0313, AUROC: 71.32%, AUPR: 45.20%, FPR95: 83.79%, Test Score: 58.50%
+Epoch: 88, Loss: 0.0316, AUROC: 70.96%, AUPR: 45.07%, FPR95: 84.34%, Test Score: 57.90%
+Epoch: 89, Loss: 0.0317, AUROC: 70.91%, AUPR: 44.90%, FPR95: 82.46%, Test Score: 57.50%
+Epoch: 90, Loss: 0.0316, AUROC: 70.52%, AUPR: 44.65%, FPR95: 84.79%, Test Score: 56.00%
+Epoch: 91, Loss: 0.0320, AUROC: 71.24%, AUPR: 44.96%, FPR95: 82.09%, Test Score: 57.20%
+Epoch: 92, Loss: 0.0319, AUROC: 71.06%, AUPR: 44.81%, FPR95: 82.05%, Test Score: 57.00%
+Epoch: 93, Loss: 0.0321, AUROC: 71.03%, AUPR: 44.85%, FPR95: 83.05%, Test Score: 57.80%
+Epoch: 94, Loss: 0.0324, AUROC: 70.92%, AUPR: 44.64%, FPR95: 82.09%, Test Score: 56.90%
+Epoch: 95, Loss: 0.0322, AUROC: 71.00%, AUPR: 44.77%, FPR95: 82.79%, Test Score: 57.70%
+Epoch: 96, Loss: 0.0324, AUROC: 70.83%, AUPR: 44.68%, FPR95: 83.46%, Test Score: 58.90%
+Epoch: 97, Loss: 0.0325, AUROC: 70.69%, AUPR: 44.64%, FPR95: 83.57%, Test Score: 58.80%
+Epoch: 98, Loss: 0.0325, AUROC: 71.16%, AUPR: 44.83%, FPR95: 82.16%, Test Score: 58.60%
+Epoch: 99, Loss: 0.0326, AUROC: 71.28%, AUPR: 45.02%, FPR95: 81.87%, Test Score: 59.30%
+",20240309 191634,74.9131,46.6178,74.5199,74.2
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'mixhop',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': True,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",True,gnnsafe,mixhop,cora,structure,detect,100,"GNNSafe(
+  (encoder): MixHop(
+    (convs): ModuleList(
+      (0): MixHopLayer(
+        (lins): ModuleList(
+          (0-2): 3 x Linear(in_features=1433, out_features=64, bias=True)
+        )
+      )
+      (1): MixHopLayer(
+        (lins): ModuleList(
+          (0-2): 3 x Linear(in_features=192, out_features=7, bias=True)
+        )
+      )
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (final_project): Linear(in_features=21, out_features=7, bias=True)
+  )
+)","Epoch: 00, Loss: 1.9635, AUROC: 36.16%, AUPR: 24.48%, FPR95: 99.96%, Test Score: 14.90%
+Epoch: 01, Loss: 1.0239, AUROC: 36.55%, AUPR: 24.85%, FPR95: 99.78%, Test Score: 15.00%
+Epoch: 02, Loss: 0.4647, AUROC: 37.68%, AUPR: 25.37%, FPR95: 99.26%, Test Score: 16.10%
+Epoch: 03, Loss: 0.1865, AUROC: 40.96%, AUPR: 26.79%, FPR95: 98.56%, Test Score: 35.20%
+Epoch: 04, Loss: 0.0742, AUROC: 44.20%, AUPR: 28.20%, FPR95: 98.08%, Test Score: 57.70%
+Epoch: 05, Loss: 0.0322, AUROC: 46.33%, AUPR: 29.18%, FPR95: 97.93%, Test Score: 56.70%
+Epoch: 06, Loss: 0.0164, AUROC: 48.24%, AUPR: 30.18%, FPR95: 97.75%, Test Score: 56.10%
+Epoch: 07, Loss: 0.0101, AUROC: 49.96%, AUPR: 31.06%, FPR95: 98.01%, Test Score: 55.70%
+Epoch: 08, Loss: 0.0074, AUROC: 51.45%, AUPR: 31.79%, FPR95: 97.53%, Test Score: 53.90%
+Epoch: 09, Loss: 0.0064, AUROC: 52.98%, AUPR: 32.47%, FPR95: 97.08%, Test Score: 53.60%
+Epoch: 10, Loss: 0.0063, AUROC: 54.25%, AUPR: 32.98%, FPR95: 96.79%, Test Score: 52.20%
+Epoch: 11, Loss: 0.0069, AUROC: 55.75%, AUPR: 33.64%, FPR95: 96.71%, Test Score: 53.40%
+Epoch: 12, Loss: 0.0083, AUROC: 57.41%, AUPR: 34.36%, FPR95: 96.38%, Test Score: 54.90%
+Epoch: 13, Loss: 0.0105, AUROC: 59.10%, AUPR: 35.20%, FPR95: 96.79%, Test Score: 61.70%
+Epoch: 14, Loss: 0.0131, AUROC: 60.20%, AUPR: 35.78%, FPR95: 96.79%, Test Score: 65.20%
+Epoch: 15, Loss: 0.0159, AUROC: 61.13%, AUPR: 36.19%, FPR95: 96.68%, Test Score: 68.50%
+Epoch: 16, Loss: 0.0179, AUROC: 60.92%, AUPR: 35.87%, FPR95: 97.12%, Test Score: 71.20%
+Epoch: 17, Loss: 0.0189, AUROC: 60.11%, AUPR: 35.16%, FPR95: 97.16%, Test Score: 69.60%
+Epoch: 18, Loss: 0.0186, AUROC: 59.09%, AUPR: 34.43%, FPR95: 96.94%, Test Score: 67.70%
+Epoch: 19, Loss: 0.0177, AUROC: 58.97%, AUPR: 34.30%, FPR95: 97.12%, Test Score: 65.70%
+Epoch: 20, Loss: 0.0166, AUROC: 59.26%, AUPR: 34.49%, FPR95: 97.60%, Test Score: 61.20%
+Epoch: 21, Loss: 0.0154, AUROC: 58.48%, AUPR: 34.24%, FPR95: 97.86%, Test Score: 61.40%
+Epoch: 22, Loss: 0.0146, AUROC: 58.35%, AUPR: 34.43%, FPR95: 97.75%, Test Score: 61.80%
+Epoch: 23, Loss: 0.0142, AUROC: 58.97%, AUPR: 34.95%, FPR95: 97.67%, Test Score: 63.10%
+Epoch: 24, Loss: 0.0142, AUROC: 59.95%, AUPR: 35.62%, FPR95: 96.71%, Test Score: 64.00%
+Epoch: 25, Loss: 0.0145, AUROC: 61.64%, AUPR: 36.72%, FPR95: 96.01%, Test Score: 65.40%
+Epoch: 26, Loss: 0.0148, AUROC: 62.90%, AUPR: 37.60%, FPR95: 95.38%, Test Score: 67.50%
+Epoch: 27, Loss: 0.0152, AUROC: 64.37%, AUPR: 38.65%, FPR95: 94.98%, Test Score: 68.60%
+Epoch: 28, Loss: 0.0154, AUROC: 64.95%, AUPR: 39.22%, FPR95: 93.69%, Test Score: 69.70%
+Epoch: 29, Loss: 0.0155, AUROC: 65.07%, AUPR: 39.48%, FPR95: 93.21%, Test Score: 69.20%
+Epoch: 30, Loss: 0.0156, AUROC: 65.58%, AUPR: 39.99%, FPR95: 92.58%, Test Score: 70.40%
+Epoch: 31, Loss: 0.0158, AUROC: 66.83%, AUPR: 40.74%, FPR95: 90.07%, Test Score: 70.10%
+Epoch: 32, Loss: 0.0160, AUROC: 67.30%, AUPR: 41.00%, FPR95: 89.48%, Test Score: 71.20%
+Epoch: 33, Loss: 0.0162, AUROC: 67.94%, AUPR: 41.45%, FPR95: 88.15%, Test Score: 73.20%
+Epoch: 34, Loss: 0.0165, AUROC: 68.92%, AUPR: 42.08%, FPR95: 85.75%, Test Score: 73.50%
+Epoch: 35, Loss: 0.0168, AUROC: 69.82%, AUPR: 42.80%, FPR95: 84.79%, Test Score: 74.90%
+Epoch: 36, Loss: 0.0172, AUROC: 69.51%, AUPR: 42.85%, FPR95: 84.75%, Test Score: 75.60%
+Epoch: 37, Loss: 0.0175, AUROC: 69.23%, AUPR: 42.89%, FPR95: 86.96%, Test Score: 76.20%
+Epoch: 38, Loss: 0.0178, AUROC: 69.86%, AUPR: 43.33%, FPR95: 85.16%, Test Score: 74.90%
+Epoch: 39, Loss: 0.0181, AUROC: 69.22%, AUPR: 42.93%, FPR95: 85.67%, Test Score: 74.30%
+Epoch: 40, Loss: 0.0183, AUROC: 69.61%, AUPR: 43.10%, FPR95: 84.34%, Test Score: 73.50%
+Epoch: 41, Loss: 0.0186, AUROC: 70.37%, AUPR: 43.69%, FPR95: 85.52%, Test Score: 74.90%
+Epoch: 42, Loss: 0.0188, AUROC: 70.04%, AUPR: 43.58%, FPR95: 86.12%, Test Score: 75.30%
+Epoch: 43, Loss: 0.0190, AUROC: 70.39%, AUPR: 43.74%, FPR95: 84.08%, Test Score: 75.10%
+Epoch: 44, Loss: 0.0192, AUROC: 70.56%, AUPR: 43.99%, FPR95: 84.79%, Test Score: 75.80%
+Epoch: 45, Loss: 0.0194, AUROC: 71.23%, AUPR: 44.35%, FPR95: 82.09%, Test Score: 77.10%
+Epoch: 46, Loss: 0.0196, AUROC: 71.24%, AUPR: 44.37%, FPR95: 81.68%, Test Score: 76.60%
+Epoch: 47, Loss: 0.0196, AUROC: 70.91%, AUPR: 44.10%, FPR95: 81.94%, Test Score: 76.70%
+Epoch: 48, Loss: 0.0197, AUROC: 70.96%, AUPR: 44.16%, FPR95: 81.79%, Test Score: 78.40%
+Epoch: 49, Loss: 0.0197, AUROC: 70.19%, AUPR: 43.55%, FPR95: 82.53%, Test Score: 77.70%
+Epoch: 50, Loss: 0.0197, AUROC: 70.80%, AUPR: 43.87%, FPR95: 82.16%, Test Score: 78.10%
+Epoch: 51, Loss: 0.0196, AUROC: 70.71%, AUPR: 43.82%, FPR95: 81.68%, Test Score: 78.30%
+Epoch: 52, Loss: 0.0196, AUROC: 70.49%, AUPR: 43.66%, FPR95: 82.24%, Test Score: 77.80%
+Epoch: 53, Loss: 0.0197, AUROC: 70.69%, AUPR: 43.70%, FPR95: 81.28%, Test Score: 76.90%
+Epoch: 54, Loss: 0.0197, AUROC: 70.70%, AUPR: 43.66%, FPR95: 81.76%, Test Score: 76.50%
+Epoch: 55, Loss: 0.0197, AUROC: 70.89%, AUPR: 43.82%, FPR95: 81.79%, Test Score: 77.10%
+Epoch: 56, Loss: 0.0197, AUROC: 70.98%, AUPR: 43.94%, FPR95: 82.90%, Test Score: 79.10%
+Epoch: 57, Loss: 0.0197, AUROC: 70.89%, AUPR: 43.91%, FPR95: 82.39%, Test Score: 78.10%
+Epoch: 58, Loss: 0.0197, AUROC: 70.72%, AUPR: 43.75%, FPR95: 83.31%, Test Score: 78.20%
+Epoch: 59, Loss: 0.0197, AUROC: 70.91%, AUPR: 43.79%, FPR95: 81.83%, Test Score: 77.20%
+Epoch: 60, Loss: 0.0198, AUROC: 70.74%, AUPR: 43.66%, FPR95: 82.20%, Test Score: 78.00%
+Epoch: 61, Loss: 0.0199, AUROC: 70.96%, AUPR: 43.75%, FPR95: 81.39%, Test Score: 77.70%
+Epoch: 62, Loss: 0.0200, AUROC: 70.56%, AUPR: 43.37%, FPR95: 81.50%, Test Score: 76.40%
+Epoch: 63, Loss: 0.0201, AUROC: 70.62%, AUPR: 43.31%, FPR95: 80.87%, Test Score: 75.40%
+Epoch: 64, Loss: 0.0202, AUROC: 70.92%, AUPR: 43.53%, FPR95: 80.58%, Test Score: 76.00%
+Epoch: 65, Loss: 0.0203, AUROC: 70.95%, AUPR: 43.53%, FPR95: 80.58%, Test Score: 76.80%
+Epoch: 66, Loss: 0.0204, AUROC: 70.02%, AUPR: 42.94%, FPR95: 81.35%, Test Score: 77.00%
+Epoch: 67, Loss: 0.0205, AUROC: 69.94%, AUPR: 42.86%, FPR95: 80.65%, Test Score: 76.60%
+Epoch: 68, Loss: 0.0207, AUROC: 70.19%, AUPR: 42.94%, FPR95: 80.24%, Test Score: 76.10%
+Epoch: 69, Loss: 0.0207, AUROC: 70.46%, AUPR: 43.04%, FPR95: 80.65%, Test Score: 75.80%
+Epoch: 70, Loss: 0.0208, AUROC: 70.27%, AUPR: 42.89%, FPR95: 80.87%, Test Score: 76.10%
+Epoch: 71, Loss: 0.0209, AUROC: 70.21%, AUPR: 42.87%, FPR95: 81.94%, Test Score: 76.30%
+Epoch: 72, Loss: 0.0211, AUROC: 70.53%, AUPR: 43.09%, FPR95: 81.79%, Test Score: 76.40%
+Epoch: 73, Loss: 0.0212, AUROC: 70.87%, AUPR: 43.32%, FPR95: 81.13%, Test Score: 76.60%
+Epoch: 74, Loss: 0.0214, AUROC: 70.67%, AUPR: 43.12%, FPR95: 81.31%, Test Score: 76.70%
+Epoch: 75, Loss: 0.0216, AUROC: 70.06%, AUPR: 42.67%, FPR95: 82.75%, Test Score: 76.30%
+Epoch: 76, Loss: 0.0217, AUROC: 69.62%, AUPR: 42.36%, FPR95: 83.75%, Test Score: 76.80%
+Epoch: 77, Loss: 0.0217, AUROC: 69.63%, AUPR: 42.36%, FPR95: 82.20%, Test Score: 76.40%
+Epoch: 78, Loss: 0.0218, AUROC: 69.72%, AUPR: 42.38%, FPR95: 83.16%, Test Score: 75.50%
+Epoch: 79, Loss: 0.0219, AUROC: 69.33%, AUPR: 42.10%, FPR95: 83.20%, Test Score: 75.80%
+Epoch: 80, Loss: 0.0220, AUROC: 68.76%, AUPR: 41.72%, FPR95: 84.16%, Test Score: 75.90%
+Epoch: 81, Loss: 0.0221, AUROC: 68.68%, AUPR: 41.67%, FPR95: 83.75%, Test Score: 76.80%
+Epoch: 82, Loss: 0.0222, AUROC: 68.38%, AUPR: 41.50%, FPR95: 84.93%, Test Score: 76.30%
+Epoch: 83, Loss: 0.0222, AUROC: 68.47%, AUPR: 41.48%, FPR95: 84.53%, Test Score: 75.70%
+Epoch: 84, Loss: 0.0223, AUROC: 68.63%, AUPR: 41.52%, FPR95: 83.75%, Test Score: 74.70%
+Epoch: 85, Loss: 0.0224, AUROC: 68.44%, AUPR: 41.33%, FPR95: 84.16%, Test Score: 76.20%
+Epoch: 86, Loss: 0.0225, AUROC: 67.87%, AUPR: 40.88%, FPR95: 84.93%, Test Score: 75.30%
+Epoch: 87, Loss: 0.0225, AUROC: 67.81%, AUPR: 40.81%, FPR95: 85.16%, Test Score: 74.00%
+Epoch: 88, Loss: 0.0226, AUROC: 67.73%, AUPR: 40.67%, FPR95: 86.34%, Test Score: 73.80%
+Epoch: 89, Loss: 0.0226, AUROC: 67.92%, AUPR: 40.76%, FPR95: 85.34%, Test Score: 74.20%
+Epoch: 90, Loss: 0.0226, AUROC: 67.88%, AUPR: 40.65%, FPR95: 84.56%, Test Score: 74.50%
+Epoch: 91, Loss: 0.0227, AUROC: 67.47%, AUPR: 40.36%, FPR95: 85.12%, Test Score: 75.80%
+Epoch: 92, Loss: 0.0227, AUROC: 67.16%, AUPR: 40.17%, FPR95: 85.04%, Test Score: 75.70%
+Epoch: 93, Loss: 0.0228, AUROC: 66.92%, AUPR: 39.95%, FPR95: 85.67%, Test Score: 75.40%
+Epoch: 94, Loss: 0.0227, AUROC: 66.10%, AUPR: 39.44%, FPR95: 86.08%, Test Score: 75.50%
+Epoch: 95, Loss: 0.0227, AUROC: 66.39%, AUPR: 39.54%, FPR95: 85.45%, Test Score: 75.00%
+Epoch: 96, Loss: 0.0228, AUROC: 65.81%, AUPR: 39.19%, FPR95: 85.45%, Test Score: 75.10%
+Epoch: 97, Loss: 0.0228, AUROC: 65.38%, AUPR: 38.92%, FPR95: 87.37%, Test Score: 73.90%
+Epoch: 98, Loss: 0.0228, AUROC: 65.21%, AUPR: 38.74%, FPR95: 86.26%, Test Score: 73.90%
+Epoch: 99, Loss: 0.0228, AUROC: 64.29%, AUPR: 38.14%, FPR95: 87.19%, Test Score: 73.30%
+",20240309 191658,70.716,43.747,83.3087,78.2
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'gcnjk',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': True,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",True,gnnsafe,gcnjk,cora,structure,detect,100,"GNNSafe(
+  (encoder): GCNJK(
+    (convs): ModuleList(
+      (0): GCNConv(1433, 64)
+      (1): GCNConv(64, 64)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (jump): JumpingKnowledge(max)
+    (final_project): Linear(in_features=64, out_features=7, bias=True)
+  )
+)","Epoch: 00, Loss: 1.9976, AUROC: 49.43%, AUPR: 26.65%, FPR95: 95.27%, Test Score: 6.40%
+Epoch: 01, Loss: 1.0403, AUROC: 51.45%, AUPR: 27.63%, FPR95: 94.53%, Test Score: 6.40%
+Epoch: 02, Loss: 0.5949, AUROC: 49.43%, AUPR: 26.73%, FPR95: 95.68%, Test Score: 11.20%
+Epoch: 03, Loss: 0.3340, AUROC: 50.62%, AUPR: 27.73%, FPR95: 96.12%, Test Score: 14.70%
+Epoch: 04, Loss: 0.1830, AUROC: 52.20%, AUPR: 29.06%, FPR95: 95.24%, Test Score: 14.30%
+Epoch: 05, Loss: 0.1012, AUROC: 52.05%, AUPR: 29.27%, FPR95: 95.35%, Test Score: 15.40%
+Epoch: 06, Loss: 0.0590, AUROC: 50.33%, AUPR: 28.69%, FPR95: 95.16%, Test Score: 17.50%
+Epoch: 07, Loss: 0.0368, AUROC: 49.49%, AUPR: 28.54%, FPR95: 95.49%, Test Score: 21.70%
+Epoch: 08, Loss: 0.0247, AUROC: 50.20%, AUPR: 29.04%, FPR95: 95.16%, Test Score: 27.50%
+Epoch: 09, Loss: 0.0180, AUROC: 52.14%, AUPR: 29.99%, FPR95: 93.80%, Test Score: 39.20%
+Epoch: 10, Loss: 0.0143, AUROC: 54.73%, AUPR: 31.24%, FPR95: 91.06%, Test Score: 50.80%
+Epoch: 11, Loss: 0.0123, AUROC: 57.33%, AUPR: 32.54%, FPR95: 87.78%, Test Score: 60.90%
+Epoch: 12, Loss: 0.0112, AUROC: 59.39%, AUPR: 33.71%, FPR95: 87.00%, Test Score: 65.30%
+Epoch: 13, Loss: 0.0108, AUROC: 61.12%, AUPR: 34.78%, FPR95: 86.41%, Test Score: 68.40%
+Epoch: 14, Loss: 0.0109, AUROC: 62.23%, AUPR: 35.67%, FPR95: 85.67%, Test Score: 68.10%
+Epoch: 15, Loss: 0.0115, AUROC: 62.03%, AUPR: 35.92%, FPR95: 86.37%, Test Score: 66.40%
+Epoch: 16, Loss: 0.0124, AUROC: 61.42%, AUPR: 35.71%, FPR95: 87.44%, Test Score: 60.70%
+Epoch: 17, Loss: 0.0137, AUROC: 60.96%, AUPR: 35.34%, FPR95: 87.74%, Test Score: 57.30%
+Epoch: 18, Loss: 0.0154, AUROC: 60.29%, AUPR: 34.94%, FPR95: 89.33%, Test Score: 54.80%
+Epoch: 19, Loss: 0.0174, AUROC: 61.11%, AUPR: 35.53%, FPR95: 89.11%, Test Score: 57.10%
+Epoch: 20, Loss: 0.0196, AUROC: 62.39%, AUPR: 36.40%, FPR95: 88.04%, Test Score: 61.20%
+Epoch: 21, Loss: 0.0217, AUROC: 64.46%, AUPR: 37.61%, FPR95: 86.37%, Test Score: 65.30%
+Epoch: 22, Loss: 0.0237, AUROC: 65.91%, AUPR: 38.53%, FPR95: 84.56%, Test Score: 71.50%
+Epoch: 23, Loss: 0.0253, AUROC: 66.19%, AUPR: 38.70%, FPR95: 85.49%, Test Score: 72.00%
+Epoch: 24, Loss: 0.0265, AUROC: 66.28%, AUPR: 38.60%, FPR95: 84.60%, Test Score: 70.50%
+Epoch: 25, Loss: 0.0273, AUROC: 66.49%, AUPR: 38.86%, FPR95: 83.90%, Test Score: 70.90%
+Epoch: 26, Loss: 0.0276, AUROC: 66.67%, AUPR: 39.17%, FPR95: 85.12%, Test Score: 71.20%
+Epoch: 27, Loss: 0.0276, AUROC: 66.41%, AUPR: 39.09%, FPR95: 84.86%, Test Score: 69.80%
+Epoch: 28, Loss: 0.0273, AUROC: 65.69%, AUPR: 38.59%, FPR95: 85.01%, Test Score: 68.20%
+Epoch: 29, Loss: 0.0267, AUROC: 64.68%, AUPR: 37.99%, FPR95: 84.45%, Test Score: 66.70%
+Epoch: 30, Loss: 0.0259, AUROC: 64.31%, AUPR: 37.79%, FPR95: 84.60%, Test Score: 65.40%
+Epoch: 31, Loss: 0.0251, AUROC: 63.73%, AUPR: 37.65%, FPR95: 87.56%, Test Score: 67.30%
+Epoch: 32, Loss: 0.0244, AUROC: 64.45%, AUPR: 38.11%, FPR95: 85.60%, Test Score: 69.20%
+Epoch: 33, Loss: 0.0237, AUROC: 65.17%, AUPR: 38.69%, FPR95: 85.49%, Test Score: 70.20%
+Epoch: 34, Loss: 0.0231, AUROC: 64.88%, AUPR: 38.57%, FPR95: 87.48%, Test Score: 70.70%
+Epoch: 35, Loss: 0.0227, AUROC: 64.67%, AUPR: 38.58%, FPR95: 87.89%, Test Score: 71.70%
+Epoch: 36, Loss: 0.0226, AUROC: 64.74%, AUPR: 38.68%, FPR95: 87.00%, Test Score: 71.10%
+Epoch: 37, Loss: 0.0226, AUROC: 64.90%, AUPR: 38.90%, FPR95: 87.08%, Test Score: 70.20%
+Epoch: 38, Loss: 0.0227, AUROC: 64.52%, AUPR: 38.66%, FPR95: 85.52%, Test Score: 67.10%
+Epoch: 39, Loss: 0.0230, AUROC: 63.75%, AUPR: 38.10%, FPR95: 85.04%, Test Score: 65.00%
+Epoch: 40, Loss: 0.0232, AUROC: 63.03%, AUPR: 37.51%, FPR95: 86.15%, Test Score: 64.90%
+Epoch: 41, Loss: 0.0236, AUROC: 62.34%, AUPR: 37.24%, FPR95: 88.48%, Test Score: 67.10%
+Epoch: 42, Loss: 0.0239, AUROC: 62.94%, AUPR: 37.54%, FPR95: 88.22%, Test Score: 68.40%
+Epoch: 43, Loss: 0.0242, AUROC: 63.58%, AUPR: 37.82%, FPR95: 86.56%, Test Score: 68.60%
+Epoch: 44, Loss: 0.0244, AUROC: 63.77%, AUPR: 38.03%, FPR95: 86.74%, Test Score: 70.30%
+Epoch: 45, Loss: 0.0246, AUROC: 63.95%, AUPR: 38.02%, FPR95: 85.86%, Test Score: 68.90%
+Epoch: 46, Loss: 0.0248, AUROC: 64.35%, AUPR: 38.13%, FPR95: 85.01%, Test Score: 66.30%
+Epoch: 47, Loss: 0.0249, AUROC: 64.89%, AUPR: 38.63%, FPR95: 84.97%, Test Score: 67.50%
+Epoch: 48, Loss: 0.0251, AUROC: 64.18%, AUPR: 38.45%, FPR95: 86.00%, Test Score: 68.50%
+Epoch: 49, Loss: 0.0252, AUROC: 63.99%, AUPR: 38.28%, FPR95: 85.82%, Test Score: 64.40%
+Epoch: 50, Loss: 0.0253, AUROC: 62.71%, AUPR: 37.52%, FPR95: 87.52%, Test Score: 64.20%
+Epoch: 51, Loss: 0.0255, AUROC: 62.25%, AUPR: 37.20%, FPR95: 88.29%, Test Score: 62.60%
+Epoch: 52, Loss: 0.0258, AUROC: 62.45%, AUPR: 37.42%, FPR95: 88.70%, Test Score: 65.50%
+Epoch: 53, Loss: 0.0259, AUROC: 62.98%, AUPR: 37.78%, FPR95: 88.59%, Test Score: 67.40%
+Epoch: 54, Loss: 0.0262, AUROC: 63.44%, AUPR: 37.97%, FPR95: 87.48%, Test Score: 68.50%
+Epoch: 55, Loss: 0.0265, AUROC: 63.90%, AUPR: 38.07%, FPR95: 86.48%, Test Score: 67.90%
+Epoch: 56, Loss: 0.0267, AUROC: 64.03%, AUPR: 38.26%, FPR95: 86.48%, Test Score: 68.80%
+Epoch: 57, Loss: 0.0270, AUROC: 63.52%, AUPR: 37.75%, FPR95: 88.11%, Test Score: 70.30%
+Epoch: 58, Loss: 0.0273, AUROC: 63.31%, AUPR: 37.62%, FPR95: 87.59%, Test Score: 69.50%
+Epoch: 59, Loss: 0.0275, AUROC: 62.55%, AUPR: 37.01%, FPR95: 87.74%, Test Score: 67.20%
+Epoch: 60, Loss: 0.0277, AUROC: 61.69%, AUPR: 36.51%, FPR95: 89.03%, Test Score: 68.40%
+Epoch: 61, Loss: 0.0278, AUROC: 61.46%, AUPR: 36.54%, FPR95: 90.03%, Test Score: 69.20%
+Epoch: 62, Loss: 0.0280, AUROC: 61.07%, AUPR: 36.21%, FPR95: 89.99%, Test Score: 66.50%
+Epoch: 63, Loss: 0.0282, AUROC: 61.38%, AUPR: 36.37%, FPR95: 89.25%, Test Score: 67.50%
+Epoch: 64, Loss: 0.0283, AUROC: 61.97%, AUPR: 36.64%, FPR95: 88.37%, Test Score: 67.70%
+Epoch: 65, Loss: 0.0285, AUROC: 61.75%, AUPR: 36.54%, FPR95: 89.18%, Test Score: 68.70%
+Epoch: 66, Loss: 0.0286, AUROC: 61.47%, AUPR: 36.33%, FPR95: 88.63%, Test Score: 67.80%
+Epoch: 67, Loss: 0.0286, AUROC: 61.48%, AUPR: 36.20%, FPR95: 89.84%, Test Score: 68.90%
+Epoch: 68, Loss: 0.0287, AUROC: 61.37%, AUPR: 36.16%, FPR95: 88.70%, Test Score: 67.30%
+Epoch: 69, Loss: 0.0288, AUROC: 61.29%, AUPR: 36.20%, FPR95: 89.96%, Test Score: 68.60%
+Epoch: 70, Loss: 0.0288, AUROC: 61.09%, AUPR: 36.06%, FPR95: 90.21%, Test Score: 67.80%
+Epoch: 71, Loss: 0.0289, AUROC: 60.66%, AUPR: 35.78%, FPR95: 90.58%, Test Score: 69.10%
+Epoch: 72, Loss: 0.0290, AUROC: 60.75%, AUPR: 35.79%, FPR95: 90.55%, Test Score: 68.80%
+Epoch: 73, Loss: 0.0291, AUROC: 60.66%, AUPR: 35.48%, FPR95: 90.10%, Test Score: 69.00%
+Epoch: 74, Loss: 0.0291, AUROC: 61.25%, AUPR: 35.63%, FPR95: 89.33%, Test Score: 68.00%
+Epoch: 75, Loss: 0.0292, AUROC: 60.96%, AUPR: 35.39%, FPR95: 89.25%, Test Score: 67.50%
+Epoch: 76, Loss: 0.0292, AUROC: 60.44%, AUPR: 35.18%, FPR95: 89.18%, Test Score: 67.70%
+Epoch: 77, Loss: 0.0292, AUROC: 60.37%, AUPR: 35.17%, FPR95: 89.96%, Test Score: 66.40%
+Epoch: 78, Loss: 0.0292, AUROC: 60.31%, AUPR: 35.15%, FPR95: 89.22%, Test Score: 68.20%
+Epoch: 79, Loss: 0.0292, AUROC: 60.30%, AUPR: 35.22%, FPR95: 89.22%, Test Score: 69.20%
+Epoch: 80, Loss: 0.0291, AUROC: 60.42%, AUPR: 35.30%, FPR95: 89.14%, Test Score: 69.30%
+Epoch: 81, Loss: 0.0291, AUROC: 59.98%, AUPR: 35.07%, FPR95: 89.92%, Test Score: 69.40%
+Epoch: 82, Loss: 0.0291, AUROC: 60.13%, AUPR: 35.00%, FPR95: 89.96%, Test Score: 69.40%
+Epoch: 83, Loss: 0.0291, AUROC: 60.52%, AUPR: 35.03%, FPR95: 88.48%, Test Score: 67.50%
+Epoch: 84, Loss: 0.0290, AUROC: 60.50%, AUPR: 34.91%, FPR95: 87.33%, Test Score: 64.50%
+Epoch: 85, Loss: 0.0290, AUROC: 60.06%, AUPR: 34.63%, FPR95: 89.51%, Test Score: 64.50%
+Epoch: 86, Loss: 0.0289, AUROC: 59.55%, AUPR: 34.47%, FPR95: 90.21%, Test Score: 64.10%
+Epoch: 87, Loss: 0.0289, AUROC: 59.76%, AUPR: 34.54%, FPR95: 89.77%, Test Score: 63.40%
+Epoch: 88, Loss: 0.0288, AUROC: 59.49%, AUPR: 34.49%, FPR95: 89.55%, Test Score: 63.40%
+Epoch: 89, Loss: 0.0288, AUROC: 59.12%, AUPR: 34.39%, FPR95: 90.07%, Test Score: 63.20%
+Epoch: 90, Loss: 0.0287, AUROC: 59.75%, AUPR: 34.48%, FPR95: 88.48%, Test Score: 62.90%
+Epoch: 91, Loss: 0.0287, AUROC: 59.80%, AUPR: 34.70%, FPR95: 88.29%, Test Score: 65.90%
+Epoch: 92, Loss: 0.0286, AUROC: 59.71%, AUPR: 34.67%, FPR95: 89.18%, Test Score: 67.00%
+Epoch: 93, Loss: 0.0286, AUROC: 59.85%, AUPR: 34.60%, FPR95: 89.81%, Test Score: 67.00%
+Epoch: 94, Loss: 0.0286, AUROC: 59.53%, AUPR: 34.53%, FPR95: 90.10%, Test Score: 69.30%
+Epoch: 95, Loss: 0.0284, AUROC: 59.64%, AUPR: 34.48%, FPR95: 89.51%, Test Score: 65.90%
+Epoch: 96, Loss: 0.0284, AUROC: 59.48%, AUPR: 34.50%, FPR95: 90.10%, Test Score: 66.00%
+Epoch: 97, Loss: 0.0284, AUROC: 59.46%, AUPR: 34.59%, FPR95: 89.62%, Test Score: 66.00%
+Epoch: 98, Loss: 0.0283, AUROC: 59.38%, AUPR: 34.45%, FPR95: 89.59%, Test Score: 63.40%
+Epoch: 99, Loss: 0.0283, AUROC: 59.65%, AUPR: 34.58%, FPR95: 89.22%, Test Score: 65.30%
+",20240309 191724,63.5168,37.7549,88.1093,70.3
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'gcn',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': False,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",False,gnnsafe,gcn,cora,structure,detect,100,"GNNSafe(
+  (encoder): GCN(
+    (convs): ModuleList(
+      (0): GCNConv(1433, 64)
+      (1): GCNConv(64, 7)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+)","Epoch: 00, Loss: 2.1764, AUROC: 40.88%, AUPR: 25.47%, FPR95: 97.60%, Test Score: 37.20%
+Epoch: 01, Loss: 0.5384, AUROC: 41.09%, AUPR: 25.77%, FPR95: 98.89%, Test Score: 49.90%
+Epoch: 02, Loss: 0.2131, AUROC: 40.42%, AUPR: 26.13%, FPR95: 99.59%, Test Score: 52.10%
+Epoch: 03, Loss: 0.1152, AUROC: 40.55%, AUPR: 26.52%, FPR95: 99.59%, Test Score: 51.90%
+Epoch: 04, Loss: 0.0733, AUROC: 41.08%, AUPR: 26.88%, FPR95: 99.48%, Test Score: 52.30%
+Epoch: 05, Loss: 0.0515, AUROC: 42.47%, AUPR: 27.60%, FPR95: 99.52%, Test Score: 53.10%
+Epoch: 06, Loss: 0.0389, AUROC: 44.54%, AUPR: 28.70%, FPR95: 99.37%, Test Score: 52.50%
+Epoch: 07, Loss: 0.0311, AUROC: 46.16%, AUPR: 29.46%, FPR95: 99.19%, Test Score: 52.80%
+Epoch: 08, Loss: 0.0261, AUROC: 47.35%, AUPR: 30.01%, FPR95: 99.15%, Test Score: 53.20%
+Epoch: 09, Loss: 0.0230, AUROC: 48.22%, AUPR: 30.42%, FPR95: 98.97%, Test Score: 53.00%
+Epoch: 10, Loss: 0.0210, AUROC: 48.90%, AUPR: 30.81%, FPR95: 99.08%, Test Score: 53.60%
+Epoch: 11, Loss: 0.0199, AUROC: 49.72%, AUPR: 31.24%, FPR95: 99.00%, Test Score: 54.50%
+Epoch: 12, Loss: 0.0193, AUROC: 50.92%, AUPR: 31.93%, FPR95: 98.97%, Test Score: 56.00%
+Epoch: 13, Loss: 0.0192, AUROC: 52.46%, AUPR: 32.69%, FPR95: 98.97%, Test Score: 58.00%
+Epoch: 14, Loss: 0.0195, AUROC: 54.01%, AUPR: 33.52%, FPR95: 98.86%, Test Score: 60.30%
+Epoch: 15, Loss: 0.0201, AUROC: 55.35%, AUPR: 34.26%, FPR95: 98.60%, Test Score: 62.20%
+Epoch: 16, Loss: 0.0210, AUROC: 56.30%, AUPR: 34.76%, FPR95: 98.45%, Test Score: 64.70%
+Epoch: 17, Loss: 0.0221, AUROC: 57.01%, AUPR: 35.12%, FPR95: 98.34%, Test Score: 66.40%
+Epoch: 18, Loss: 0.0235, AUROC: 57.59%, AUPR: 35.43%, FPR95: 98.30%, Test Score: 67.80%
+Epoch: 19, Loss: 0.0250, AUROC: 58.20%, AUPR: 35.78%, FPR95: 98.12%, Test Score: 69.20%
+Epoch: 20, Loss: 0.0266, AUROC: 58.96%, AUPR: 36.24%, FPR95: 98.04%, Test Score: 69.50%
+Epoch: 21, Loss: 0.0281, AUROC: 59.94%, AUPR: 36.89%, FPR95: 97.64%, Test Score: 71.20%
+Epoch: 22, Loss: 0.0295, AUROC: 61.09%, AUPR: 37.53%, FPR95: 97.34%, Test Score: 71.60%
+Epoch: 23, Loss: 0.0307, AUROC: 62.44%, AUPR: 38.39%, FPR95: 96.71%, Test Score: 72.10%
+Epoch: 24, Loss: 0.0317, AUROC: 63.76%, AUPR: 39.23%, FPR95: 95.64%, Test Score: 73.10%
+Epoch: 25, Loss: 0.0325, AUROC: 64.88%, AUPR: 39.92%, FPR95: 93.87%, Test Score: 74.40%
+Epoch: 26, Loss: 0.0330, AUROC: 65.71%, AUPR: 40.40%, FPR95: 92.17%, Test Score: 76.00%
+Epoch: 27, Loss: 0.0332, AUROC: 66.34%, AUPR: 40.64%, FPR95: 90.77%, Test Score: 76.90%
+Epoch: 28, Loss: 0.0333, AUROC: 66.82%, AUPR: 40.76%, FPR95: 89.66%, Test Score: 77.10%
+Epoch: 29, Loss: 0.0331, AUROC: 67.36%, AUPR: 40.89%, FPR95: 86.71%, Test Score: 77.00%
+Epoch: 30, Loss: 0.0328, AUROC: 68.17%, AUPR: 41.31%, FPR95: 87.67%, Test Score: 76.60%
+Epoch: 31, Loss: 0.0324, AUROC: 69.26%, AUPR: 41.99%, FPR95: 85.19%, Test Score: 77.10%
+Epoch: 32, Loss: 0.0320, AUROC: 70.47%, AUPR: 42.81%, FPR95: 82.09%, Test Score: 77.60%
+Epoch: 33, Loss: 0.0315, AUROC: 71.58%, AUPR: 43.62%, FPR95: 78.62%, Test Score: 77.50%
+Epoch: 34, Loss: 0.0311, AUROC: 72.51%, AUPR: 44.29%, FPR95: 77.92%, Test Score: 77.90%
+Epoch: 35, Loss: 0.0308, AUROC: 73.22%, AUPR: 44.79%, FPR95: 74.78%, Test Score: 77.90%
+Epoch: 36, Loss: 0.0304, AUROC: 73.66%, AUPR: 45.10%, FPR95: 74.59%, Test Score: 78.30%
+Epoch: 37, Loss: 0.0302, AUROC: 73.85%, AUPR: 45.27%, FPR95: 76.22%, Test Score: 77.90%
+Epoch: 38, Loss: 0.0301, AUROC: 73.77%, AUPR: 45.28%, FPR95: 74.15%, Test Score: 78.40%
+Epoch: 39, Loss: 0.0300, AUROC: 73.53%, AUPR: 45.17%, FPR95: 76.18%, Test Score: 78.30%
+Epoch: 40, Loss: 0.0300, AUROC: 73.38%, AUPR: 45.09%, FPR95: 75.44%, Test Score: 77.30%
+Epoch: 41, Loss: 0.0300, AUROC: 73.48%, AUPR: 45.20%, FPR95: 75.26%, Test Score: 77.00%
+Epoch: 42, Loss: 0.0301, AUROC: 73.73%, AUPR: 45.47%, FPR95: 76.03%, Test Score: 76.90%
+Epoch: 43, Loss: 0.0302, AUROC: 74.00%, AUPR: 45.76%, FPR95: 74.37%, Test Score: 76.60%
+Epoch: 44, Loss: 0.0303, AUROC: 74.19%, AUPR: 46.00%, FPR95: 74.37%, Test Score: 76.30%
+Epoch: 45, Loss: 0.0305, AUROC: 74.18%, AUPR: 46.06%, FPR95: 75.33%, Test Score: 76.30%
+Epoch: 46, Loss: 0.0307, AUROC: 73.98%, AUPR: 46.04%, FPR95: 76.77%, Test Score: 76.60%
+Epoch: 47, Loss: 0.0308, AUROC: 73.65%, AUPR: 46.00%, FPR95: 78.40%, Test Score: 76.40%
+Epoch: 48, Loss: 0.0309, AUROC: 73.31%, AUPR: 45.97%, FPR95: 80.58%, Test Score: 76.50%
+Epoch: 49, Loss: 0.0311, AUROC: 73.07%, AUPR: 45.98%, FPR95: 82.75%, Test Score: 76.30%
+Epoch: 50, Loss: 0.0312, AUROC: 72.98%, AUPR: 46.00%, FPR95: 83.42%, Test Score: 76.40%
+Epoch: 51, Loss: 0.0313, AUROC: 72.99%, AUPR: 46.12%, FPR95: 83.23%, Test Score: 76.40%
+Epoch: 52, Loss: 0.0314, AUROC: 73.04%, AUPR: 46.25%, FPR95: 82.46%, Test Score: 76.30%
+Epoch: 53, Loss: 0.0315, AUROC: 73.07%, AUPR: 46.38%, FPR95: 81.68%, Test Score: 76.00%
+Epoch: 54, Loss: 0.0316, AUROC: 73.07%, AUPR: 46.45%, FPR95: 81.35%, Test Score: 76.20%
+Epoch: 55, Loss: 0.0317, AUROC: 73.01%, AUPR: 46.45%, FPR95: 82.57%, Test Score: 76.50%
+Epoch: 56, Loss: 0.0319, AUROC: 72.88%, AUPR: 46.44%, FPR95: 82.46%, Test Score: 76.50%
+Epoch: 57, Loss: 0.0320, AUROC: 72.74%, AUPR: 46.44%, FPR95: 83.16%, Test Score: 76.50%
+Epoch: 58, Loss: 0.0322, AUROC: 72.64%, AUPR: 46.46%, FPR95: 83.57%, Test Score: 76.60%
+Epoch: 59, Loss: 0.0323, AUROC: 72.57%, AUPR: 46.47%, FPR95: 84.31%, Test Score: 76.40%
+Epoch: 60, Loss: 0.0325, AUROC: 72.55%, AUPR: 46.49%, FPR95: 83.05%, Test Score: 76.00%
+Epoch: 61, Loss: 0.0326, AUROC: 72.53%, AUPR: 46.50%, FPR95: 83.75%, Test Score: 76.00%
+Epoch: 62, Loss: 0.0328, AUROC: 72.52%, AUPR: 46.53%, FPR95: 83.60%, Test Score: 75.80%
+Epoch: 63, Loss: 0.0329, AUROC: 72.50%, AUPR: 46.54%, FPR95: 83.86%, Test Score: 76.00%
+Epoch: 64, Loss: 0.0331, AUROC: 72.45%, AUPR: 46.54%, FPR95: 84.56%, Test Score: 75.90%
+Epoch: 65, Loss: 0.0332, AUROC: 72.37%, AUPR: 46.52%, FPR95: 85.12%, Test Score: 76.00%
+Epoch: 66, Loss: 0.0333, AUROC: 72.28%, AUPR: 46.49%, FPR95: 84.64%, Test Score: 76.00%
+Epoch: 67, Loss: 0.0334, AUROC: 72.19%, AUPR: 46.47%, FPR95: 84.64%, Test Score: 76.10%
+Epoch: 68, Loss: 0.0335, AUROC: 72.11%, AUPR: 46.44%, FPR95: 84.64%, Test Score: 76.20%
+Epoch: 69, Loss: 0.0336, AUROC: 72.05%, AUPR: 46.40%, FPR95: 85.12%, Test Score: 76.00%
+Epoch: 70, Loss: 0.0337, AUROC: 71.99%, AUPR: 46.35%, FPR95: 85.34%, Test Score: 75.90%
+Epoch: 71, Loss: 0.0338, AUROC: 71.95%, AUPR: 46.34%, FPR95: 85.93%, Test Score: 75.60%
+Epoch: 72, Loss: 0.0338, AUROC: 71.91%, AUPR: 46.33%, FPR95: 86.30%, Test Score: 75.60%
+Epoch: 73, Loss: 0.0339, AUROC: 71.88%, AUPR: 46.34%, FPR95: 86.82%, Test Score: 75.60%
+Epoch: 74, Loss: 0.0339, AUROC: 71.84%, AUPR: 46.33%, FPR95: 87.15%, Test Score: 76.00%
+Epoch: 75, Loss: 0.0340, AUROC: 71.81%, AUPR: 46.33%, FPR95: 87.11%, Test Score: 76.00%
+Epoch: 76, Loss: 0.0340, AUROC: 71.78%, AUPR: 46.31%, FPR95: 87.19%, Test Score: 76.20%
+Epoch: 77, Loss: 0.0340, AUROC: 71.74%, AUPR: 46.28%, FPR95: 87.37%, Test Score: 76.00%
+Epoch: 78, Loss: 0.0340, AUROC: 71.71%, AUPR: 46.24%, FPR95: 87.41%, Test Score: 75.70%
+Epoch: 79, Loss: 0.0341, AUROC: 71.67%, AUPR: 46.22%, FPR95: 87.15%, Test Score: 75.70%
+Epoch: 80, Loss: 0.0341, AUROC: 71.65%, AUPR: 46.22%, FPR95: 87.26%, Test Score: 75.80%
+Epoch: 81, Loss: 0.0341, AUROC: 71.64%, AUPR: 46.22%, FPR95: 87.48%, Test Score: 75.80%
+Epoch: 82, Loss: 0.0341, AUROC: 71.61%, AUPR: 46.20%, FPR95: 87.63%, Test Score: 75.80%
+Epoch: 83, Loss: 0.0341, AUROC: 71.58%, AUPR: 46.19%, FPR95: 87.63%, Test Score: 75.70%
+Epoch: 84, Loss: 0.0341, AUROC: 71.52%, AUPR: 46.15%, FPR95: 87.22%, Test Score: 75.90%
+Epoch: 85, Loss: 0.0341, AUROC: 71.48%, AUPR: 46.12%, FPR95: 87.74%, Test Score: 76.00%
+Epoch: 86, Loss: 0.0341, AUROC: 71.44%, AUPR: 46.09%, FPR95: 87.70%, Test Score: 75.90%
+Epoch: 87, Loss: 0.0341, AUROC: 71.40%, AUPR: 46.04%, FPR95: 87.92%, Test Score: 75.70%
+Epoch: 88, Loss: 0.0341, AUROC: 71.36%, AUPR: 46.02%, FPR95: 87.70%, Test Score: 75.80%
+Epoch: 89, Loss: 0.0341, AUROC: 71.34%, AUPR: 46.01%, FPR95: 88.55%, Test Score: 75.90%
+Epoch: 90, Loss: 0.0340, AUROC: 71.31%, AUPR: 46.00%, FPR95: 88.55%, Test Score: 75.90%
+Epoch: 91, Loss: 0.0340, AUROC: 71.28%, AUPR: 45.97%, FPR95: 88.74%, Test Score: 75.90%
+Epoch: 92, Loss: 0.0340, AUROC: 71.24%, AUPR: 45.94%, FPR95: 89.07%, Test Score: 75.90%
+Epoch: 93, Loss: 0.0340, AUROC: 71.20%, AUPR: 45.91%, FPR95: 89.11%, Test Score: 75.80%
+Epoch: 94, Loss: 0.0339, AUROC: 71.15%, AUPR: 45.87%, FPR95: 89.00%, Test Score: 75.70%
+Epoch: 95, Loss: 0.0339, AUROC: 71.12%, AUPR: 45.85%, FPR95: 89.14%, Test Score: 75.60%
+Epoch: 96, Loss: 0.0339, AUROC: 71.09%, AUPR: 45.84%, FPR95: 89.55%, Test Score: 75.60%
+Epoch: 97, Loss: 0.0338, AUROC: 71.07%, AUPR: 45.83%, FPR95: 89.73%, Test Score: 75.60%
+Epoch: 98, Loss: 0.0338, AUROC: 71.04%, AUPR: 45.81%, FPR95: 89.96%, Test Score: 75.60%
+Epoch: 99, Loss: 0.0338, AUROC: 71.03%, AUPR: 45.79%, FPR95: 90.14%, Test Score: 75.70%
+",20240309 191924,71.5234,46.1544,87.223,75.9
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'mlp',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': False,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",False,gnnsafe,mlp,cora,structure,detect,100,"GNNSafe(
+  (encoder): MLP(
+    (lins): ModuleList(
+      (0): Linear(in_features=1433, out_features=64, bias=True)
+      (1): Linear(in_features=64, out_features=7, bias=True)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+)","Epoch: 00, Loss: 1.9997, AUROC: 50.25%, AUPR: 26.86%, FPR95: 94.83%, Test Score: 6.40%
+Epoch: 01, Loss: 0.8297, AUROC: 50.30%, AUPR: 26.74%, FPR95: 94.46%, Test Score: 13.40%
+Epoch: 02, Loss: 0.2430, AUROC: 50.33%, AUPR: 26.57%, FPR95: 95.05%, Test Score: 12.20%
+Epoch: 03, Loss: 0.0787, AUROC: 50.19%, AUPR: 26.50%, FPR95: 95.27%, Test Score: 14.20%
+Epoch: 04, Loss: 0.0282, AUROC: 50.14%, AUPR: 26.46%, FPR95: 95.09%, Test Score: 15.60%
+Epoch: 05, Loss: 0.0128, AUROC: 50.05%, AUPR: 26.40%, FPR95: 95.16%, Test Score: 17.60%
+Epoch: 06, Loss: 0.0071, AUROC: 49.95%, AUPR: 26.32%, FPR95: 94.83%, Test Score: 19.30%
+Epoch: 07, Loss: 0.0046, AUROC: 49.89%, AUPR: 26.28%, FPR95: 94.72%, Test Score: 22.00%
+Epoch: 08, Loss: 0.0033, AUROC: 49.85%, AUPR: 26.24%, FPR95: 94.72%, Test Score: 25.00%
+Epoch: 09, Loss: 0.0027, AUROC: 49.78%, AUPR: 26.19%, FPR95: 95.05%, Test Score: 27.90%
+Epoch: 10, Loss: 0.0024, AUROC: 49.71%, AUPR: 26.14%, FPR95: 95.24%, Test Score: 30.60%
+Epoch: 11, Loss: 0.0022, AUROC: 49.63%, AUPR: 26.09%, FPR95: 94.98%, Test Score: 33.40%
+Epoch: 12, Loss: 0.0022, AUROC: 49.55%, AUPR: 26.04%, FPR95: 95.01%, Test Score: 37.10%
+Epoch: 13, Loss: 0.0023, AUROC: 49.46%, AUPR: 25.98%, FPR95: 95.01%, Test Score: 39.40%
+Epoch: 14, Loss: 0.0025, AUROC: 49.38%, AUPR: 25.93%, FPR95: 94.90%, Test Score: 40.20%
+Epoch: 15, Loss: 0.0028, AUROC: 49.30%, AUPR: 25.89%, FPR95: 95.01%, Test Score: 42.80%
+Epoch: 16, Loss: 0.0031, AUROC: 49.21%, AUPR: 25.84%, FPR95: 95.20%, Test Score: 44.00%
+Epoch: 17, Loss: 0.0035, AUROC: 49.12%, AUPR: 25.79%, FPR95: 95.16%, Test Score: 45.90%
+Epoch: 18, Loss: 0.0040, AUROC: 49.02%, AUPR: 25.74%, FPR95: 95.31%, Test Score: 47.80%
+Epoch: 19, Loss: 0.0045, AUROC: 48.89%, AUPR: 25.69%, FPR95: 95.05%, Test Score: 49.40%
+Epoch: 20, Loss: 0.0051, AUROC: 48.75%, AUPR: 25.62%, FPR95: 95.27%, Test Score: 50.90%
+Epoch: 21, Loss: 0.0057, AUROC: 48.63%, AUPR: 25.57%, FPR95: 95.27%, Test Score: 52.10%
+Epoch: 22, Loss: 0.0063, AUROC: 48.55%, AUPR: 25.54%, FPR95: 95.31%, Test Score: 51.90%
+Epoch: 23, Loss: 0.0069, AUROC: 48.47%, AUPR: 25.51%, FPR95: 95.57%, Test Score: 51.80%
+Epoch: 24, Loss: 0.0075, AUROC: 48.39%, AUPR: 25.48%, FPR95: 95.53%, Test Score: 51.30%
+Epoch: 25, Loss: 0.0080, AUROC: 48.32%, AUPR: 25.46%, FPR95: 95.38%, Test Score: 51.50%
+Epoch: 26, Loss: 0.0085, AUROC: 48.27%, AUPR: 25.44%, FPR95: 95.13%, Test Score: 50.90%
+Epoch: 27, Loss: 0.0089, AUROC: 48.23%, AUPR: 25.42%, FPR95: 95.01%, Test Score: 51.30%
+Epoch: 28, Loss: 0.0093, AUROC: 48.18%, AUPR: 25.40%, FPR95: 94.57%, Test Score: 50.90%
+Epoch: 29, Loss: 0.0097, AUROC: 48.16%, AUPR: 25.39%, FPR95: 94.72%, Test Score: 50.30%
+Epoch: 30, Loss: 0.0099, AUROC: 48.17%, AUPR: 25.40%, FPR95: 94.94%, Test Score: 50.40%
+Epoch: 31, Loss: 0.0102, AUROC: 48.20%, AUPR: 25.40%, FPR95: 94.76%, Test Score: 51.00%
+Epoch: 32, Loss: 0.0105, AUROC: 48.23%, AUPR: 25.42%, FPR95: 94.98%, Test Score: 51.20%
+Epoch: 33, Loss: 0.0107, AUROC: 48.21%, AUPR: 25.43%, FPR95: 95.13%, Test Score: 51.80%
+Epoch: 34, Loss: 0.0108, AUROC: 48.20%, AUPR: 25.42%, FPR95: 95.35%, Test Score: 51.50%
+Epoch: 35, Loss: 0.0109, AUROC: 48.15%, AUPR: 25.41%, FPR95: 95.53%, Test Score: 50.90%
+Epoch: 36, Loss: 0.0109, AUROC: 48.08%, AUPR: 25.38%, FPR95: 95.31%, Test Score: 50.40%
+Epoch: 37, Loss: 0.0109, AUROC: 47.99%, AUPR: 25.34%, FPR95: 95.27%, Test Score: 50.10%
+Epoch: 38, Loss: 0.0109, AUROC: 47.94%, AUPR: 25.32%, FPR95: 95.16%, Test Score: 49.60%
+Epoch: 39, Loss: 0.0109, AUROC: 47.88%, AUPR: 25.29%, FPR95: 95.16%, Test Score: 49.10%
+Epoch: 40, Loss: 0.0110, AUROC: 47.94%, AUPR: 25.33%, FPR95: 94.65%, Test Score: 50.00%
+Epoch: 41, Loss: 0.0111, AUROC: 48.00%, AUPR: 25.39%, FPR95: 94.79%, Test Score: 48.90%
+Epoch: 42, Loss: 0.0112, AUROC: 48.06%, AUPR: 25.44%, FPR95: 95.13%, Test Score: 47.60%
+Epoch: 43, Loss: 0.0112, AUROC: 48.12%, AUPR: 25.47%, FPR95: 95.68%, Test Score: 46.70%
+Epoch: 44, Loss: 0.0113, AUROC: 48.16%, AUPR: 25.47%, FPR95: 95.42%, Test Score: 45.80%
+Epoch: 45, Loss: 0.0114, AUROC: 48.20%, AUPR: 25.47%, FPR95: 95.61%, Test Score: 46.50%
+Epoch: 46, Loss: 0.0116, AUROC: 48.20%, AUPR: 25.45%, FPR95: 95.49%, Test Score: 46.50%
+Epoch: 47, Loss: 0.0118, AUROC: 48.13%, AUPR: 25.39%, FPR95: 95.38%, Test Score: 46.00%
+Epoch: 48, Loss: 0.0119, AUROC: 47.98%, AUPR: 25.30%, FPR95: 95.61%, Test Score: 43.60%
+Epoch: 49, Loss: 0.0120, AUROC: 47.84%, AUPR: 25.20%, FPR95: 95.83%, Test Score: 42.30%
+Epoch: 50, Loss: 0.0122, AUROC: 47.76%, AUPR: 25.11%, FPR95: 95.16%, Test Score: 42.80%
+Epoch: 51, Loss: 0.0125, AUROC: 47.75%, AUPR: 25.06%, FPR95: 95.53%, Test Score: 44.70%
+Epoch: 52, Loss: 0.0126, AUROC: 47.70%, AUPR: 24.98%, FPR95: 95.05%, Test Score: 46.80%
+Epoch: 53, Loss: 0.0128, AUROC: 47.65%, AUPR: 24.90%, FPR95: 94.98%, Test Score: 47.50%
+Epoch: 54, Loss: 0.0130, AUROC: 47.58%, AUPR: 24.81%, FPR95: 95.01%, Test Score: 47.80%
+Epoch: 55, Loss: 0.0132, AUROC: 47.54%, AUPR: 24.75%, FPR95: 95.09%, Test Score: 48.00%
+Epoch: 56, Loss: 0.0134, AUROC: 47.49%, AUPR: 24.69%, FPR95: 95.31%, Test Score: 47.60%
+Epoch: 57, Loss: 0.0136, AUROC: 47.43%, AUPR: 24.64%, FPR95: 95.01%, Test Score: 47.00%
+Epoch: 58, Loss: 0.0137, AUROC: 47.40%, AUPR: 24.60%, FPR95: 95.27%, Test Score: 46.20%
+Epoch: 59, Loss: 0.0139, AUROC: 47.44%, AUPR: 24.57%, FPR95: 95.16%, Test Score: 44.70%
+Epoch: 60, Loss: 0.0140, AUROC: 47.60%, AUPR: 24.62%, FPR95: 95.05%, Test Score: 46.80%
+Epoch: 61, Loss: 0.0143, AUROC: 47.75%, AUPR: 24.67%, FPR95: 94.20%, Test Score: 48.40%
+Epoch: 62, Loss: 0.0143, AUROC: 47.83%, AUPR: 24.70%, FPR95: 94.53%, Test Score: 49.20%
+Epoch: 63, Loss: 0.0144, AUROC: 47.90%, AUPR: 24.73%, FPR95: 95.09%, Test Score: 49.40%
+Epoch: 64, Loss: 0.0146, AUROC: 47.88%, AUPR: 24.71%, FPR95: 95.24%, Test Score: 49.20%
+Epoch: 65, Loss: 0.0147, AUROC: 47.85%, AUPR: 24.67%, FPR95: 95.09%, Test Score: 48.70%
+Epoch: 66, Loss: 0.0148, AUROC: 47.82%, AUPR: 24.64%, FPR95: 94.57%, Test Score: 48.00%
+Epoch: 67, Loss: 0.0150, AUROC: 47.83%, AUPR: 24.64%, FPR95: 95.09%, Test Score: 46.50%
+Epoch: 68, Loss: 0.0150, AUROC: 47.79%, AUPR: 24.61%, FPR95: 94.94%, Test Score: 44.60%
+Epoch: 69, Loss: 0.0152, AUROC: 47.76%, AUPR: 24.60%, FPR95: 94.72%, Test Score: 43.70%
+Epoch: 70, Loss: 0.0154, AUROC: 47.80%, AUPR: 24.64%, FPR95: 95.27%, Test Score: 43.40%
+Epoch: 71, Loss: 0.0155, AUROC: 47.81%, AUPR: 24.65%, FPR95: 95.27%, Test Score: 42.60%
+Epoch: 72, Loss: 0.0156, AUROC: 47.75%, AUPR: 24.64%, FPR95: 95.42%, Test Score: 40.50%
+Epoch: 73, Loss: 0.0158, AUROC: 47.72%, AUPR: 24.70%, FPR95: 95.20%, Test Score: 38.40%
+Epoch: 74, Loss: 0.0158, AUROC: 47.67%, AUPR: 24.71%, FPR95: 95.24%, Test Score: 37.70%
+Epoch: 75, Loss: 0.0159, AUROC: 47.63%, AUPR: 24.70%, FPR95: 95.49%, Test Score: 36.70%
+Epoch: 76, Loss: 0.0160, AUROC: 47.61%, AUPR: 24.68%, FPR95: 95.46%, Test Score: 36.70%
+Epoch: 77, Loss: 0.0161, AUROC: 47.62%, AUPR: 24.67%, FPR95: 95.42%, Test Score: 35.90%
+Epoch: 78, Loss: 0.0162, AUROC: 47.52%, AUPR: 24.61%, FPR95: 95.68%, Test Score: 37.00%
+Epoch: 79, Loss: 0.0163, AUROC: 47.41%, AUPR: 24.54%, FPR95: 95.24%, Test Score: 37.70%
+Epoch: 80, Loss: 0.0163, AUROC: 47.38%, AUPR: 24.51%, FPR95: 95.27%, Test Score: 38.20%
+Epoch: 81, Loss: 0.0164, AUROC: 47.35%, AUPR: 24.47%, FPR95: 95.16%, Test Score: 39.10%
+Epoch: 82, Loss: 0.0165, AUROC: 47.28%, AUPR: 24.42%, FPR95: 95.68%, Test Score: 38.10%
+Epoch: 83, Loss: 0.0166, AUROC: 47.53%, AUPR: 24.52%, FPR95: 95.13%, Test Score: 42.40%
+Epoch: 84, Loss: 0.0167, AUROC: 47.69%, AUPR: 24.62%, FPR95: 94.28%, Test Score: 43.70%
+Epoch: 85, Loss: 0.0167, AUROC: 47.82%, AUPR: 24.71%, FPR95: 94.68%, Test Score: 44.10%
+Epoch: 86, Loss: 0.0167, AUROC: 47.87%, AUPR: 24.73%, FPR95: 94.79%, Test Score: 44.30%
+Epoch: 87, Loss: 0.0166, AUROC: 47.89%, AUPR: 24.72%, FPR95: 95.13%, Test Score: 44.70%
+Epoch: 88, Loss: 0.0166, AUROC: 47.82%, AUPR: 24.65%, FPR95: 95.20%, Test Score: 44.60%
+Epoch: 89, Loss: 0.0168, AUROC: 47.87%, AUPR: 24.67%, FPR95: 94.76%, Test Score: 44.00%
+Epoch: 90, Loss: 0.0169, AUROC: 47.92%, AUPR: 24.68%, FPR95: 94.79%, Test Score: 42.70%
+Epoch: 91, Loss: 0.0169, AUROC: 47.93%, AUPR: 24.68%, FPR95: 94.61%, Test Score: 42.00%
+Epoch: 92, Loss: 0.0168, AUROC: 47.93%, AUPR: 24.67%, FPR95: 94.53%, Test Score: 41.40%
+Epoch: 93, Loss: 0.0168, AUROC: 47.91%, AUPR: 24.64%, FPR95: 94.42%, Test Score: 41.20%
+Epoch: 94, Loss: 0.0168, AUROC: 47.87%, AUPR: 24.63%, FPR95: 94.50%, Test Score: 41.30%
+Epoch: 95, Loss: 0.0169, AUROC: 47.88%, AUPR: 24.65%, FPR95: 95.16%, Test Score: 43.50%
+Epoch: 96, Loss: 0.0169, AUROC: 47.89%, AUPR: 24.66%, FPR95: 95.20%, Test Score: 43.40%
+Epoch: 97, Loss: 0.0168, AUROC: 47.90%, AUPR: 24.65%, FPR95: 95.61%, Test Score: 43.30%
+Epoch: 98, Loss: 0.0168, AUROC: 47.88%, AUPR: 24.64%, FPR95: 95.64%, Test Score: 44.30%
+Epoch: 99, Loss: 0.0168, AUROC: 47.86%, AUPR: 24.62%, FPR95: 95.24%, Test Score: 44.40%
+",20240309 191930,47.8256,24.7021,94.5347,49.2
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'gat',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': False,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",False,gnnsafe,gat,cora,structure,detect,100,"GNNSafe(
+  (encoder): GAT(
+    (convs): ModuleList(
+      (0): GATConv(1433, 64, heads=2)
+      (1): GATConv(128, 7, heads=1)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+)","Epoch: 00, Loss: 2.1533, AUROC: 49.42%, AUPR: 27.34%, FPR95: 95.75%, Test Score: 17.20%
+Epoch: 01, Loss: 0.1381, AUROC: 51.55%, AUPR: 29.42%, FPR95: 96.16%, Test Score: 25.60%
+Epoch: 02, Loss: 0.0373, AUROC: 53.32%, AUPR: 31.54%, FPR95: 95.79%, Test Score: 33.50%
+Epoch: 03, Loss: 0.0157, AUROC: 54.62%, AUPR: 33.35%, FPR95: 96.20%, Test Score: 37.70%
+Epoch: 04, Loss: 0.0104, AUROC: 55.65%, AUPR: 34.79%, FPR95: 96.38%, Test Score: 40.80%
+Epoch: 05, Loss: 0.0082, AUROC: 56.50%, AUPR: 35.87%, FPR95: 96.57%, Test Score: 42.00%
+Epoch: 06, Loss: 0.0068, AUROC: 57.21%, AUPR: 36.65%, FPR95: 96.79%, Test Score: 42.90%
+Epoch: 07, Loss: 0.0061, AUROC: 57.85%, AUPR: 37.22%, FPR95: 96.79%, Test Score: 44.10%
+Epoch: 08, Loss: 0.0058, AUROC: 58.46%, AUPR: 37.69%, FPR95: 96.45%, Test Score: 45.20%
+Epoch: 09, Loss: 0.0058, AUROC: 59.08%, AUPR: 38.04%, FPR95: 96.27%, Test Score: 46.10%
+Epoch: 10, Loss: 0.0061, AUROC: 59.72%, AUPR: 38.45%, FPR95: 95.35%, Test Score: 46.80%
+Epoch: 11, Loss: 0.0068, AUROC: 60.33%, AUPR: 38.80%, FPR95: 94.90%, Test Score: 47.80%
+Epoch: 12, Loss: 0.0079, AUROC: 60.92%, AUPR: 39.12%, FPR95: 93.83%, Test Score: 48.60%
+Epoch: 13, Loss: 0.0094, AUROC: 61.48%, AUPR: 39.43%, FPR95: 92.73%, Test Score: 50.30%
+Epoch: 14, Loss: 0.0113, AUROC: 62.04%, AUPR: 39.76%, FPR95: 92.25%, Test Score: 53.60%
+Epoch: 15, Loss: 0.0133, AUROC: 62.66%, AUPR: 40.12%, FPR95: 91.80%, Test Score: 57.10%
+Epoch: 16, Loss: 0.0153, AUROC: 63.36%, AUPR: 40.54%, FPR95: 91.47%, Test Score: 61.20%
+Epoch: 17, Loss: 0.0170, AUROC: 64.04%, AUPR: 40.92%, FPR95: 91.17%, Test Score: 63.40%
+Epoch: 18, Loss: 0.0186, AUROC: 64.76%, AUPR: 41.36%, FPR95: 90.51%, Test Score: 66.50%
+Epoch: 19, Loss: 0.0201, AUROC: 65.57%, AUPR: 41.78%, FPR95: 89.11%, Test Score: 69.70%
+Epoch: 20, Loss: 0.0213, AUROC: 66.47%, AUPR: 42.21%, FPR95: 88.37%, Test Score: 70.80%
+Epoch: 21, Loss: 0.0221, AUROC: 67.47%, AUPR: 42.66%, FPR95: 87.52%, Test Score: 72.30%
+Epoch: 22, Loss: 0.0226, AUROC: 68.52%, AUPR: 43.19%, FPR95: 86.52%, Test Score: 73.00%
+Epoch: 23, Loss: 0.0227, AUROC: 69.49%, AUPR: 43.65%, FPR95: 84.93%, Test Score: 73.20%
+Epoch: 24, Loss: 0.0225, AUROC: 70.36%, AUPR: 44.03%, FPR95: 83.49%, Test Score: 73.10%
+Epoch: 25, Loss: 0.0221, AUROC: 71.04%, AUPR: 44.27%, FPR95: 82.05%, Test Score: 73.50%
+Epoch: 26, Loss: 0.0216, AUROC: 71.56%, AUPR: 44.47%, FPR95: 81.43%, Test Score: 74.10%
+Epoch: 27, Loss: 0.0210, AUROC: 71.93%, AUPR: 44.57%, FPR95: 80.72%, Test Score: 74.70%
+Epoch: 28, Loss: 0.0205, AUROC: 72.21%, AUPR: 44.65%, FPR95: 80.02%, Test Score: 75.10%
+Epoch: 29, Loss: 0.0199, AUROC: 72.46%, AUPR: 44.68%, FPR95: 80.02%, Test Score: 75.40%
+Epoch: 30, Loss: 0.0195, AUROC: 72.75%, AUPR: 44.76%, FPR95: 80.02%, Test Score: 75.20%
+Epoch: 31, Loss: 0.0191, AUROC: 73.15%, AUPR: 44.97%, FPR95: 78.43%, Test Score: 75.20%
+Epoch: 32, Loss: 0.0189, AUROC: 73.64%, AUPR: 45.26%, FPR95: 77.18%, Test Score: 75.70%
+Epoch: 33, Loss: 0.0188, AUROC: 74.09%, AUPR: 45.58%, FPR95: 77.07%, Test Score: 75.80%
+Epoch: 34, Loss: 0.0188, AUROC: 74.44%, AUPR: 45.88%, FPR95: 77.25%, Test Score: 75.30%
+Epoch: 35, Loss: 0.0188, AUROC: 74.65%, AUPR: 46.09%, FPR95: 76.55%, Test Score: 74.90%
+Epoch: 36, Loss: 0.0189, AUROC: 74.82%, AUPR: 46.23%, FPR95: 76.74%, Test Score: 75.40%
+Epoch: 37, Loss: 0.0190, AUROC: 74.96%, AUPR: 46.33%, FPR95: 76.18%, Test Score: 75.80%
+Epoch: 38, Loss: 0.0191, AUROC: 75.02%, AUPR: 46.37%, FPR95: 74.74%, Test Score: 75.80%
+Epoch: 39, Loss: 0.0192, AUROC: 75.05%, AUPR: 46.40%, FPR95: 73.89%, Test Score: 75.80%
+Epoch: 40, Loss: 0.0192, AUROC: 75.05%, AUPR: 46.47%, FPR95: 73.26%, Test Score: 75.60%
+Epoch: 41, Loss: 0.0193, AUROC: 75.05%, AUPR: 46.56%, FPR95: 73.82%, Test Score: 74.90%
+Epoch: 42, Loss: 0.0193, AUROC: 75.10%, AUPR: 46.75%, FPR95: 74.48%, Test Score: 74.70%
+Epoch: 43, Loss: 0.0194, AUROC: 75.20%, AUPR: 46.96%, FPR95: 74.00%, Test Score: 74.40%
+Epoch: 44, Loss: 0.0195, AUROC: 75.31%, AUPR: 47.19%, FPR95: 73.97%, Test Score: 74.30%
+Epoch: 45, Loss: 0.0197, AUROC: 75.44%, AUPR: 47.40%, FPR95: 72.64%, Test Score: 74.00%
+Epoch: 46, Loss: 0.0198, AUROC: 75.55%, AUPR: 47.55%, FPR95: 73.01%, Test Score: 73.90%
+Epoch: 47, Loss: 0.0200, AUROC: 75.64%, AUPR: 47.66%, FPR95: 72.38%, Test Score: 73.90%
+Epoch: 48, Loss: 0.0202, AUROC: 75.66%, AUPR: 47.76%, FPR95: 72.23%, Test Score: 73.70%
+Epoch: 49, Loss: 0.0203, AUROC: 75.62%, AUPR: 47.80%, FPR95: 72.64%, Test Score: 73.40%
+Epoch: 50, Loss: 0.0205, AUROC: 75.55%, AUPR: 47.86%, FPR95: 72.86%, Test Score: 73.20%
+Epoch: 51, Loss: 0.0207, AUROC: 75.46%, AUPR: 47.92%, FPR95: 73.19%, Test Score: 72.80%
+Epoch: 52, Loss: 0.0208, AUROC: 75.39%, AUPR: 48.01%, FPR95: 74.08%, Test Score: 72.90%
+Epoch: 53, Loss: 0.0210, AUROC: 75.32%, AUPR: 48.11%, FPR95: 74.08%, Test Score: 73.10%
+Epoch: 54, Loss: 0.0212, AUROC: 75.25%, AUPR: 48.20%, FPR95: 75.48%, Test Score: 72.60%
+Epoch: 55, Loss: 0.0213, AUROC: 75.18%, AUPR: 48.28%, FPR95: 75.15%, Test Score: 72.50%
+Epoch: 56, Loss: 0.0215, AUROC: 75.14%, AUPR: 48.35%, FPR95: 75.37%, Test Score: 72.60%
+Epoch: 57, Loss: 0.0217, AUROC: 75.10%, AUPR: 48.41%, FPR95: 75.11%, Test Score: 72.70%
+Epoch: 58, Loss: 0.0219, AUROC: 75.04%, AUPR: 48.44%, FPR95: 74.78%, Test Score: 72.50%
+Epoch: 59, Loss: 0.0221, AUROC: 74.98%, AUPR: 48.46%, FPR95: 75.15%, Test Score: 73.00%
+Epoch: 60, Loss: 0.0224, AUROC: 74.88%, AUPR: 48.48%, FPR95: 75.59%, Test Score: 72.70%
+Epoch: 61, Loss: 0.0226, AUROC: 74.76%, AUPR: 48.47%, FPR95: 76.00%, Test Score: 72.60%
+Epoch: 62, Loss: 0.0228, AUROC: 74.65%, AUPR: 48.49%, FPR95: 77.25%, Test Score: 72.60%
+Epoch: 63, Loss: 0.0231, AUROC: 74.54%, AUPR: 48.47%, FPR95: 77.77%, Test Score: 72.30%
+Epoch: 64, Loss: 0.0233, AUROC: 74.44%, AUPR: 48.45%, FPR95: 79.43%, Test Score: 71.80%
+Epoch: 65, Loss: 0.0235, AUROC: 74.34%, AUPR: 48.42%, FPR95: 79.43%, Test Score: 71.60%
+Epoch: 66, Loss: 0.0237, AUROC: 74.26%, AUPR: 48.39%, FPR95: 79.69%, Test Score: 71.50%
+Epoch: 67, Loss: 0.0240, AUROC: 74.20%, AUPR: 48.38%, FPR95: 79.65%, Test Score: 71.30%
+Epoch: 68, Loss: 0.0242, AUROC: 74.13%, AUPR: 48.35%, FPR95: 79.80%, Test Score: 71.50%
+Epoch: 69, Loss: 0.0244, AUROC: 74.07%, AUPR: 48.34%, FPR95: 80.39%, Test Score: 71.30%
+Epoch: 70, Loss: 0.0246, AUROC: 73.99%, AUPR: 48.32%, FPR95: 80.65%, Test Score: 71.30%
+Epoch: 71, Loss: 0.0248, AUROC: 73.90%, AUPR: 48.29%, FPR95: 81.17%, Test Score: 71.30%
+Epoch: 72, Loss: 0.0251, AUROC: 73.81%, AUPR: 48.27%, FPR95: 81.28%, Test Score: 71.10%
+Epoch: 73, Loss: 0.0253, AUROC: 73.72%, AUPR: 48.24%, FPR95: 81.09%, Test Score: 71.00%
+Epoch: 74, Loss: 0.0255, AUROC: 73.64%, AUPR: 48.19%, FPR95: 81.72%, Test Score: 70.80%
+Epoch: 75, Loss: 0.0257, AUROC: 73.57%, AUPR: 48.13%, FPR95: 81.57%, Test Score: 70.60%
+Epoch: 76, Loss: 0.0259, AUROC: 73.50%, AUPR: 48.08%, FPR95: 81.24%, Test Score: 70.20%
+Epoch: 77, Loss: 0.0261, AUROC: 73.45%, AUPR: 48.06%, FPR95: 80.54%, Test Score: 70.10%
+Epoch: 78, Loss: 0.0263, AUROC: 73.38%, AUPR: 48.04%, FPR95: 80.39%, Test Score: 70.00%
+Epoch: 79, Loss: 0.0265, AUROC: 73.31%, AUPR: 48.01%, FPR95: 80.43%, Test Score: 70.10%
+Epoch: 80, Loss: 0.0267, AUROC: 73.24%, AUPR: 47.99%, FPR95: 80.98%, Test Score: 70.00%
+Epoch: 81, Loss: 0.0268, AUROC: 73.17%, AUPR: 47.95%, FPR95: 81.20%, Test Score: 70.10%
+Epoch: 82, Loss: 0.0269, AUROC: 73.09%, AUPR: 47.90%, FPR95: 81.39%, Test Score: 70.10%
+Epoch: 83, Loss: 0.0271, AUROC: 73.01%, AUPR: 47.84%, FPR95: 81.24%, Test Score: 70.10%
+Epoch: 84, Loss: 0.0272, AUROC: 72.94%, AUPR: 47.79%, FPR95: 81.31%, Test Score: 69.90%
+Epoch: 85, Loss: 0.0274, AUROC: 72.88%, AUPR: 47.74%, FPR95: 81.54%, Test Score: 69.80%
+Epoch: 86, Loss: 0.0275, AUROC: 72.81%, AUPR: 47.72%, FPR95: 81.68%, Test Score: 69.70%
+Epoch: 87, Loss: 0.0277, AUROC: 72.76%, AUPR: 47.70%, FPR95: 81.17%, Test Score: 69.70%
+Epoch: 88, Loss: 0.0278, AUROC: 72.70%, AUPR: 47.66%, FPR95: 81.94%, Test Score: 69.70%
+Epoch: 89, Loss: 0.0280, AUROC: 72.64%, AUPR: 47.62%, FPR95: 81.98%, Test Score: 69.70%
+Epoch: 90, Loss: 0.0281, AUROC: 72.58%, AUPR: 47.58%, FPR95: 82.61%, Test Score: 69.70%
+Epoch: 91, Loss: 0.0282, AUROC: 72.52%, AUPR: 47.52%, FPR95: 82.79%, Test Score: 69.70%
+Epoch: 92, Loss: 0.0283, AUROC: 72.47%, AUPR: 47.47%, FPR95: 82.83%, Test Score: 69.60%
+Epoch: 93, Loss: 0.0284, AUROC: 72.42%, AUPR: 47.44%, FPR95: 82.90%, Test Score: 69.60%
+Epoch: 94, Loss: 0.0285, AUROC: 72.37%, AUPR: 47.42%, FPR95: 83.05%, Test Score: 69.50%
+Epoch: 95, Loss: 0.0286, AUROC: 72.32%, AUPR: 47.40%, FPR95: 82.87%, Test Score: 69.10%
+Epoch: 96, Loss: 0.0287, AUROC: 72.26%, AUPR: 47.35%, FPR95: 82.75%, Test Score: 69.00%
+Epoch: 97, Loss: 0.0287, AUROC: 72.21%, AUPR: 47.31%, FPR95: 82.75%, Test Score: 69.00%
+Epoch: 98, Loss: 0.0288, AUROC: 72.16%, AUPR: 47.28%, FPR95: 82.98%, Test Score: 68.90%
+Epoch: 99, Loss: 0.0289, AUROC: 72.13%, AUPR: 47.25%, FPR95: 82.98%, Test Score: 68.90%
+",20240309 191937,75.3189,48.1122,74.0768,73.1
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'mixhop',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': False,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",False,gnnsafe,mixhop,cora,structure,detect,100,"GNNSafe(
+  (encoder): MixHop(
+    (convs): ModuleList(
+      (0): MixHopLayer(
+        (lins): ModuleList(
+          (0-2): 3 x Linear(in_features=1433, out_features=64, bias=True)
+        )
+      )
+      (1): MixHopLayer(
+        (lins): ModuleList(
+          (0-2): 3 x Linear(in_features=192, out_features=7, bias=True)
+        )
+      )
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (final_project): Linear(in_features=21, out_features=7, bias=True)
+  )
+)","Epoch: 00, Loss: 1.9615, AUROC: 36.14%, AUPR: 24.49%, FPR95: 100.00%, Test Score: 14.90%
+Epoch: 01, Loss: 1.0209, AUROC: 36.37%, AUPR: 24.77%, FPR95: 99.78%, Test Score: 15.00%
+Epoch: 02, Loss: 0.4624, AUROC: 37.30%, AUPR: 25.28%, FPR95: 99.41%, Test Score: 15.70%
+Epoch: 03, Loss: 0.1844, AUROC: 39.87%, AUPR: 26.38%, FPR95: 98.93%, Test Score: 26.90%
+Epoch: 04, Loss: 0.0721, AUROC: 42.06%, AUPR: 27.27%, FPR95: 98.49%, Test Score: 51.90%
+Epoch: 05, Loss: 0.0301, AUROC: 43.68%, AUPR: 27.94%, FPR95: 98.30%, Test Score: 55.60%
+Epoch: 06, Loss: 0.0143, AUROC: 44.93%, AUPR: 28.48%, FPR95: 98.23%, Test Score: 52.70%
+Epoch: 07, Loss: 0.0079, AUROC: 46.07%, AUPR: 28.99%, FPR95: 98.04%, Test Score: 52.20%
+Epoch: 08, Loss: 0.0053, AUROC: 47.19%, AUPR: 29.45%, FPR95: 98.34%, Test Score: 50.60%
+Epoch: 09, Loss: 0.0042, AUROC: 48.31%, AUPR: 29.96%, FPR95: 98.04%, Test Score: 51.20%
+Epoch: 10, Loss: 0.0041, AUROC: 49.41%, AUPR: 30.43%, FPR95: 98.08%, Test Score: 52.10%
+Epoch: 11, Loss: 0.0047, AUROC: 50.52%, AUPR: 30.94%, FPR95: 97.93%, Test Score: 52.70%
+Epoch: 12, Loss: 0.0061, AUROC: 51.58%, AUPR: 31.43%, FPR95: 97.86%, Test Score: 54.70%
+Epoch: 13, Loss: 0.0083, AUROC: 52.47%, AUPR: 31.85%, FPR95: 97.90%, Test Score: 55.90%
+Epoch: 14, Loss: 0.0111, AUROC: 53.11%, AUPR: 32.19%, FPR95: 97.64%, Test Score: 56.30%
+Epoch: 15, Loss: 0.0137, AUROC: 53.46%, AUPR: 32.42%, FPR95: 97.56%, Test Score: 52.50%
+Epoch: 16, Loss: 0.0158, AUROC: 53.56%, AUPR: 32.50%, FPR95: 97.71%, Test Score: 50.60%
+Epoch: 17, Loss: 0.0167, AUROC: 53.67%, AUPR: 32.52%, FPR95: 97.67%, Test Score: 49.60%
+Epoch: 18, Loss: 0.0166, AUROC: 53.84%, AUPR: 32.64%, FPR95: 97.60%, Test Score: 50.00%
+Epoch: 19, Loss: 0.0157, AUROC: 53.78%, AUPR: 32.57%, FPR95: 97.56%, Test Score: 54.20%
+Epoch: 20, Loss: 0.0145, AUROC: 53.54%, AUPR: 32.33%, FPR95: 97.86%, Test Score: 56.80%
+Epoch: 21, Loss: 0.0133, AUROC: 53.36%, AUPR: 32.16%, FPR95: 98.01%, Test Score: 59.80%
+Epoch: 22, Loss: 0.0125, AUROC: 53.14%, AUPR: 32.01%, FPR95: 98.08%, Test Score: 62.50%
+Epoch: 23, Loss: 0.0121, AUROC: 52.98%, AUPR: 31.93%, FPR95: 97.97%, Test Score: 63.60%
+Epoch: 24, Loss: 0.0122, AUROC: 52.89%, AUPR: 31.89%, FPR95: 97.97%, Test Score: 63.80%
+Epoch: 25, Loss: 0.0124, AUROC: 53.03%, AUPR: 31.98%, FPR95: 97.97%, Test Score: 63.60%
+Epoch: 26, Loss: 0.0127, AUROC: 53.45%, AUPR: 32.26%, FPR95: 98.08%, Test Score: 64.00%
+Epoch: 27, Loss: 0.0129, AUROC: 54.24%, AUPR: 32.67%, FPR95: 97.90%, Test Score: 64.00%
+Epoch: 28, Loss: 0.0132, AUROC: 55.47%, AUPR: 33.31%, FPR95: 97.97%, Test Score: 66.40%
+Epoch: 29, Loss: 0.0133, AUROC: 56.85%, AUPR: 34.10%, FPR95: 98.04%, Test Score: 69.00%
+Epoch: 30, Loss: 0.0134, AUROC: 58.07%, AUPR: 34.87%, FPR95: 98.01%, Test Score: 71.50%
+Epoch: 31, Loss: 0.0135, AUROC: 58.85%, AUPR: 35.41%, FPR95: 97.97%, Test Score: 73.30%
+Epoch: 32, Loss: 0.0137, AUROC: 59.38%, AUPR: 35.72%, FPR95: 97.12%, Test Score: 75.20%
+Epoch: 33, Loss: 0.0140, AUROC: 59.72%, AUPR: 35.84%, FPR95: 96.60%, Test Score: 77.10%
+Epoch: 34, Loss: 0.0142, AUROC: 60.34%, AUPR: 36.11%, FPR95: 95.75%, Test Score: 78.10%
+Epoch: 35, Loss: 0.0145, AUROC: 61.19%, AUPR: 36.47%, FPR95: 95.49%, Test Score: 78.50%
+Epoch: 36, Loss: 0.0149, AUROC: 62.22%, AUPR: 37.05%, FPR95: 94.94%, Test Score: 79.70%
+Epoch: 37, Loss: 0.0152, AUROC: 63.22%, AUPR: 37.67%, FPR95: 94.17%, Test Score: 79.40%
+Epoch: 38, Loss: 0.0155, AUROC: 64.19%, AUPR: 38.27%, FPR95: 92.73%, Test Score: 78.90%
+Epoch: 39, Loss: 0.0158, AUROC: 65.13%, AUPR: 38.80%, FPR95: 90.81%, Test Score: 78.50%
+Epoch: 40, Loss: 0.0160, AUROC: 65.89%, AUPR: 39.24%, FPR95: 88.74%, Test Score: 77.50%
+Epoch: 41, Loss: 0.0162, AUROC: 66.23%, AUPR: 39.40%, FPR95: 88.48%, Test Score: 77.50%
+Epoch: 42, Loss: 0.0164, AUROC: 66.35%, AUPR: 39.44%, FPR95: 88.55%, Test Score: 77.40%
+Epoch: 43, Loss: 0.0166, AUROC: 66.59%, AUPR: 39.53%, FPR95: 88.44%, Test Score: 77.80%
+Epoch: 44, Loss: 0.0168, AUROC: 66.93%, AUPR: 39.66%, FPR95: 87.89%, Test Score: 77.70%
+Epoch: 45, Loss: 0.0170, AUROC: 67.27%, AUPR: 39.78%, FPR95: 86.63%, Test Score: 77.40%
+Epoch: 46, Loss: 0.0171, AUROC: 67.49%, AUPR: 39.84%, FPR95: 85.97%, Test Score: 77.80%
+Epoch: 47, Loss: 0.0172, AUROC: 67.62%, AUPR: 39.88%, FPR95: 85.01%, Test Score: 77.90%
+Epoch: 48, Loss: 0.0173, AUROC: 67.72%, AUPR: 39.86%, FPR95: 84.82%, Test Score: 76.90%
+Epoch: 49, Loss: 0.0173, AUROC: 67.75%, AUPR: 39.80%, FPR95: 85.16%, Test Score: 76.70%
+Epoch: 50, Loss: 0.0173, AUROC: 67.73%, AUPR: 39.75%, FPR95: 85.30%, Test Score: 76.90%
+Epoch: 51, Loss: 0.0172, AUROC: 67.80%, AUPR: 39.75%, FPR95: 85.19%, Test Score: 76.10%
+Epoch: 52, Loss: 0.0172, AUROC: 67.85%, AUPR: 39.75%, FPR95: 85.89%, Test Score: 75.80%
+Epoch: 53, Loss: 0.0172, AUROC: 67.80%, AUPR: 39.70%, FPR95: 86.82%, Test Score: 75.50%
+Epoch: 54, Loss: 0.0172, AUROC: 67.66%, AUPR: 39.62%, FPR95: 86.89%, Test Score: 75.80%
+Epoch: 55, Loss: 0.0172, AUROC: 67.54%, AUPR: 39.53%, FPR95: 86.82%, Test Score: 76.00%
+Epoch: 56, Loss: 0.0173, AUROC: 67.47%, AUPR: 39.47%, FPR95: 86.96%, Test Score: 76.00%
+Epoch: 57, Loss: 0.0173, AUROC: 67.48%, AUPR: 39.48%, FPR95: 86.67%, Test Score: 76.00%
+Epoch: 58, Loss: 0.0173, AUROC: 67.42%, AUPR: 39.42%, FPR95: 87.22%, Test Score: 75.90%
+Epoch: 59, Loss: 0.0174, AUROC: 67.39%, AUPR: 39.36%, FPR95: 87.22%, Test Score: 76.00%
+Epoch: 60, Loss: 0.0174, AUROC: 67.36%, AUPR: 39.28%, FPR95: 86.41%, Test Score: 75.90%
+Epoch: 61, Loss: 0.0174, AUROC: 67.26%, AUPR: 39.17%, FPR95: 86.45%, Test Score: 75.80%
+Epoch: 62, Loss: 0.0175, AUROC: 67.13%, AUPR: 39.04%, FPR95: 87.11%, Test Score: 75.60%
+Epoch: 63, Loss: 0.0176, AUROC: 66.97%, AUPR: 38.86%, FPR95: 87.44%, Test Score: 75.40%
+Epoch: 64, Loss: 0.0177, AUROC: 66.82%, AUPR: 38.68%, FPR95: 87.59%, Test Score: 74.70%
+Epoch: 65, Loss: 0.0178, AUROC: 66.69%, AUPR: 38.53%, FPR95: 87.52%, Test Score: 74.80%
+Epoch: 66, Loss: 0.0179, AUROC: 66.54%, AUPR: 38.41%, FPR95: 87.22%, Test Score: 75.10%
+Epoch: 67, Loss: 0.0181, AUROC: 66.34%, AUPR: 38.26%, FPR95: 87.70%, Test Score: 74.80%
+Epoch: 68, Loss: 0.0182, AUROC: 66.17%, AUPR: 38.13%, FPR95: 87.59%, Test Score: 74.70%
+Epoch: 69, Loss: 0.0183, AUROC: 66.06%, AUPR: 38.01%, FPR95: 87.59%, Test Score: 74.70%
+Epoch: 70, Loss: 0.0184, AUROC: 65.89%, AUPR: 37.85%, FPR95: 87.81%, Test Score: 74.70%
+Epoch: 71, Loss: 0.0186, AUROC: 65.67%, AUPR: 37.67%, FPR95: 88.37%, Test Score: 74.30%
+Epoch: 72, Loss: 0.0187, AUROC: 65.49%, AUPR: 37.53%, FPR95: 88.44%, Test Score: 74.50%
+Epoch: 73, Loss: 0.0188, AUROC: 65.40%, AUPR: 37.38%, FPR95: 87.96%, Test Score: 74.50%
+Epoch: 74, Loss: 0.0189, AUROC: 65.28%, AUPR: 37.21%, FPR95: 88.07%, Test Score: 74.60%
+Epoch: 75, Loss: 0.0191, AUROC: 65.09%, AUPR: 37.04%, FPR95: 88.66%, Test Score: 74.30%
+Epoch: 76, Loss: 0.0192, AUROC: 64.87%, AUPR: 36.87%, FPR95: 88.74%, Test Score: 74.30%
+Epoch: 77, Loss: 0.0193, AUROC: 64.68%, AUPR: 36.71%, FPR95: 88.70%, Test Score: 73.90%
+Epoch: 78, Loss: 0.0194, AUROC: 64.50%, AUPR: 36.52%, FPR95: 88.85%, Test Score: 73.70%
+Epoch: 79, Loss: 0.0195, AUROC: 64.35%, AUPR: 36.35%, FPR95: 89.00%, Test Score: 73.40%
+Epoch: 80, Loss: 0.0196, AUROC: 64.20%, AUPR: 36.21%, FPR95: 88.88%, Test Score: 73.40%
+Epoch: 81, Loss: 0.0197, AUROC: 63.97%, AUPR: 36.05%, FPR95: 89.25%, Test Score: 73.40%
+Epoch: 82, Loss: 0.0198, AUROC: 63.77%, AUPR: 35.88%, FPR95: 89.18%, Test Score: 72.60%
+Epoch: 83, Loss: 0.0198, AUROC: 63.60%, AUPR: 35.71%, FPR95: 89.07%, Test Score: 72.30%
+Epoch: 84, Loss: 0.0199, AUROC: 63.44%, AUPR: 35.55%, FPR95: 89.36%, Test Score: 72.00%
+Epoch: 85, Loss: 0.0200, AUROC: 63.24%, AUPR: 35.39%, FPR95: 89.51%, Test Score: 72.20%
+Epoch: 86, Loss: 0.0200, AUROC: 63.05%, AUPR: 35.22%, FPR95: 89.55%, Test Score: 72.00%
+Epoch: 87, Loss: 0.0201, AUROC: 62.85%, AUPR: 35.04%, FPR95: 89.25%, Test Score: 71.40%
+Epoch: 88, Loss: 0.0201, AUROC: 62.65%, AUPR: 34.84%, FPR95: 89.29%, Test Score: 71.30%
+Epoch: 89, Loss: 0.0202, AUROC: 62.46%, AUPR: 34.66%, FPR95: 88.96%, Test Score: 71.00%
+Epoch: 90, Loss: 0.0202, AUROC: 62.19%, AUPR: 34.47%, FPR95: 88.85%, Test Score: 70.90%
+Epoch: 91, Loss: 0.0202, AUROC: 62.00%, AUPR: 34.30%, FPR95: 88.70%, Test Score: 70.60%
+Epoch: 92, Loss: 0.0203, AUROC: 61.83%, AUPR: 34.13%, FPR95: 89.11%, Test Score: 70.30%
+Epoch: 93, Loss: 0.0203, AUROC: 61.57%, AUPR: 33.92%, FPR95: 89.25%, Test Score: 70.30%
+Epoch: 94, Loss: 0.0204, AUROC: 61.31%, AUPR: 33.72%, FPR95: 89.11%, Test Score: 69.80%
+Epoch: 95, Loss: 0.0204, AUROC: 61.09%, AUPR: 33.52%, FPR95: 89.22%, Test Score: 69.20%
+Epoch: 96, Loss: 0.0204, AUROC: 60.86%, AUPR: 33.32%, FPR95: 89.36%, Test Score: 68.90%
+Epoch: 97, Loss: 0.0204, AUROC: 60.61%, AUPR: 33.12%, FPR95: 89.70%, Test Score: 68.50%
+Epoch: 98, Loss: 0.0204, AUROC: 60.36%, AUPR: 32.93%, FPR95: 90.14%, Test Score: 68.00%
+Epoch: 99, Loss: 0.0204, AUROC: 60.08%, AUPR: 32.72%, FPR95: 90.07%, Test Score: 67.90%
+",20240309 191944,67.261,39.171,86.4476,75.8
+"{'K': 2,
+ 'T': 1.0,
+ 'alpha': 0.5,
+ 'backbone': 'gcnjk',
+ 'cached': False,
+ 'cpu': False,
+ 'data_dir': '../data/',
+ 'dataset': 'cora',
+ 'device': 0,
+ 'display_step': 1,
+ 'dropout': 0.0,
+ 'epochs': 100,
+ 'gat_heads': 8,
+ 'generate_ood': False,
+ 'hidden_channels': 64,
+ 'hops': 2,
+ 'lamda': 1.0,
+ 'lr': 0.01,
+ 'm_in': -5,
+ 'm_out': -1,
+ 'method': 'gnnsafe',
+ 'mode': 'detect',
+ 'noise': 0.0,
+ 'num_layers': 2,
+ 'ood_type': 'structure',
+ 'out_heads': 1,
+ 'print_args': False,
+ 'print_prop': False,
+ 'runs': 1,
+ 'seed': 123,
+ 'train_prop': 0.1,
+ 'use_bn': True,
+ 'use_prop': False,
+ 'use_reg': False,
+ 'valid_prop': 0.1,
+ 'weight_decay': 0.01}",False,gnnsafe,gcnjk,cora,structure,detect,100,"GNNSafe(
+  (encoder): GCNJK(
+    (convs): ModuleList(
+      (0): GCNConv(1433, 64)
+      (1): GCNConv(64, 64)
+    )
+    (bns): ModuleList(
+      (0): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (jump): JumpingKnowledge(max)
+    (final_project): Linear(in_features=64, out_features=7, bias=True)
+  )
+)","Epoch: 00, Loss: 1.9952, AUROC: 46.84%, AUPR: 26.33%, FPR95: 95.53%, Test Score: 6.40%
+Epoch: 01, Loss: 1.0383, AUROC: 50.93%, AUPR: 27.41%, FPR95: 94.13%, Test Score: 6.40%
+Epoch: 02, Loss: 0.5928, AUROC: 50.47%, AUPR: 27.35%, FPR95: 95.68%, Test Score: 14.20%
+Epoch: 03, Loss: 0.3319, AUROC: 50.86%, AUPR: 28.13%, FPR95: 95.31%, Test Score: 13.20%
+Epoch: 04, Loss: 0.1807, AUROC: 51.52%, AUPR: 28.93%, FPR95: 95.53%, Test Score: 12.00%
+Epoch: 05, Loss: 0.0989, AUROC: 51.23%, AUPR: 28.98%, FPR95: 94.68%, Test Score: 11.10%
+Epoch: 06, Loss: 0.0566, AUROC: 50.50%, AUPR: 28.73%, FPR95: 94.53%, Test Score: 12.30%
+Epoch: 07, Loss: 0.0344, AUROC: 50.05%, AUPR: 28.67%, FPR95: 94.28%, Test Score: 13.60%
+Epoch: 08, Loss: 0.0223, AUROC: 50.13%, AUPR: 28.74%, FPR95: 94.46%, Test Score: 17.40%
+Epoch: 09, Loss: 0.0156, AUROC: 50.75%, AUPR: 28.93%, FPR95: 92.95%, Test Score: 22.40%
+Epoch: 10, Loss: 0.0118, AUROC: 51.87%, AUPR: 29.27%, FPR95: 91.43%, Test Score: 31.00%
+Epoch: 11, Loss: 0.0098, AUROC: 53.29%, AUPR: 29.83%, FPR95: 90.07%, Test Score: 38.70%
+Epoch: 12, Loss: 0.0087, AUROC: 54.77%, AUPR: 30.58%, FPR95: 89.51%, Test Score: 47.40%
+Epoch: 13, Loss: 0.0083, AUROC: 56.12%, AUPR: 31.34%, FPR95: 89.33%, Test Score: 53.70%
+Epoch: 14, Loss: 0.0084, AUROC: 57.19%, AUPR: 31.98%, FPR95: 89.33%, Test Score: 56.60%
+Epoch: 15, Loss: 0.0090, AUROC: 57.93%, AUPR: 32.41%, FPR95: 88.59%, Test Score: 56.60%
+Epoch: 16, Loss: 0.0100, AUROC: 58.26%, AUPR: 32.58%, FPR95: 88.40%, Test Score: 55.90%
+Epoch: 17, Loss: 0.0113, AUROC: 58.26%, AUPR: 32.57%, FPR95: 89.40%, Test Score: 54.90%
+Epoch: 18, Loss: 0.0130, AUROC: 58.21%, AUPR: 32.53%, FPR95: 89.99%, Test Score: 55.80%
+Epoch: 19, Loss: 0.0150, AUROC: 58.45%, AUPR: 32.65%, FPR95: 89.81%, Test Score: 58.40%
+Epoch: 20, Loss: 0.0172, AUROC: 58.99%, AUPR: 32.94%, FPR95: 88.81%, Test Score: 62.70%
+Epoch: 21, Loss: 0.0193, AUROC: 59.93%, AUPR: 33.46%, FPR95: 87.92%, Test Score: 66.80%
+Epoch: 22, Loss: 0.0212, AUROC: 60.91%, AUPR: 34.04%, FPR95: 89.07%, Test Score: 70.30%
+Epoch: 23, Loss: 0.0229, AUROC: 61.84%, AUPR: 34.66%, FPR95: 86.67%, Test Score: 71.10%
+Epoch: 24, Loss: 0.0241, AUROC: 62.50%, AUPR: 35.19%, FPR95: 86.04%, Test Score: 71.20%
+Epoch: 25, Loss: 0.0248, AUROC: 62.84%, AUPR: 35.60%, FPR95: 86.15%, Test Score: 70.90%
+Epoch: 26, Loss: 0.0252, AUROC: 62.84%, AUPR: 35.82%, FPR95: 86.67%, Test Score: 70.00%
+Epoch: 27, Loss: 0.0252, AUROC: 62.53%, AUPR: 35.84%, FPR95: 87.04%, Test Score: 68.50%
+Epoch: 28, Loss: 0.0249, AUROC: 61.97%, AUPR: 35.57%, FPR95: 88.11%, Test Score: 67.70%
+Epoch: 29, Loss: 0.0243, AUROC: 61.27%, AUPR: 35.19%, FPR95: 88.40%, Test Score: 67.40%
+Epoch: 30, Loss: 0.0235, AUROC: 60.96%, AUPR: 35.11%, FPR95: 89.40%, Test Score: 69.60%
+Epoch: 31, Loss: 0.0227, AUROC: 61.29%, AUPR: 35.55%, FPR95: 89.07%, Test Score: 71.30%
+Epoch: 32, Loss: 0.0219, AUROC: 62.31%, AUPR: 36.44%, FPR95: 89.25%, Test Score: 72.50%
+Epoch: 33, Loss: 0.0213, AUROC: 63.54%, AUPR: 37.47%, FPR95: 89.29%, Test Score: 73.00%
+Epoch: 34, Loss: 0.0207, AUROC: 64.49%, AUPR: 38.30%, FPR95: 87.92%, Test Score: 72.90%
+Epoch: 35, Loss: 0.0204, AUROC: 65.20%, AUPR: 39.01%, FPR95: 86.37%, Test Score: 72.20%
+Epoch: 36, Loss: 0.0202, AUROC: 65.69%, AUPR: 39.56%, FPR95: 85.64%, Test Score: 71.30%
+Epoch: 37, Loss: 0.0203, AUROC: 65.77%, AUPR: 39.79%, FPR95: 85.89%, Test Score: 70.20%
+Epoch: 38, Loss: 0.0204, AUROC: 65.18%, AUPR: 39.48%, FPR95: 87.70%, Test Score: 70.10%
+Epoch: 39, Loss: 0.0206, AUROC: 64.18%, AUPR: 38.80%, FPR95: 87.22%, Test Score: 69.70%
+Epoch: 40, Loss: 0.0209, AUROC: 63.41%, AUPR: 38.30%, FPR95: 88.40%, Test Score: 70.10%
+Epoch: 41, Loss: 0.0212, AUROC: 63.30%, AUPR: 38.24%, FPR95: 88.29%, Test Score: 70.70%
+Epoch: 42, Loss: 0.0215, AUROC: 63.89%, AUPR: 38.60%, FPR95: 87.52%, Test Score: 70.50%
+Epoch: 43, Loss: 0.0218, AUROC: 64.85%, AUPR: 39.18%, FPR95: 87.04%, Test Score: 70.50%
+Epoch: 44, Loss: 0.0220, AUROC: 65.71%, AUPR: 39.63%, FPR95: 85.93%, Test Score: 70.40%
+Epoch: 45, Loss: 0.0222, AUROC: 65.98%, AUPR: 39.75%, FPR95: 86.12%, Test Score: 70.20%
+Epoch: 46, Loss: 0.0223, AUROC: 65.81%, AUPR: 39.63%, FPR95: 85.82%, Test Score: 69.30%
+Epoch: 47, Loss: 0.0224, AUROC: 65.56%, AUPR: 39.54%, FPR95: 85.34%, Test Score: 69.40%
+Epoch: 48, Loss: 0.0226, AUROC: 65.18%, AUPR: 39.39%, FPR95: 85.12%, Test Score: 69.10%
+Epoch: 49, Loss: 0.0227, AUROC: 64.60%, AUPR: 39.14%, FPR95: 86.08%, Test Score: 69.30%
+Epoch: 50, Loss: 0.0229, AUROC: 64.17%, AUPR: 38.95%, FPR95: 85.12%, Test Score: 69.80%
+Epoch: 51, Loss: 0.0230, AUROC: 64.01%, AUPR: 38.91%, FPR95: 85.41%, Test Score: 70.00%
+Epoch: 52, Loss: 0.0233, AUROC: 64.00%, AUPR: 38.92%, FPR95: 86.26%, Test Score: 69.50%
+Epoch: 53, Loss: 0.0235, AUROC: 63.99%, AUPR: 38.87%, FPR95: 86.30%, Test Score: 69.60%
+Epoch: 54, Loss: 0.0237, AUROC: 63.86%, AUPR: 38.71%, FPR95: 86.45%, Test Score: 69.20%
+Epoch: 55, Loss: 0.0240, AUROC: 63.65%, AUPR: 38.54%, FPR95: 86.85%, Test Score: 68.60%
+Epoch: 56, Loss: 0.0243, AUROC: 63.46%, AUPR: 38.44%, FPR95: 87.11%, Test Score: 68.40%
+Epoch: 57, Loss: 0.0245, AUROC: 63.32%, AUPR: 38.39%, FPR95: 86.23%, Test Score: 69.30%
+Epoch: 58, Loss: 0.0247, AUROC: 63.11%, AUPR: 38.29%, FPR95: 87.04%, Test Score: 69.60%
+Epoch: 59, Loss: 0.0250, AUROC: 62.87%, AUPR: 38.17%, FPR95: 86.23%, Test Score: 69.70%
+Epoch: 60, Loss: 0.0252, AUROC: 62.66%, AUPR: 38.06%, FPR95: 86.41%, Test Score: 69.80%
+Epoch: 61, Loss: 0.0254, AUROC: 62.52%, AUPR: 37.97%, FPR95: 88.00%, Test Score: 68.90%
+Epoch: 62, Loss: 0.0256, AUROC: 62.34%, AUPR: 37.84%, FPR95: 88.81%, Test Score: 68.10%
+Epoch: 63, Loss: 0.0257, AUROC: 62.12%, AUPR: 37.70%, FPR95: 88.52%, Test Score: 68.30%
+Epoch: 64, Loss: 0.0258, AUROC: 61.96%, AUPR: 37.60%, FPR95: 88.81%, Test Score: 68.40%
+Epoch: 65, Loss: 0.0259, AUROC: 61.84%, AUPR: 37.53%, FPR95: 88.52%, Test Score: 68.70%
+Epoch: 66, Loss: 0.0260, AUROC: 61.79%, AUPR: 37.52%, FPR95: 88.74%, Test Score: 69.30%
+Epoch: 67, Loss: 0.0261, AUROC: 61.74%, AUPR: 37.51%, FPR95: 88.63%, Test Score: 69.20%
+Epoch: 68, Loss: 0.0262, AUROC: 61.63%, AUPR: 37.46%, FPR95: 89.29%, Test Score: 68.90%
+Epoch: 69, Loss: 0.0263, AUROC: 61.51%, AUPR: 37.39%, FPR95: 89.25%, Test Score: 68.20%
+Epoch: 70, Loss: 0.0264, AUROC: 61.40%, AUPR: 37.32%, FPR95: 89.73%, Test Score: 68.00%
+Epoch: 71, Loss: 0.0264, AUROC: 61.30%, AUPR: 37.25%, FPR95: 89.29%, Test Score: 67.80%
+Epoch: 72, Loss: 0.0265, AUROC: 61.24%, AUPR: 37.21%, FPR95: 89.22%, Test Score: 67.60%
+Epoch: 73, Loss: 0.0266, AUROC: 61.21%, AUPR: 37.20%, FPR95: 89.48%, Test Score: 67.70%
+Epoch: 74, Loss: 0.0266, AUROC: 61.17%, AUPR: 37.18%, FPR95: 89.92%, Test Score: 67.90%
+Epoch: 75, Loss: 0.0266, AUROC: 61.12%, AUPR: 37.16%, FPR95: 90.14%, Test Score: 68.20%
+Epoch: 76, Loss: 0.0267, AUROC: 61.04%, AUPR: 37.11%, FPR95: 90.47%, Test Score: 68.20%
+Epoch: 77, Loss: 0.0267, AUROC: 60.98%, AUPR: 37.08%, FPR95: 90.51%, Test Score: 68.50%
+Epoch: 78, Loss: 0.0267, AUROC: 60.92%, AUPR: 37.04%, FPR95: 89.96%, Test Score: 68.40%
+Epoch: 79, Loss: 0.0266, AUROC: 60.85%, AUPR: 36.97%, FPR95: 89.70%, Test Score: 67.90%
+Epoch: 80, Loss: 0.0266, AUROC: 60.78%, AUPR: 36.93%, FPR95: 89.84%, Test Score: 67.80%
+Epoch: 81, Loss: 0.0266, AUROC: 60.72%, AUPR: 36.90%, FPR95: 90.10%, Test Score: 68.10%
+Epoch: 82, Loss: 0.0266, AUROC: 60.70%, AUPR: 36.88%, FPR95: 90.21%, Test Score: 68.20%
+Epoch: 83, Loss: 0.0265, AUROC: 60.67%, AUPR: 36.85%, FPR95: 90.66%, Test Score: 68.10%
+Epoch: 84, Loss: 0.0265, AUROC: 60.63%, AUPR: 36.83%, FPR95: 91.03%, Test Score: 68.10%
+Epoch: 85, Loss: 0.0265, AUROC: 60.57%, AUPR: 36.82%, FPR95: 90.99%, Test Score: 68.30%
+Epoch: 86, Loss: 0.0264, AUROC: 60.50%, AUPR: 36.78%, FPR95: 91.14%, Test Score: 68.00%
+Epoch: 87, Loss: 0.0263, AUROC: 60.41%, AUPR: 36.73%, FPR95: 90.77%, Test Score: 67.80%
+Epoch: 88, Loss: 0.0263, AUROC: 60.31%, AUPR: 36.67%, FPR95: 90.47%, Test Score: 67.60%
+Epoch: 89, Loss: 0.0262, AUROC: 60.26%, AUPR: 36.64%, FPR95: 91.06%, Test Score: 68.00%
+Epoch: 90, Loss: 0.0262, AUROC: 60.25%, AUPR: 36.63%, FPR95: 91.36%, Test Score: 68.00%
+Epoch: 91, Loss: 0.0262, AUROC: 60.26%, AUPR: 36.64%, FPR95: 91.84%, Test Score: 68.00%
+Epoch: 92, Loss: 0.0261, AUROC: 60.25%, AUPR: 36.62%, FPR95: 92.13%, Test Score: 68.00%
+Epoch: 93, Loss: 0.0261, AUROC: 60.21%, AUPR: 36.59%, FPR95: 92.10%, Test Score: 67.80%
+Epoch: 94, Loss: 0.0260, AUROC: 60.12%, AUPR: 36.55%, FPR95: 92.06%, Test Score: 68.00%
+Epoch: 95, Loss: 0.0259, AUROC: 60.03%, AUPR: 36.50%, FPR95: 92.25%, Test Score: 67.90%
+Epoch: 96, Loss: 0.0259, AUROC: 59.93%, AUPR: 36.46%, FPR95: 92.36%, Test Score: 67.60%
+Epoch: 97, Loss: 0.0258, AUROC: 59.88%, AUPR: 36.42%, FPR95: 92.36%, Test Score: 67.40%
+Epoch: 98, Loss: 0.0257, AUROC: 59.84%, AUPR: 36.40%, FPR95: 92.43%, Test Score: 67.90%
+Epoch: 99, Loss: 0.0257, AUROC: 59.79%, AUPR: 36.36%, FPR95: 92.91%, Test Score: 67.90%
+",20240309 191950,60.2516,36.617,92.1344,68.0

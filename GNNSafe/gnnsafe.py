@@ -140,7 +140,6 @@ class GNNSafe(nn.Module):
         if args.generate_ood:
 
             device = get_device(args)
-            # res = faiss.StandardGpuResources()
             # penultimate_dim为数据集的features数
             # Actor 的特征数目为932
             # print(dataset_ind)
@@ -152,13 +151,14 @@ class GNNSafe(nn.Module):
             # 采样1/2的数据
             nun_samples = dataset_ind.num_nodes
             negative_samples = new_dis.rsample((nun_samples // 2,))
+            # print("Begin Generate Outliers")
             sample_point = generate_outliers(
                 # 分布内数据 x_in torch.Size([7600, 932])
                 x_in,
                 # 进行随机采样得到负样本 torch.Size([600, 932])
                 negative_samples=negative_samples,
                 # 从选择的分布内数据抽取的边界样本 2
-                ID_points_num=dataset_ind.num_nodes//20,
+                ID_points_num=dataset_ind.num_nodes // 20,
                 # ID_points_num=10,
                 # KNN距离 300
                 K=300,
