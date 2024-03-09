@@ -23,17 +23,17 @@ def fix_seed(seed):
 
 def get_now_datetime() -> str:
     """
-    获取今天的日期
+    获取现在的日期时间
     Returns:
-        2023/10/01 12:30:30格式的日期时间
+        2023-10-01 12:30:30格式的日期时间
     """
-    return datetime.now().strftime("%Y%m%d %H%M%S")
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_now_date() -> str:
     """
     获取今天的日期
     Returns:
-        2023/10/01格式的日期
+        20231001格式的日期
     """
     return datetime.now().strftime("%Y%m%d")

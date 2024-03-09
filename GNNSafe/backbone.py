@@ -3,9 +3,11 @@ import scipy.sparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, SGConv, GATConv, JumpingKnowledge, APPNP, MessagePassing
+# from torch_geometric.nn import GCNConv, SGConv, GATConv, JumpingKnowledge, APPNP, MessagePassing
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from torch_sparse import SparseTensor, matmul
+from torch_geometric.nn.conv import GCNConv, SGConv, GATConv, MessagePassing, APPNP
+from torch_geometric.nn.models import JumpingKnowledge
 
 
 class MLP(nn.Module):

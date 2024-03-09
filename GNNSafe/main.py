@@ -142,11 +142,6 @@ for run in range(args.runs):
 
 results = logger.print_statistics()
 
-# Save results #
-# if args.mode == 'detect':
-#     save_result(results, args)
-
-
 metrics = logger.get_statistics()
 insert_row(
     args=args,

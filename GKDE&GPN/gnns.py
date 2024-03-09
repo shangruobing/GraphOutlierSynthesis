@@ -62,7 +62,7 @@ class MLP(nn.Module):
         x = self.lins[-1](x)
         return x, out_list
 
-    
+
 class SGC(nn.Module):
     def __init__(self, in_channels, out_channels, hops):
         """ takes 'hops' power of the normalized adjacency"""
@@ -85,6 +85,7 @@ class SGC(nn.Module):
         x = self.conv(x, edge_index)
         out_list.append(x)
         return x, out_list
+
 
 class GCN(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
@@ -152,6 +153,7 @@ class GCN(nn.Module):
         x = self.convs[-1](x, edge_index)
         return x, out_list
 
+
 class GAT(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
                  dropout=0.5, use_bn=False, heads=2, out_heads=1):
@@ -162,17 +164,17 @@ class GAT(nn.Module):
             GATConv(in_channels, hidden_channels, dropout=dropout, heads=heads, concat=True))
 
         self.bns = nn.ModuleList()
-        self.bns.append(nn.BatchNorm1d(hidden_channels*heads))
+        self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
         for _ in range(num_layers - 2):
             self.convs.append(
-                    GATConv(hidden_channels*heads, hidden_channels, dropout=dropout, heads=heads, concat=True))
-            self.bns.append(nn.BatchNorm1d(hidden_channels*heads))
+                GATConv(hidden_channels * heads, hidden_channels, dropout=dropout, heads=heads, concat=True))
+            self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
 
         self.convs.append(
-            GATConv(hidden_channels*heads, out_channels, dropout=dropout, heads=out_heads, concat=False))
+            GATConv(hidden_channels * heads, out_channels, dropout=dropout, heads=out_heads, concat=False))
 
         self.dropout = dropout
-        self.activation = F.elu 
+        self.activation = F.elu
         self.use_bn = use_bn
 
     def reset_parameters(self):
@@ -215,13 +217,15 @@ class GAT(nn.Module):
         x = self.convs[-1](x, edge_index)
         return x, out_list
 
+
 class MixHopLayer(nn.Module):
     """ Our MixHop layer """
+
     def __init__(self, in_channels, out_channels, hops=2):
         super(MixHopLayer, self).__init__()
         self.hops = hops
         self.lins = nn.ModuleList()
-        for hop in range(self.hops+1):
+        for hop in range(self.hops + 1):
             lin = nn.Linear(in_channels, out_channels)
             self.lins.append(lin)
 
@@ -230,8 +234,8 @@ class MixHopLayer(nn.Module):
             lin.reset_parameters()
 
     def forward(self, x, adj_t):
-        xs = [self.lins[0](x) ]
-        for j in range(1,self.hops+1):
+        xs = [self.lins[0](x)]
+        for j in range(1, self.hops + 1):
             # less runtime efficient but usually more memory efficient to mult weight matrix first
             x_j = self.lins[j](x)
             for hop in range(j):
@@ -239,12 +243,14 @@ class MixHopLayer(nn.Module):
             xs += [x_j]
         return torch.cat(xs, dim=1)
 
+
 class MixHop(nn.Module):
     """ our implementation of MixHop
     some assumptions: the powers of the adjacency are [0, 1, ..., hops],
         with every power in between
     each concatenated layer has the same dimension --- hidden_channels
     """
+
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
                  dropout=0.5, hops=2):
         super(MixHop, self).__init__()
@@ -253,17 +259,17 @@ class MixHop(nn.Module):
         self.convs.append(MixHopLayer(in_channels, hidden_channels, hops=hops))
 
         self.bns = nn.ModuleList()
-        self.bns.append(nn.BatchNorm1d(hidden_channels*(hops+1)))
+        self.bns.append(nn.BatchNorm1d(hidden_channels * (hops + 1)))
         for _ in range(num_layers - 2):
             self.convs.append(
-                MixHopLayer(hidden_channels*(hops+1), hidden_channels, hops=hops))
-            self.bns.append(nn.BatchNorm1d(hidden_channels*(hops+1)))
+                MixHopLayer(hidden_channels * (hops + 1), hidden_channels, hops=hops))
+            self.bns.append(nn.BatchNorm1d(hidden_channels * (hops + 1)))
 
         self.convs.append(
-            MixHopLayer(hidden_channels*(hops+1), out_channels, hops=hops))
+            MixHopLayer(hidden_channels * (hops + 1), out_channels, hops=hops))
 
         # note: uses linear projection instead of paper's attention output
-        self.final_project = nn.Linear(out_channels*(hops+1), out_channels)
+        self.final_project = nn.Linear(out_channels * (hops + 1), out_channels)
 
         self.dropout = dropout
         self.activation = F.relu
@@ -275,23 +281,22 @@ class MixHop(nn.Module):
             bn.reset_parameters()
         self.final_project.reset_parameters()
 
-
     def forward(self, x, edge_index):
         n = x.size(0)
         edge_weight = None
         if isinstance(edge_index, torch.Tensor):
-            edge_index, edge_weight = gcn_norm( 
+            edge_index, edge_weight = gcn_norm(
                 edge_index, edge_weight, n, False,
-                 dtype=x.dtype)
+                dtype=x.dtype)
             row, col = edge_index
             adj_t = SparseTensor(row=col, col=row, value=edge_weight, sparse_sizes=(n, n))
         elif isinstance(edge_index, SparseTensor):
             edge_index = gcn_norm(
                 edge_index, edge_weight, n, False,
                 dtype=x.dtype)
-            edge_weight=None
+            edge_weight = None
             adj_t = edge_index
-        
+
         for i, conv in enumerate(self.convs[:-1]):
             x = conv(x, adj_t)
             x = self.bns[i](x)
@@ -301,6 +306,7 @@ class MixHop(nn.Module):
 
         x = self.final_project(x)
         return x
+
 
 class GCNJK(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
@@ -326,7 +332,7 @@ class GCNJK(nn.Module):
         self.jump = JumpingKnowledge(jk_type, channels=hidden_channels, num_layers=1)
         if jk_type == 'cat':
             self.final_project = nn.Linear(hidden_channels * num_layers, out_channels)
-        else: # max or lstm
+        else:  # max or lstm
             self.final_project = nn.Linear(hidden_channels, out_channels)
 
     def reset_parameters(self):
@@ -351,6 +357,7 @@ class GCNJK(nn.Module):
         x = self.final_project(x)
         return x
 
+
 class GATJK(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
                  dropout=0.5, heads=2, jk_type='max'):
@@ -361,25 +368,23 @@ class GATJK(nn.Module):
             GATConv(in_channels, hidden_channels, heads=heads, concat=True))
 
         self.bns = nn.ModuleList()
-        self.bns.append(nn.BatchNorm1d(hidden_channels*heads))
+        self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
         for _ in range(num_layers - 2):
-
             self.convs.append(
-                    GATConv(hidden_channels*heads, hidden_channels, heads=heads, concat=True) ) 
-            self.bns.append(nn.BatchNorm1d(hidden_channels*heads))
+                GATConv(hidden_channels * heads, hidden_channels, heads=heads, concat=True))
+            self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
 
         self.convs.append(
-            GATConv(hidden_channels*heads, hidden_channels, heads=heads))
+            GATConv(hidden_channels * heads, hidden_channels, heads=heads))
 
         self.dropout = dropout
-        self.activation = F.elu # note: uses elu
+        self.activation = F.elu  # note: uses elu
 
-        self.jump = JumpingKnowledge(jk_type, channels=hidden_channels*heads, num_layers=1)
+        self.jump = JumpingKnowledge(jk_type, channels=hidden_channels * heads, num_layers=1)
         if jk_type == 'cat':
-            self.final_project = nn.Linear(hidden_channels*heads*num_layers, out_channels)
-        else: # max or lstm
-            self.final_project = nn.Linear(hidden_channels*heads, out_channels)
-
+            self.final_project = nn.Linear(hidden_channels * heads * num_layers, out_channels)
+        else:  # max or lstm
+            self.final_project = nn.Linear(hidden_channels * heads, out_channels)
 
     def reset_parameters(self):
         for conv in self.convs:
@@ -388,7 +393,6 @@ class GATJK(nn.Module):
             bn.reset_parameters()
         self.jump.reset_parameters()
         self.final_project.reset_parameters()
-
 
     def forward(self, x, edge_index):
         xs = []
@@ -404,8 +408,10 @@ class GATJK(nn.Module):
         x = self.final_project(x)
         return x
 
+
 class H2GCNConv(nn.Module):
     """ Neighborhood aggregation step """
+
     def __init__(self):
         super(H2GCNConv, self).__init__()
 
@@ -420,33 +426,33 @@ class H2GCNConv(nn.Module):
 
 class H2GCN(nn.Module):
     """ our implementation """
+
     def __init__(self, in_channels, hidden_channels, out_channels, edge_index, num_nodes,
-                    num_layers=2, dropout=0.5, save_mem=False, num_mlp_layers=1,
-                    use_bn=True, conv_dropout=True):
+                 num_layers=2, dropout=0.5, save_mem=False, num_mlp_layers=1,
+                 use_bn=True, conv_dropout=True):
         super(H2GCN, self).__init__()
 
         self.feature_embed = MLP(in_channels, hidden_channels,
-                hidden_channels, num_layers=num_mlp_layers, dropout=dropout)
-
+                                 hidden_channels, num_layers=num_mlp_layers, dropout=dropout)
 
         self.convs = nn.ModuleList()
         self.convs.append(H2GCNConv())
 
         self.bns = nn.ModuleList()
-        self.bns.append(nn.BatchNorm1d(hidden_channels*2*len(self.convs) ) )
+        self.bns.append(nn.BatchNorm1d(hidden_channels * 2 * len(self.convs)))
 
         for l in range(num_layers - 1):
             self.convs.append(H2GCNConv())
-            if l != num_layers-2:
-                self.bns.append(nn.BatchNorm1d(hidden_channels*2*len(self.convs) ) )
+            if l != num_layers - 2:
+                self.bns.append(nn.BatchNorm1d(hidden_channels * 2 * len(self.convs)))
 
         self.dropout = dropout
         self.activation = F.relu
         self.use_bn = use_bn
-        self.conv_dropout = conv_dropout # dropout neighborhood aggregation steps
+        self.conv_dropout = conv_dropout  # dropout neighborhood aggregation steps
 
         self.jump = JumpingKnowledge('cat')
-        last_dim = hidden_channels*(2**(num_layers+1)-1)
+        last_dim = hidden_channels * (2 ** (num_layers + 1) - 1)
         self.final_project = nn.Linear(last_dim, out_channels)
 
         self.num_nodes = num_nodes
@@ -463,7 +469,7 @@ class H2GCN(nn.Module):
         neither has self loops
         """
         n = self.num_nodes
-        
+
         if isinstance(edge_index, SparseTensor):
             dev = edge_index.device
             adj_t = edge_index
@@ -486,27 +492,25 @@ class H2GCN(nn.Module):
 
         adj_t = SparseTensor.from_scipy(adj_t)
         adj_t2 = SparseTensor.from_scipy(adj_t2)
-        
+
         adj_t = gcn_norm(adj_t, None, n, add_self_loops=False)
         adj_t2 = gcn_norm(adj_t2, None, n, add_self_loops=False)
 
         self.adj_t = adj_t.to(edge_index.device)
         self.adj_t2 = adj_t2.to(edge_index.device)
 
-
-
     def forward(self, x, edge_index):
 
         adj_t = self.adj_t
         adj_t2 = self.adj_t2
-        
+
         x = self.feature_embed(x)
         x = self.activation(x)
         xs = [x]
         if self.conv_dropout:
             x = F.dropout(x, p=self.dropout, training=self.training)
         for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, adj_t, adj_t2) 
+            x = conv(x, adj_t, adj_t2)
             if self.use_bn:
                 x = self.bns[i](x)
             xs.append(x)
@@ -544,6 +548,7 @@ class APPNP_Net(nn.Module):
         x = self.prop1(x, edge_index)
         return x
 
+
 class GPR_prop(MessagePassing):
     '''
     GPRGNN, from original repo https://github.com/jianhao2016/GPRGNN
@@ -559,21 +564,21 @@ class GPR_prop(MessagePassing):
         assert Init in ['SGC', 'PPR', 'NPPR', 'Random', 'WS']
         if Init == 'SGC':
             # SGC-like
-            TEMP = 0.0*np.ones(K+1)
+            TEMP = 0.0 * np.ones(K + 1)
             TEMP[alpha] = 1.0
         elif Init == 'PPR':
             # PPR-like
-            TEMP = alpha*(1-alpha)**np.arange(K+1)
-            TEMP[-1] = (1-alpha)**K
+            TEMP = alpha * (1 - alpha) ** np.arange(K + 1)
+            TEMP[-1] = (1 - alpha) ** K
         elif Init == 'NPPR':
             # Negative PPR
-            TEMP = (alpha)**np.arange(K+1)
-            TEMP = TEMP/np.sum(np.abs(TEMP))
+            TEMP = (alpha) ** np.arange(K + 1)
+            TEMP = TEMP / np.sum(np.abs(TEMP))
         elif Init == 'Random':
             # Random
-            bound = np.sqrt(3/(K+1))
-            TEMP = np.random.uniform(-bound, bound, K+1)
-            TEMP = TEMP/np.sum(np.abs(TEMP))
+            bound = np.sqrt(3 / (K + 1))
+            TEMP = np.random.uniform(-bound, bound, K + 1)
+            TEMP = TEMP / np.sum(np.abs(TEMP))
         elif Init == 'WS':
             # Specify Gamma
             TEMP = Gamma
@@ -582,9 +587,9 @@ class GPR_prop(MessagePassing):
 
     def reset_parameters(self):
         nn.init.zeros_(self.temp)
-        for k in range(self.K+1):
-            self.temp.data[k] = self.alpha*(1-self.alpha)**k
-        self.temp.data[-1] = (1-self.alpha)**self.K
+        for k in range(self.K + 1):
+            self.temp.data[k] = self.alpha * (1 - self.alpha) ** k
+        self.temp.data[-1] = (1 - self.alpha) ** self.K
 
     def forward(self, x, edge_index, edge_weight=None):
         if isinstance(edge_index, torch.Tensor):
@@ -595,11 +600,11 @@ class GPR_prop(MessagePassing):
                 edge_index, edge_weight, num_nodes=x.size(0), dtype=x.dtype)
             norm = None
 
-        hidden = x*(self.temp[0])
+        hidden = x * (self.temp[0])
         for k in range(self.K):
             x = self.propagate(edge_index, x=x, norm=norm)
-            gamma = self.temp[k+1]
-            hidden = hidden + gamma*x
+            gamma = self.temp[k + 1]
+            hidden = hidden + gamma * x
         return hidden
 
     def message(self, x_j, norm):
@@ -613,7 +618,8 @@ class GPR_prop(MessagePassing):
 class GPRGNN(nn.Module):
     """GPRGNN, from original repo https://github.com/jianhao2016/GPRGNN"""
 
-    def __init__(self, in_channels, hidden_channels, out_channels, Init='PPR', dprate=.5, dropout=.5, K=10, alpha=.1, Gamma=None, ppnp='GPR_prop'):
+    def __init__(self, in_channels, hidden_channels, out_channels, Init='PPR', dprate=.5, dropout=.5, K=10, alpha=.1,
+                 Gamma=None, ppnp='GPR_prop'):
         super(GPRGNN, self).__init__()
         self.lin1 = nn.Linear(in_channels, hidden_channels)
         self.lin2 = nn.Linear(hidden_channels, out_channels)
@@ -649,5 +655,5 @@ class GPRGNN(nn.Module):
 
 
 if __name__ == '__main__':
-    a = torch.ones((3,4))
+    a = torch.ones((3, 4))
     print(len(a.shape))
