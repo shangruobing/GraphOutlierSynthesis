@@ -10,7 +10,6 @@ from OutliersGenerate.utils import get_device
 from backbone import *
 import torch
 
-# sys.path.append('..')
 from OutliersGenerate.KNN import generate_outliers
 
 
@@ -141,28 +140,26 @@ class GNNSafe(nn.Module):
         if args.generate_ood:
 
             device = get_device(args)
-            res = faiss.StandardGpuResources()
+            # res = faiss.StandardGpuResources()
             # penultimate_dim为数据集的features数
             # Actor 的特征数目为932
-            penultimate_dim = dataset_ind.x.shape[1]
-            KNN_index = faiss.GpuIndexFlatL2(res, penultimate_dim)
-            ID = x_in
-
+            # print(dataset_ind)
+            penultimate_dim = dataset_ind.num_features
             # Standard Gaussian distribution
             # 创建一个高斯分布然后进行随机采样
             new_dis = MultivariateNormal(torch.zeros(penultimate_dim, device=device),
                                          torch.eye(penultimate_dim, device=device))
-            # @issue 先固定采样600个
-            negative_samples = new_dis.rsample((600,))
+            # 采样1/2的数据
+            nun_samples = dataset_ind.num_nodes
+            negative_samples = new_dis.rsample((nun_samples // 2,))
             sample_point = generate_outliers(
                 # 分布内数据 x_in torch.Size([7600, 932])
-                ID,
-                # Faiss 向量搜索
-                input_index=KNN_index,
+                x_in,
                 # 进行随机采样得到负样本 torch.Size([600, 932])
                 negative_samples=negative_samples,
                 # 从选择的分布内数据抽取的边界样本 2
-                ID_points_num=2,
+                ID_points_num=dataset_ind.num_nodes//20,
+                # ID_points_num=10,
                 # KNN距离 300
                 K=300,
                 # 多少ID样本用来定义边界 200
@@ -172,19 +169,26 @@ class GNNSafe(nn.Module):
                 # 采样率 1
                 sampling_ratio=1.0,
                 # 挑选用于生成异常值的ID样本数
-                pic_nums=2,
+                pic_nums=10,
                 # 特征的纬度 932
                 depth=penultimate_dim,
                 # 设备
                 device=device
             )
             sample_point_label = torch.zeros(sample_point.shape[0], dtype=torch.long, device=device).view(-1)
+
+            # max(dataset_ind.num_nodes,dataset_ind.num_edges)//min(dataset_ind.num_nodes,dataset_ind.num_edges)
+            edge_node_radio = dataset_ind.num_edges // dataset_ind.num_nodes
             sample_point_edge = torch.randint(
                 low=0,
                 high=len(sample_point_label) - 1,
-                size=(2, len(sample_point_label)),
+                size=(2, edge_node_radio * len(sample_point_label)),
                 device=device
             )
+            # print("dataset_ind.num_nodes", dataset_ind.num_nodes)
+            # print("dataset_ind.num_edges", dataset_ind.num_edges)
+            # print("sample_point", sample_point.size())
+            # print("sample_point_edge", sample_point_edge.size())
             sample_point_logits_out = self.encoder(sample_point, sample_point_edge)
             sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
             sample_sup_loss = criterion(sample_point_out, sample_point_label)

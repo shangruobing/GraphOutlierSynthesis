@@ -1,3 +1,4 @@
+import faiss
 import numpy as np
 import torch
 
@@ -51,11 +52,10 @@ def KNN_dis_search_distance(target, index, K=50, num_points=10, length=2000, dep
     return target[torch.cat(point_list)]
 
 
-def generate_outliers(ID, input_index, negative_samples, ID_points_num=2, K=20, select=1, cov_mat=0.1,
+def generate_outliers(ID, negative_samples, ID_points_num=2, K=20, select=1, cov_mat=0.1,
                       sampling_ratio=1.0, pic_nums=30, depth=342, device=torch.device("cpu")):
     """
     ID: the input data 分布内数据 torch.Size([1000, 512])
-    input_index: Faiss Index
     negative_samples: 进行随机采样得到负样本 torch.Size([600, 512])
     ID_points_num: the number of synthetic outliers extracted for each selected ID 从选择的分布内数据抽取的边界样本 2
     K: KNN距离 300
@@ -64,24 +64,27 @@ def generate_outliers(ID, input_index, negative_samples, ID_points_num=2, K=20, 
     sampling_ratio: 采样率 1
     pic_nums: Number of ID samples used to generate outliers 2
     depth: 特征维度 932
+    device: 设备
     """
-    # length 600个样本
+    res = faiss.StandardGpuResources()
+    faiss_index = faiss.GpuIndexFlatL2(res, depth)
+
     length = negative_samples.shape[0]
     # 归一化 torch.Size([7600, 932])
     normed_data = ID / torch.norm(ID, p=2, dim=1, keepdim=True)
     # 7600, 7600*1
     rand_ind = np.random.choice(normed_data.shape[0], int(normed_data.shape[0] * sampling_ratio), replace=False)
     # (7600,) print(rand_ind.shape)
-    index = input_index
+    # index = input_index
     # target.shape torch.Size([7600, 932])
-    index.add(normed_data[rand_ind].cpu().numpy())
+    faiss_index.add(normed_data[rand_ind].cpu().numpy())
 
     # minD_idx,k_th 200,200
     minD_idx, k_th = KNN_dis_search_decrease(
         # 分布内数据 torch.Size([7600, 932])
         ID,
         # faiss
-        index,
+        faiss_index,
         # 300的距离
         K,
         # 选择200个
@@ -95,8 +98,8 @@ def generate_outliers(ID, input_index, negative_samples, ID_points_num=2, K=20, 
     # negative_sample_cov torch.Size([1200, 932])
     negative_sample_list = negative_sample_cov + data_point_list
     # negative_sample_list torch.Size([1200, 932])
-    point = KNN_dis_search_distance(negative_sample_list, index, K, ID_points_num, length, depth)
-    index.reset()
+    point = KNN_dis_search_distance(negative_sample_list, faiss_index, K, ID_points_num, length, depth)
+    faiss_index.reset()
     # point torch.Size([4, 932])
     return point
 

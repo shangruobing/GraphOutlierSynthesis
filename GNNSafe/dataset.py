@@ -1,4 +1,3 @@
-
 import torch
 import torch_geometric.transforms as T
 from torch_geometric.data import Data
@@ -238,17 +237,29 @@ def create_label_noise_dataset(data):
 def load_graph_dataset(data_dir, dataname, ood_type):
     transform = T.NormalizeFeatures()
     if dataname in ('cora', 'citeseer', 'pubmed'):
-        torch_dataset = Planetoid(root=f'{data_dir}Planetoid', split='public',
-                                  name=dataname, transform=transform)
+        torch_dataset = Planetoid(
+            root=f'{data_dir}Planetoid',
+            split='public',
+            name=dataname,
+            transform=transform
+        )
         dataset = torch_dataset[0]
-        print("dataset", dataset)
+        # print("dataset", dataset)
         tensor_split_idx = {}
         idx = torch.arange(dataset.num_nodes)
-        print("idx", idx)
+        # print("idx", idx)
+        # print(dataset.train_mask)
+        # print(dataset.val_mask)
+        # print(dataset.test_mask)
         tensor_split_idx['train'] = idx[dataset.train_mask]
         tensor_split_idx['valid'] = idx[dataset.val_mask]
         tensor_split_idx['test'] = idx[dataset.test_mask]
         dataset.splits = tensor_split_idx
+        # from pprint import pprint
+        # pprint(tensor_split_idx)
+        # for item in tensor_split_idx.items():
+        #     print(item)
+
     elif dataname == 'amazon-photo':
         torch_dataset = Amazon(root=f'{data_dir}Amazon',
                                name='Photo', transform=transform)

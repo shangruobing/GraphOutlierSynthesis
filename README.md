@@ -37,7 +37,6 @@ python main.py \
   --ood_type feature \
   --mode detect \
   --use_bn \
-  --device 0 \
   --epochs 500 \
   --cpu \
   --generate_ood false
