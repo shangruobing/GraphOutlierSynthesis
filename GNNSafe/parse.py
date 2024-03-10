@@ -49,3 +49,4 @@ def parser_add_main_args(parser):
 
     # generate outliers
     parser.add_argument('--generate_ood', action='store_true')
+    parser.add_argument('--generate_logit', action='store_true')

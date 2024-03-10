@@ -53,6 +53,14 @@ class GNNSafe(nn.Module):
             self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
+        self.optimizer = nn.Sequential(
+            nn.Linear(in_features=7, out_features=16, bias=True),
+            nn.ReLU(),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(),
+            nn.Linear(in_features=8, out_features=2, bias=True),
+            # nn.Softmax(dim=1)
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -121,7 +129,11 @@ class GNNSafe(nn.Module):
         edge_index_out torch.Size([2, 21146])
         """
 
+        # print(x_in.size())
+        # x_in torch.Size([2708, 1433])
+        # logits_in torch.Size([2708, 7])
         logits_in = self.encoder(x_in, edge_index_in)
+        # print(logits_in.size())
         """
         x_in torch.Size([7600, 932]) edge_index_in torch.Size([2, 30019])
         logits_in torch.Size([7600, 5])
@@ -147,11 +159,29 @@ class GNNSafe(nn.Module):
                 num_features=dataset_ind.num_features,
                 num_edges=dataset_ind.num_edges,
             )
+            # print(sample_point.size())
+            # print(sample_edge.size())
+            # print(sample_label.size())
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
             sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
             sample_sup_loss = criterion(sample_point_out, sample_label)
         else:
             sample_sup_loss = 0
+
+        if args.generate_logit:
+            logit_point, sample_edge, sample_label = generate_outliers(
+                logits_in.clone().detach(),
+                device=device,
+                num_nodes=logits_in.shape[0],
+                num_features=logits_in.shape[1],
+                num_edges=dataset_ind.num_edges,
+            )
+            logit_label = torch.ones(logit_point.shape[0], dtype=torch.long, device=device).view(-1)
+            logit_sample_point_logits_out = self.optimizer(logit_point)
+            logit_sample_point_out = F.log_softmax(logit_sample_point_logits_out, dim=1)
+            logit_sample_sup_loss = criterion(logit_sample_point_out, logit_label)
+        else:
+            logit_sample_sup_loss = 0
 
         train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
 
@@ -199,4 +229,14 @@ class GNNSafe(nn.Module):
 
         if args.generate_ood:
             loss += 0.001 * sample_sup_loss
+            # sample_sup_loss tensor(3.7787)
+            # print("sample_sup_loss", sample_sup_loss)
+            # print("sample_sup_loss", 0.001 * sample_sup_loss)
+
+        if args.generate_logit:
+            loss += 0.01 * logit_sample_sup_loss
+            # logit_sample_sup_loss tensor(0.7226)
+            # print("logit_sample_sup_loss", logit_sample_sup_loss)
+            # print("logit_sample_sup_loss", 0.01 * logit_sample_sup_loss)
+
         return loss

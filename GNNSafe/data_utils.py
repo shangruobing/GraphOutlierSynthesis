@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+import torch
 from scipy import sparse as sp
 from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 
@@ -391,7 +392,7 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
 
 
 def convert_to_adj(edge_index, n_node):
-    '''convert from pyg format edge_index to n by n adj matrix'''
+    """convert from pyg format edge_index to n by n adj matrix"""
     adj = torch.zeros((n_node, n_node))
     row, col = edge_index
     adj[row, col] = 1

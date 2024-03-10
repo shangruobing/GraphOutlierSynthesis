@@ -7,9 +7,15 @@ from torch_geometric.data import Dataset
 
 def KNN_dis_search_decrease(target, index, K=50, select=1, ):
     """
-    data_point: Queue for searching k-th points
-    target: the target of the search
-    K
+
+    Args:
+        target: the target of the search
+        index:
+        K:
+        select:
+
+    Returns:
+
     """
     # Normalize the features
     # print("target.shape", target.shape)
@@ -33,9 +39,17 @@ def KNN_dis_search_decrease(target, index, K=50, select=1, ):
 
 def KNN_dis_search_distance(target, index, K=50, num_points=10, length=2000, depth=342):
     """
-    data_point: Queue for searching k-th points
-    target: the target of the search
-    K
+
+    Args:
+        target: the target of the search
+        index:
+        K:
+        num_points:
+        length:
+        depth:
+
+    Returns:
+
     """
     # Normalize the features
     #
