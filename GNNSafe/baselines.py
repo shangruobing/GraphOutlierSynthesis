@@ -4,6 +4,7 @@ import numpy as np
 import torch.autograd as autograd
 from torch.autograd import Variable
 
+from OutliersGenerate.KNN import generate_outliers
 from backbone import *
 
 
@@ -55,12 +56,32 @@ class MSP(nn.Module):
     def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
 
         train_idx = dataset_ind.splits['train']
-        logits_in = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))[train_idx]
+        x_in = dataset_ind.x.to(device)
+        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
+
+        if args.generate_ood:
+            # print("begin generate_ood")
+            sample_point, sample_edge, sample_label = generate_outliers(
+                x_in,
+                device=device,
+                num_nodes=dataset_ind.num_nodes,
+                num_features=dataset_ind.num_features,
+                num_edges=dataset_ind.num_edges,
+            )
+            sample_point_logits_out = self.encoder(sample_point, sample_edge)
+            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
+            sample_sup_loss = criterion(sample_point_out, sample_label)
+        else:
+            sample_sup_loss = 0
+
         if args.dataset in ('proteins', 'ppi'):
             loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
         else:
             pred_in = F.log_softmax(logits_in, dim=1)
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+
+        if args.generate_ood:
+            loss += 0.001 * sample_sup_loss
         return loss
 
 
@@ -106,8 +127,24 @@ class OE(nn.Module):
 
         train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
 
-        logits_in = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))[train_in_idx]
+        x_in = dataset_ind.x.to(device)
+        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_in_idx]
         logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
+
+        if args.generate_ood:
+            # print("begin generate_ood")
+            sample_point, sample_edge, sample_label = generate_outliers(
+                x_in,
+                device=device,
+                num_nodes=dataset_ind.num_nodes,
+                num_features=dataset_ind.num_features,
+                num_edges=dataset_ind.num_edges,
+            )
+            sample_point_logits_out = self.encoder(sample_point, sample_edge)
+            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
+            sample_sup_loss = criterion(sample_point_out, sample_label)
+        else:
+            sample_sup_loss = 0
 
         train_idx = dataset_ind.splits['train']
         if args.dataset in ('proteins', 'ppi'):
@@ -116,6 +153,9 @@ class OE(nn.Module):
             pred_in = F.log_softmax(logits_in, dim=1)
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
         loss += 0.5 * -(logits_out.mean(1) - torch.logsumexp(logits_out, dim=1)).mean()
+
+        if args.generate_ood:
+            loss += 0.001 * sample_sup_loss
         return loss
 
 
@@ -195,12 +235,32 @@ class ODIN(nn.Module):
     def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
 
         train_idx = dataset_ind.splits['train']
-        logits_in = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))[train_idx]
+        x_in = dataset_ind.x.to(device)
+        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
+
+        if args.generate_ood:
+            # print("begin generate_ood")
+            sample_point, sample_edge, sample_label = generate_outliers(
+                x_in,
+                device=device,
+                num_nodes=dataset_ind.num_nodes,
+                num_features=dataset_ind.num_features,
+                num_edges=dataset_ind.num_edges,
+            )
+            sample_point_logits_out = self.encoder(sample_point, sample_edge)
+            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
+            sample_sup_loss = criterion(sample_point_out, sample_label)
+        else:
+            sample_sup_loss = 0
+
         if args.dataset in ('proteins', 'ppi'):
             loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
         else:
             pred_in = F.log_softmax(logits_in, dim=1)
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+
+        if args.generate_ood:
+            loss += 0.001 * sample_sup_loss
         return loss
 
 
@@ -249,10 +309,10 @@ class Mahalanobis(nn.Module):
 
     def get_Mahalanobis_score(self, test_set, node_idx, device, num_classes, sample_mean, precision, layer_index,
                               magnitude):
-        '''
+        """
         Compute the proposed Mahalanobis confidence score on input dataset
         return: Mahalanobis score from layer_index
-        '''
+        """
         self.encoder.eval()
         Mahalanobis = []
 
@@ -395,10 +455,30 @@ class Mahalanobis(nn.Module):
     def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
 
         train_idx = dataset_ind.splits['train']
-        logits_in = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))[train_idx]
+        x_in = dataset_ind.x.to(device)
+        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
+
+        if args.generate_ood:
+            # print("begin generate_ood")
+            sample_point, sample_edge, sample_label = generate_outliers(
+                x_in,
+                device=device,
+                num_nodes=dataset_ind.num_nodes,
+                num_features=dataset_ind.num_features,
+                num_edges=dataset_ind.num_edges,
+            )
+            sample_point_logits_out = self.encoder(sample_point, sample_edge)
+            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
+            sample_sup_loss = criterion(sample_point_out, sample_label)
+        else:
+            sample_sup_loss = 0
+
         if args.dataset in ('proteins', 'ppi'):
             loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
         else:
             pred_in = F.log_softmax(logits_in, dim=1)
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+
+        if args.generate_ood:
+            loss += 0.001 * sample_sup_loss
         return loss

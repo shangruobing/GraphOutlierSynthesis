@@ -1,6 +1,6 @@
 from argparse import Namespace
 
-from torch.distributions import MultivariateNormal
+from torch_geometric.data import Data
 from torch_geometric.utils import degree
 
 from backbone import *
@@ -94,7 +94,7 @@ class GNNSafe(nn.Module):
             neg_energy = self.propagation(neg_energy, edge_index, args.K, args.alpha)
         return neg_energy[node_idx]
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         """return loss for training"""
         """
         Actor Datasets:
@@ -132,12 +132,24 @@ class GNNSafe(nn.Module):
         x_out torch.Size([7600, 932]) edge_index_out torch.Size([2, 21146])
         logits_out torch.Size([7600, 5])
         """
+        # print("edge_index_in", edge_index_in.size())
+        # print(dataset_ind)
+        # print(type(dataset_ind))
+        # print(dataset_ind.x)
+        # print(type(dataset_ind.x))
 
         if args.generate_ood:
-            sample_point, sample_point_edge, sample_point_label = generate_outliers(x_in, device=device)
-            sample_point_logits_out = self.encoder(sample_point, sample_point_edge)
+            # print("begin generate_ood")
+            sample_point, sample_edge, sample_label = generate_outliers(
+                x_in,
+                device=device,
+                num_nodes=dataset_ind.num_nodes,
+                num_features=dataset_ind.num_features,
+                num_edges=dataset_ind.num_edges,
+            )
+            sample_point_logits_out = self.encoder(sample_point, sample_edge)
             sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_point_label)
+            sample_sup_loss = criterion(sample_point_out, sample_label)
         else:
             sample_sup_loss = 0
 

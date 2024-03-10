@@ -21,6 +21,7 @@ def KNN_dis_search_decrease(target, index, K=50, select=1, ):
     # print("normed_target.shape", normed_target.shape)
     # print("K", K)
     distance, output_index = index.search(normed_target.cpu().numpy(), K)
+    # distance, output_index = index.search(normed_target, K)
     # print("distance", distance)
     # print("output_index", output_index)
     k_th_distance = distance[:, -1]
@@ -55,17 +56,23 @@ def KNN_dis_search_distance(target, index, K=50, num_points=10, length=2000, dep
 
 
 def generate_outliers(
-        dataset: Dataset,
+        dataset: torch.Tensor,
+        num_nodes,
+        num_features,
+        num_edges,
         distance=300,
         select=200,
         cov_mat=0.1,
         sampling_ratio=1.0,
         pic_nums=10,
-        device=torch.device("cpu")
+        device=torch.device("cpu"),
 ):
     """
     Args:
         dataset: the input dataset
+        num_nodes: the number of nodes
+        num_features: the number of features
+        num_edges: the number of edges
         distance: KNN distance
         select: How many ID samples to pick to define as points near the boundary of the sample space
         cov_mat: The weight before the covariance matrix to determine the sampling range
@@ -76,13 +83,14 @@ def generate_outliers(
 
     """
     # feature dimension
-    num_features = dataset.num_features
+    # num_features = dataset.shape[1]
     # the number of synthetic outliers extracted for each selected ID
-    outliers_per_ID = dataset.num_nodes // 20
+    outliers_per_ID = dataset.shape[0] // 20
 
-    gaussian_distribution = MultivariateNormal(torch.zeros(num_features, device=device), torch.eye(num_features, device=device))
+    gaussian_distribution = MultivariateNormal(torch.zeros(num_features, device=device),
+                                               torch.eye(num_features, device=device))
     # 采样1/2的数据
-    negative_samples = gaussian_distribution.rsample((dataset.num_nodes // 2,))
+    negative_samples = gaussian_distribution.rsample((num_nodes // 2,))
 
     resource = faiss.StandardGpuResources()
     faiss_index = faiss.GpuIndexFlatL2(resource, num_features)
@@ -116,18 +124,20 @@ def generate_outliers(
     # negative_sample_cov torch.Size([1200, 932])
     negative_sample_list = negative_sample_cov + data_point_list
     # negative_sample_list torch.Size([1200, 932])
-    sample_point = KNN_dis_search_distance(negative_sample_list, faiss_index, distance, outliers_per_ID, length, num_features)
+    sample_point = KNN_dis_search_distance(negative_sample_list, faiss_index, distance, outliers_per_ID, length,
+                                           num_features)
     faiss_index.reset()
 
-    sample_point_label = torch.zeros(sample_point.shape[0], dtype=torch.long, device=device).view(-1)
-    edge_node_radio = dataset.num_edges // dataset.num_nodes
-    sample_point_edge = torch.randint(
+    sample_label = torch.zeros(sample_point.shape[0], dtype=torch.long, device=device).view(-1)
+    edge_node_radio = num_edges // num_nodes
+    sample_edge = torch.randint(
         low=0,
-        high=len(sample_point_label) - 1,
-        size=(2, edge_node_radio * len(sample_point_label)),
+        high=len(sample_label) - 1,
+        size=(2, edge_node_radio * len(sample_label)),
         device=device
     )
-    return sample_point, sample_point_edge, sample_point_label
+    # print("sample_point, sample_edge, sample_label", sample_point.size(), sample_edge.size(), sample_label.size())
+    return sample_point, sample_edge, sample_label
 
 # def generate_outliers_OOD(ID, input_index, negative_samples, K=100, select=100, sampling_ratio=1.0):
 #     data_norm = torch.norm(ID, p=2, dim=1, keepdim=True)
