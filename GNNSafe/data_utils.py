@@ -384,10 +384,10 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
 
     result += [test_score] + [valid_loss]
 
-    if return_score:
-        return result, test_ind_score, test_ood_score
-    else:
-        return result
+    # if return_score:
+    #     return result, test_ind_score, test_ood_score
+    # else:
+    return result
 
 
 def convert_to_adj(edge_index, n_node):

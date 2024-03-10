@@ -1,3 +1,6 @@
+from argparse import Namespace
+
+import numpy as np
 import torch
 import torch_geometric.transforms as T
 from torch_geometric.data import Data
@@ -7,11 +10,17 @@ from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
 from data_utils import to_sparse_tensor
 
 
-def load_dataset(args):
+def load_dataset(args: Namespace):
     """
-    dataset_ind: in-distribution training dataset
-    dataset_ood_tr: ood-distribution training dataset as ood exposure
-    dataset_ood_te: a list of ood testing datasets or one ood testing dataset
+    Load dataset according to the dataset name and ood type
+    Args:
+        args: arguments
+
+    Returns:
+        dataset_ind: in-distribution training dataset
+        dataset_ood_tr: ood-distribution training dataset as ood exposure
+        dataset_ood_te: a list of ood testing datasets or one ood testing dataset
+
     """
     # multi-graph datasets, use one as ind, the other as ood
     if args.dataset == 'twitch':
@@ -24,17 +33,16 @@ def load_dataset(args):
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_proteins_dataset(args.data_dir)
 
     # single graph, use original as ind, modified graphs as ood
-    elif args.dataset in (
-            'cora', 'citeseer', 'pubmed', 'amazon-photo', 'amazon-computer', 'coauthor-cs', 'coauthor-physics',
-            "wiki-cs", "actor", "webkb"):
+    elif args.dataset in [
+        'cora', "actor",
+        'citeseer', 'pubmed',
+        'amazon-photo', 'amazon-computer', 'coauthor-cs',
+        'coauthor-physics', "wiki-cs", "actor", "webkb"
+    ]:
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
 
     else:
-        raise ValueError('Invalid dataname')
-
-    # print(dataset_ind)
-    # print(dataset_ood_tr)
-    # print(dataset_ood_te)
+        raise NotImplementedError
 
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
@@ -234,71 +242,62 @@ def create_label_noise_dataset(data):
     return dataset
 
 
-def load_graph_dataset(data_dir, dataname, ood_type):
+def load_graph_dataset(data_dir, dataset_name, ood_type):
+    """
+    single graph, use original as ind, modified graphs as ood
+    Args:
+        data_dir:
+        dataset_name:
+        ood_type:
+
+    Returns:
+
+    """
     transform = T.NormalizeFeatures()
-    if dataname in ('cora', 'citeseer', 'pubmed'):
+    if dataset_name in ('cora', 'citeseer', 'pubmed'):
         torch_dataset = Planetoid(
             root=f'{data_dir}Planetoid',
             split='public',
-            name=dataname,
+            name=dataset_name,
             transform=transform
         )
         dataset = torch_dataset[0]
-        # print("dataset", dataset)
-        tensor_split_idx = {}
         idx = torch.arange(dataset.num_nodes)
-        # print("idx", idx)
-        # print(dataset.train_mask)
-        # print(dataset.val_mask)
-        # print(dataset.test_mask)
-        tensor_split_idx['train'] = idx[dataset.train_mask]
-        tensor_split_idx['valid'] = idx[dataset.val_mask]
-        tensor_split_idx['test'] = idx[dataset.test_mask]
-        dataset.splits = tensor_split_idx
-        # from pprint import pprint
-        # pprint(tensor_split_idx)
-        # for item in tensor_split_idx.items():
-        #     print(item)
-
-    elif dataname == 'amazon-photo':
-        torch_dataset = Amazon(root=f'{data_dir}Amazon',
-                               name='Photo', transform=transform)
+        dataset.splits = {
+            'train': idx[dataset.train_mask],
+            'valid': idx[dataset.val_mask],
+            'test': idx[dataset.test_mask],
+        }
+        # print("dataset.splits", dataset.splits)
+    elif dataset_name == 'amazon-photo':
+        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Photo', transform=transform)
         dataset = torch_dataset[0]
-    elif dataname == 'amazon-computer':
-        torch_dataset = Amazon(root=f'{data_dir}Amazon',
-                               name='Computers', transform=transform)
+    elif dataset_name == 'amazon-computer':
+        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Computers', transform=transform)
         dataset = torch_dataset[0]
-    elif dataname == 'coauthor-cs':
-        torch_dataset = Coauthor(root=f'{data_dir}Coauthor',
-                                 name='CS', transform=transform)
+    elif dataset_name == 'coauthor-cs':
+        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='CS', transform=transform)
         dataset = torch_dataset[0]
-    elif dataname == 'coauthor-physics':
-        torch_dataset = Coauthor(root=f'{data_dir}Coauthor',
-                                 name='Physics', transform=transform)
+    elif dataset_name == 'coauthor-physics':
+        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='Physics', transform=transform)
         dataset = torch_dataset[0]
-    elif dataname == 'wiki-cs':
+    elif dataset_name == 'wiki-cs':
         torch_dataset = WikiCS(root=f'{data_dir}WikiCS', transform=transform)
         dataset = torch_dataset[0]
-    elif dataname == 'actor':
+    elif dataset_name == 'actor':
         torch_dataset = Actor(root=f'{data_dir}Actor', transform=transform)
         dataset = torch_dataset[0]
-        # Data(x=[7600, 932],
-        # edge_index=[2, 30019],
-        # y=[7600],
-        # train_mask=[7600, 10],
-        # val_mask=[7600, 10],
-        # test_mask=[7600, 10])
-    elif dataname == 'webkb':
+    elif dataset_name == 'webkb':
         torch_dataset = WebKB(name="Cornell", root=f'{data_dir}WebKB', transform=transform)
         dataset = torch_dataset[0]
     else:
         raise NotImplementedError
 
-    print("dataset.num_nodes", dataset.num_nodes)
+    # print("dataset.num_nodes", dataset.num_nodes)
     dataset.node_idx = torch.arange(dataset.num_nodes)
     dataset_ind = dataset
 
-    print("ood_type", ood_type)
+    # print("ood_type", ood_type)
 
     if ood_type == 'structure':
         dataset_ood_tr = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
@@ -307,29 +306,37 @@ def load_graph_dataset(data_dir, dataname, ood_type):
         dataset_ood_tr = create_feat_noise_dataset(dataset)
         dataset_ood_te = create_feat_noise_dataset(dataset)
     elif ood_type == 'label':
-        if dataname == 'cora':
-            class_t = 3
-        elif dataname == 'amazon-photo':
-            class_t = 4
-        elif dataname == 'coauthor-cs':
-            class_t = 4
-        elif dataname == 'wiki-cs':
-            class_t = 4
-        elif dataname == 'actor':
-            class_t = 3
-        elif dataname == 'webkb':
-            class_t = 3
         label = dataset.y
-        # print("label",label)
+        unique_elements = torch.unique(label)
+        class_t = int(np.median(unique_elements))
+        # print("class_t", class_t)
+        # if dataset_name == 'cora':
+        #     class_t = 3
+        # elif dataset_name == 'amazon-photo':
+        #     class_t = 4
+        # elif dataset_name == 'coauthor-cs':
+        #     class_t = 4
+        # elif dataset_name == 'wiki-cs':
+        #     class_t = 4
+        # elif dataset_name == 'actor':
+        #     class_t = 2
+        # elif dataset_name == 'webkb':
+        #     class_t = 3
+        # label = dataset.y
 
+        # unique_elements = torch.unique(label)
+        # print('Unique elements:', unique_elements)
+        # print('Unique elements:', unique_elements.tolist())
+        # median_value = np.median(unique_elements)
+        # print(median_value)
         center_node_mask_ind = (label > class_t)
-        print(center_node_mask_ind.shape)
         idx = torch.arange(label.size(0))
         dataset_ind.node_idx = idx[center_node_mask_ind]
 
-        if dataname in ('cora', 'citeseer', 'pubmed'):
+        # if dataset_name in ('cora', 'citeseer', 'pubmed'):
+        #     split_idx = dataset.splits
+        if dataset_name in ('cora', 'citeseer', 'pubmed', 'arxiv'):
             split_idx = dataset.splits
-        if dataname in ('cora', 'citeseer', 'pubmed', 'arxiv'):
             tensor_split_idx = {}
             idx = torch.arange(label.size(0))
             for key in split_idx:
@@ -337,6 +344,7 @@ def load_graph_dataset(data_dir, dataname, ood_type):
                 mask[torch.as_tensor(split_idx[key])] = True
                 tensor_split_idx[key] = idx[mask * center_node_mask_ind]
             dataset_ind.splits = tensor_split_idx
+            # print("dataset_ind.splits", dataset_ind.splits)
 
         dataset_ood_tr = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
         dataset_ood_te = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)

@@ -6,18 +6,20 @@
 
 cd ../GNNSafe || exit
 
-epochs=50
+epochs=30
 device=0
+datasets=("cora" "actor")
+ood_types=("structure" "feature" "label")
 
-for data in "cora"; do
-  for ood in "structure"; do
+for dataset in "${datasets[@]}"; do
+  for ood_type in "${ood_types[@]}"; do
     for method in "msp" "gnnsafe"; do
       for backbone in "gcn" "mlp" "gat" "mixhop" "gcnjk" "gatjk"; do
         python main.py \
           --method $method \
           --backbone $backbone \
-          --dataset $data \
-          --ood_type $ood \
+          --dataset "$dataset" \
+          --ood_type "$ood_type" \
           --mode detect \
           --use_bn \
           --device $device \
@@ -28,15 +30,15 @@ for data in "cora"; do
   done
 done
 
-for data in "cora"; do
-  for ood in "structure"; do
+for dataset in "${datasets[@]}"; do
+  for ood_type in "${ood_types[@]}"; do
     for method in "msp" "gnnsafe"; do
       for backbone in "gcn" "mlp" "gat" "mixhop" "gcnjk" "gatjk"; do
         python main.py \
           --method $method \
           --backbone $backbone \
-          --dataset $data \
-          --ood_type $ood \
+          --dataset "$dataset" \
+          --ood_type "$ood_type" \
           --mode detect \
           --use_bn \
           --device $device \
@@ -46,15 +48,15 @@ for data in "cora"; do
   done
 done
 
-for data in "cora"; do
-  for ood in "structure"; do
+for dataset in "${datasets[@]}"; do
+  for ood_type in "${ood_types[@]}"; do
     for method in "OE" "ODIN" "Mahalanobis"; do
       for backbone in "gcn" "mlp" "gat"; do
         python main.py \
           --method $method \
           --backbone $backbone \
-          --dataset $data \
-          --ood_type $ood \
+          --dataset "$dataset" \
+          --ood_type "$ood_type" \
           --mode detect \
           --use_bn \
           --device $device \
@@ -65,15 +67,15 @@ for data in "cora"; do
   done
 done
 
-for data in "cora"; do
-  for ood in "structure"; do
+for dataset in "${datasets[@]}"; do
+  for ood_type in "${ood_types[@]}"; do
     for method in "OE" "ODIN" "Mahalanobis"; do
       for backbone in "gcn" "mlp" "gat"; do
         python main.py \
           --method $method \
           --backbone $backbone \
-          --dataset $data \
-          --ood_type $ood \
+          --dataset "$dataset" \
+          --ood_type "$ood_type" \
           --mode detect \
           --use_bn \
           --device $device \

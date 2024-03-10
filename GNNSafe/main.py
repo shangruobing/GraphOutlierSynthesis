@@ -56,36 +56,28 @@ else:
 
 c = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
 d = dataset_ind.x.shape[1]
-"""
-Actor Datasets:
-# d c 932 5
-# features 932 | classes 5
-"""
 
-print(
-    f"ind dataset {args.dataset}: all nodes {dataset_ind.num_nodes} | centered nodes {dataset_ind.node_idx.shape[0]} | edges {dataset_ind.edge_index.size(1)} | "
-    + f"classes {c} | feats {d}")
-print(
-    f"ood tr dataset {args.dataset}: all nodes {dataset_ood_tr.num_nodes} | centered nodes {dataset_ood_tr.node_idx.shape[0]} | edges {dataset_ood_tr.edge_index.size(1)}")
+print(f"ind    dataset {args.dataset}: all nodes {dataset_ind.num_nodes} | centered nodes {dataset_ind.node_idx.shape[0]} | edges {dataset_ind.edge_index.size(1)} | classes {c} | feats {d}")
+print(f"ood tr dataset {args.dataset}: all nodes {dataset_ood_tr.num_nodes} | centered nodes {dataset_ood_tr.node_idx.shape[0]} | edges {dataset_ood_tr.edge_index.size(1)}")
+print(f"ood te dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | centered nodes {dataset_ood_te.node_idx.shape[0]} | edges {dataset_ood_te.edge_index.size(1)}")
 
-if isinstance(dataset_ood_te, list):
-    for i, data in enumerate(dataset_ood_te):
-        print(
-            f"ood te dataset {i} {args.dataset}: all nodes {data.num_nodes} | centered nodes {data.node_idx.shape[0]} | edges {data.edge_index.size(1)}")
-else:
-    print(
-        f"ood te dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | centered nodes {dataset_ood_te.node_idx.shape[0]} | edges {dataset_ood_te.edge_index.size(1)}")
+# if isinstance(dataset_ood_te, list):
+#     for i, data in enumerate(dataset_ood_te):
+#         print(
+#             f"ood te dataset {i} {args.dataset}: all nodes {data.num_nodes} | centered nodes {data.node_idx.shape[0]} | edges {data.edge_index.size(1)}")
+# else:
+#     print(f"ood te dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | centered nodes {dataset_ood_te.node_idx.shape[0]} | edges {dataset_ood_te.edge_index.size(1)}")
 
 if args.method == 'msp':
-    model = MSP(d, c, args).to(device)
+    model = MSP(d, c, args)
 elif args.method in 'gnnsafe':
-    model = GNNSafe(d, c, args).to(device)
+    model = GNNSafe(d, c, args)
 elif args.method == 'OE':
-    model = OE(d, c, args).to(device)
+    model = OE(d, c, args)
 elif args.method == "ODIN":
-    model = ODIN(d, c, args).to(device)
+    model = ODIN(d, c, args)
 elif args.method == "Mahalanobis":
-    model = Mahalanobis(d, c, args).to(device)
+    model = Mahalanobis(d, c, args)
 else:
     raise ValueError(f"Unknown method: {args.method}")
 
@@ -94,20 +86,18 @@ if args.dataset in ('proteins', 'ppi'):  # multi-label binary classification
 else:
     criterion = nn.NLLLoss()
 
-# metric for classification #
 if args.dataset in ('proteins', 'ppi', 'twitch'):  # binary classification
     eval_func = eval_rocauc
 else:
     eval_func = eval_acc
 
-# logger for result report #
 if args.mode == 'classify':
     logger = ClassifyLogger(args.runs, args)
 else:
     logger = DetectLogger(args.runs, args)
 
 model.train()
-print('MODEL:', model)
+print(model)
 
 epoch_info = ""
 for run in range(args.runs):
@@ -140,7 +130,7 @@ for run in range(args.runs):
                 print(info)
     logger.print_statistics(run)
 
-results = logger.print_statistics()
+logger.print_statistics()
 
 metrics = logger.get_statistics()
 insert_row(

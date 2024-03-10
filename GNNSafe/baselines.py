@@ -191,7 +191,7 @@ class ODIN(nn.Module):
         odin_score = self.ODIN(dataset, node_idx, device, args.T, args.noise)
         return torch.Tensor(-np.max(odin_score, 1))
 
-    def ODIN(self, dataset, node_idx, device, temper, noiseMagnitude1):
+    def ODIN(self, dataset, node_idx, device, temper, noiseMagnitude):
         # Calculating the perturbation we need to add, that is,
         # the sign of gradient of cross entropy loss w.r.t. input
         data = dataset.x.to(device)
@@ -221,7 +221,9 @@ class ODIN(nn.Module):
         # gradient.index_copy_(1, torch.LongTensor([2]).cuda(), gradient.index_select(1, torch.LongTensor([2]).cuda()) / (66.7/255.0))
 
         # Adding small perturbations to images
-        tempInputs = torch.add(data.data, -noiseMagnitude1, gradient)
+        tempInputs = torch.add(input=data.data, other=-noiseMagnitude, out=gradient)
+        # tempInputs = torch.add(data.data, -noiseMagnitude1, gradient)
+
         outputs = self.encoder(Variable(tempInputs), edge_index)[node_idx]
         outputs = outputs / temper
         # Calculating the confidence after adding perturbations
@@ -352,7 +354,8 @@ class Mahalanobis(nn.Module):
         gradient.index_copy_(1, torch.LongTensor([2]).to(device),
                      gradient.index_select(1, torch.LongTensor([2]).to(device)) / (66.7 / 255.0))'''
 
-        tempInputs = torch.add(data.data, -magnitude, gradient)
+        tempInputs = torch.add(input=data.data, other=-magnitude, out=gradient)
+        # tempInputs = torch.add(data.data, -magnitude, gradient)
         with torch.no_grad():
             noise_out_features = self.encoder.intermediate_forward(tempInputs, edge_index, layer_index)[node_idx]
         noise_out_features = noise_out_features.view(noise_out_features.size(0), noise_out_features.size(1), -1)
