@@ -1,14 +1,14 @@
 import argparse
 import sys
 from pprint import pprint
+import torch
+import torch.nn as nn
 
 sys.path.append('..')
 
-from baselines import *
+from baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
 from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
 from dataset import load_dataset
-from gnnsafe import *
-from models import *
 from logger import ClassifyLogger, DetectLogger
 from parse import parser_add_main_args
 
@@ -116,38 +116,42 @@ epoch_info = ""
 for run in range(args.runs):
     model.reset_parameters()
     model.to(device)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
-    if args.method == 'GPN':
-        optimizer, _ = model.get_optimizer(lr=args.lr, weight_decay=args.weight_decay)
-        warmup_optimizer = model.get_warmup_optimizer(lr=args.lr, weight_decay=args.weight_decay)
-    else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    # if args.method == 'GPN':
+    #     optimizer, _ = model.get_optimizer(lr=args.lr, weight_decay=args.weight_decay)
+    #     warmup_optimizer = model.get_warmup_optimizer(lr=args.lr, weight_decay=args.weight_decay)
+    # else:
+    #     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
-    if args.method == 'SGCN':
-        teacher_optimizer = torch.optim.Adam(teacher.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-        for epoch in range(args.epochs):
-            teacher.train()
-            # for d_in, d_out in zip(train_loader_ind, train_loader_ood):
-            teacher_optimizer.zero_grad()
-            teacher_loss = teacher.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
-            teacher_loss.backward()
-            teacher_optimizer.step()
-        model.create_storage(dataset_ind, teacher, device)
+    # if args.method == 'SGCN':
+    #     teacher_optimizer = torch.optim.Adam(teacher.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    #     for epoch in range(args.epochs):
+    #         teacher.train()
+    #         # for d_in, d_out in zip(train_loader_ind, train_loader_ood):
+    #         teacher_optimizer.zero_grad()
+    #         teacher_loss = teacher.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
+    #         teacher_loss.backward()
+    #         teacher_optimizer.step()
+    #     model.create_storage(dataset_ind, teacher, device)
 
     for epoch in range(args.epochs):
         model.train()
+        optimizer.zero_grad()
+        loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
+        loss.backward()
+        optimizer.step()
 
-        if args.method == 'GPN' and epoch < args.GPN_warmup:
-            warmup_optimizer.zero_grad()
-            loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
-            loss.backward()
-            warmup_optimizer.step()
-        else:
-            optimizer.zero_grad()
-            loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
-            loss.backward()
-            optimizer.step()
+        # if args.method == 'GPN' and epoch < args.GPN_warmup:
+        #     warmup_optimizer.zero_grad()
+        #     loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
+        #     loss.backward()
+        #     warmup_optimizer.step()
+        # else:
+        #     optimizer.zero_grad()
+        #     loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
+        #     loss.backward()
+        #     optimizer.step()
 
         if args.mode == 'classify':
             result = evaluate_classify(model, dataset_ind, eval_func, criterion, args, device)
