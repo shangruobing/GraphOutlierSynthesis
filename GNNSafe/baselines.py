@@ -1,11 +1,16 @@
 from argparse import Namespace
 
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import torch.autograd as autograd
 from torch.autograd import Variable
+from torch_sparse import SparseTensor, matmul
+from torch_geometric.utils import degree
 
 from OutliersGenerate.KNN import generate_outliers
-from backbone import *
+from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
 
 
 class MSP(nn.Module):
@@ -102,6 +107,8 @@ class OE(nn.Module):
         elif args.backbone == 'gat':
             self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+        elif args.backbone == 'appnp':
+            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
 
@@ -176,6 +183,8 @@ class ODIN(nn.Module):
         elif args.backbone == 'gat':
             self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+        elif args.backbone == 'appnp':
+            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
 
@@ -266,7 +275,6 @@ class ODIN(nn.Module):
         return loss
 
 
-# noinspection PyUnreachableCode
 class Mahalanobis(nn.Module):
     def __init__(self, d, c, args: Namespace):
         super(Mahalanobis, self).__init__()
@@ -284,6 +292,8 @@ class Mahalanobis(nn.Module):
         elif args.backbone == 'gat':
             self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+        elif args.backbone == 'appnp':
+            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
 
@@ -484,4 +494,223 @@ class Mahalanobis(nn.Module):
 
         if args.generate_ood:
             loss += 0.001 * sample_sup_loss
+        return loss
+
+
+class MaxLogits(nn.Module):
+    def __init__(self, d, c, args: Namespace):
+        super(MaxLogits, self).__init__()
+        if args.backbone == 'gcn':
+            self.encoder = GCN(in_channels=d,
+                               hidden_channels=args.hidden_channels,
+                               out_channels=c,
+                               num_layers=args.num_layers,
+                               dropout=args.dropout,
+                               use_bn=args.use_bn)
+        elif args.backbone == 'mlp':
+            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
+                               out_channels=c, num_layers=args.num_layers,
+                               dropout=args.dropout)
+        elif args.backbone == 'appnp':
+            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
+        elif args.backbone == 'gat':
+            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+        else:
+            raise NotImplementedError
+
+    def reset_parameters(self):
+        self.encoder.reset_parameters()
+
+    def forward(self, dataset, device):
+        x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
+        return self.encoder(x, edge_index)
+
+    def detect(self, dataset, node_idx, device, args):
+
+        logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
+        if args.dataset in ('proteins', 'ppi'):
+            pred = torch.sigmoid(logits).unsqueeze(-1)
+            pred = torch.cat([pred, 1 - pred], dim=-1)
+            max_logits = pred.max(dim=-1)[0]
+            return max_logits.sum(dim=1)
+        else:
+            return logits.max(dim=1)[0]
+
+    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+
+        train_idx = dataset_ind.splits['train']
+        logits_in = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))[train_idx]
+        if args.dataset in ('proteins', 'ppi'):
+            loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
+        else:
+            pred_in = F.log_softmax(logits_in, dim=1)
+            loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+        return loss
+
+
+class EnergyModel(nn.Module):
+    def __init__(self, d, c, args: Namespace):
+        super(EnergyModel, self).__init__()
+        if args.backbone == 'gcn':
+            self.encoder = GCN(in_channels=d,
+                               hidden_channels=args.hidden_channels,
+                               out_channels=c,
+                               num_layers=args.num_layers,
+                               dropout=args.dropout,
+                               use_bn=args.use_bn)
+        elif args.backbone == 'mlp':
+            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
+                               out_channels=c, num_layers=args.num_layers,
+                               dropout=args.dropout)
+        elif args.backbone == 'sgc':
+            self.encoder = SGC(in_channels=d, out_channels=c, hops=args.hops)
+        elif args.backbone == 'gat':
+            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+        else:
+            raise NotImplementedError
+
+    def reset_parameters(self):
+        self.encoder.reset_parameters()
+
+    def forward(self, dataset, device):
+        x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
+        return self.encoder(x, edge_index)
+
+    def detect(self, dataset, node_idx, device, args):
+
+        logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
+        if args.dataset in ('proteins', 'ppi'):
+            logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
+            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
+        else:
+            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
+        return neg_energy
+
+    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+
+        train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
+
+        logits_in = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))[train_in_idx]
+        logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
+
+        if args.dataset in ('proteins', 'ppi'):
+            sup_loss = criterion(logits_in, dataset_ind.y[train_in_idx].to(device).to(torch.float))
+        else:
+            pred_in = F.log_softmax(logits_in, dim=1)
+            sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
+
+        '''if args.dataset in ('proteins', 'ppi'):
+            logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
+            logits_out = torch.stack([logits_out, torch.zeros_like(logits_out)], dim=2)
+            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1).sum(dim=1)
+            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1).sum(dim=1)
+        else:
+            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
+            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
+        if energy_in.shape[0] != energy_out.shape[0]:
+            min_n = min(energy_in.shape[0], energy_out.shape[0])
+            energy_in = energy_in[:min_n]
+            energy_out = energy_out[:min_n]
+        print(energy_in.mean().data, energy_out.mean().data)
+        reg_loss = torch.mean(F.relu(energy_in - args.m_in) ** 2 + F.relu(args.m_out - energy_out) ** 2)
+        # reg_loss = torch.mean(F.relu(energy_in - energy_out - args.m) ** 2)
+
+        loss = sup_loss + args.lamda * reg_loss'''
+        loss = sup_loss
+
+        return loss
+
+
+class EnergyProp(nn.Module):
+    def __init__(self, d, c, args: Namespace):
+        super(EnergyProp, self).__init__()
+        if args.backbone == 'gcn':
+            self.encoder = GCN(in_channels=d,
+                               hidden_channels=args.hidden_channels,
+                               out_channels=c,
+                               num_layers=args.num_layers,
+                               dropout=args.dropout,
+                               use_bn=args.use_bn)
+        elif args.backbone == 'mlp':
+            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
+                               out_channels=c, num_layers=args.num_layers,
+                               dropout=args.dropout)
+        elif args.backbone == 'sgc':
+            self.encoder = SGC(in_channels=d, out_channels=c, hops=args.hops)
+        elif args.backbone == 'gat':
+            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+        else:
+            raise NotImplementedError
+
+    def reset_parameters(self):
+        self.encoder.reset_parameters()
+
+    def forward(self, dataset, device):
+        x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
+        return self.encoder(x, edge_index)
+
+    def propagation(self, e, edge_index, l=1, alpha=0.5):
+        e = e.unsqueeze(1)
+        N = e.shape[0]
+        row, col = edge_index
+        d = degree(col, N).float()
+        d_norm = 1. / d[col]
+        value = torch.ones_like(row) * d_norm
+        value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
+        adj = SparseTensor(row=col, col=row, value=value, sparse_sizes=(N, N))
+        for _ in range(l):
+            e = e * alpha + matmul(adj, e) * (1 - alpha)
+        return e.squeeze(1)
+
+    def detect(self, dataset, node_idx, device, args):
+
+        x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
+        logits = self.encoder(x, edge_index)
+        if args.dataset in ('proteins', 'ppi'):
+            logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
+            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
+        else:
+            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
+        neg_energy_prop = self.propagation(neg_energy, edge_index, args.prop_layers, args.alpha)
+        return neg_energy_prop[node_idx]
+
+    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+        x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
+        x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
+        logits_in = self.encoder(x_in, edge_index_in)
+        logits_out = self.encoder(x_out, edge_index_out)
+
+        train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
+
+        if args.dataset in ('proteins', 'ppi'):
+            sup_loss = criterion(logits_in[train_in_idx], dataset_ind.y[train_in_idx].to(device).to(torch.float))
+        else:
+            pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
+            sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
+
+        '''if args.dataset in ('proteins', 'ppi'):
+            logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
+            logits_out = torch.stack([logits_out, torch.zeros_like(logits_out)], dim=2)
+            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1).sum(dim=1)
+            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1).sum(dim=1)
+        else:
+            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
+            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
+        energy_prop_in = self.propagation(energy_in, edge_index_in, args.prop_layers, args.alpha)[train_in_idx]
+        energy_prop_out = self.propagation(energy_out, edge_index_out, args.prop_layers, args.alpha)[train_ood_idx]
+
+        if energy_prop_in.shape[0] != energy_prop_out.shape[0]:
+            min_n = min(energy_prop_in.shape[0], energy_prop_out.shape[0])
+            energy_prop_in = energy_prop_in[:min_n]
+            energy_prop_out = energy_prop_out[:min_n]
+        print(energy_prop_in.mean().data, energy_prop_out.mean().data)
+        reg_loss = torch.mean(F.relu(energy_prop_in - args.m_in) ** 2 + F.relu(args.m_out - energy_prop_out) ** 2)
+        # reg_loss = torch.mean(F.relu(energy_prop_in - energy_prop_out - args.m) ** 2)
+
+        loss = sup_loss + args.lamda * reg_loss'''
+        loss = sup_loss
+
         return loss

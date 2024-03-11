@@ -1,5 +1,5 @@
 from argparse import Namespace
-
+import torch.nn as nn
 from torch_geometric.data import Data
 from torch_geometric.utils import degree
 

@@ -50,3 +50,20 @@ def parser_add_main_args(parser):
     # generate outliers
     parser.add_argument('--generate_ood', action='store_true')
     parser.add_argument('--generate_logit', action='store_true')
+
+    # GPN
+    parser.add_argument('--prop_layers', type=int, default=2)
+    parser.add_argument('--GPN_detect_type', type=str, default='Epist', choices=['Alea', 'Epist', 'Epist_wo_Net'])
+    parser.add_argument('--GPN_warmup', type=int, default=5)
+
+    # GKDE hyperparameter
+    parser.add_argument('--gkde_seed', default=42, type=int)
+    parser.add_argument('--gkde_dim_hidden', default=16, type=int)
+    parser.add_argument('--gkde_dropout_prob', default=0.5, type=float)
+    parser.add_argument('--gkde_use_kernel', default=1, type=int)
+    parser.add_argument('--gkde_lambda_1', default=0.001, type=float)
+    parser.add_argument('--gkde_teacher_training', default=1, type=int)
+    parser.add_argument('--gkde_use_bayesian_dropout', default=0, type=int)
+    parser.add_argument('--gkde_sample_method', default='log_evidence', type=str)
+    parser.add_argument('--gkde_num_samples_dropout', default=10, type=int)
+    parser.add_argument('--gkde_loss_reduction', default=None, type=str)

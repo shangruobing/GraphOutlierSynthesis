@@ -3,7 +3,6 @@ import scipy.sparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# from torch_geometric.nn import GCNConv, SGConv, GATConv, JumpingKnowledge, APPNP, MessagePassing
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from torch_sparse import SparseTensor, matmul
 from torch_geometric.nn.conv import GCNConv, SGConv, GATConv, MessagePassing, APPNP
@@ -660,8 +659,3 @@ class GPRGNN(nn.Module):
             x = F.dropout(x, p=self.dprate, training=self.training)
             x = self.prop1(x, edge_index)
             return x
-
-
-if __name__ == '__main__':
-    a = torch.ones((3, 4))
-    print(len(a.shape))
