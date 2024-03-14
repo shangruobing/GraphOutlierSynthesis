@@ -1,9 +1,13 @@
+"""
+    @deprecated
+"""
 import argparse
+import torch
+import torch.nn as nn
 import time
-from baselines import *
+from baselines import MSP, EnergyProp, EnergyModel
 from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
 from dataset import load_dataset
-from gnnsafe import *
 from logger import ClassifyLogger, DetectLogger
 from parse import parser_add_main_args
 from OutliersGenerate.utils import get_device, fix_seed
@@ -54,7 +58,7 @@ print(f"Discussion of {args.dis_type} on dataset {args.dataset} with ood type {a
 if args.method == 'msp':
     model = MSP(d, c, args).to(device)
 elif args.method == 'energybase':
-    model = EnergyBase(d, c, args).to(device)
+    model = EnergyModel(d, c, args).to(device)
 elif args.method == 'energyprop':
     model = EnergyProp(d, c, args).to(device)
 

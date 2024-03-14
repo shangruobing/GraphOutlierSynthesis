@@ -5,15 +5,17 @@ import torch
 import numpy as np
 
 
-def get_device(args: Namespace):
+def get_device(args: Namespace) -> torch.device:
     if args.cpu:
         device = torch.device("cpu")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
     else:
         device = torch.device("cuda:" + str(args.device)) if torch.cuda.is_available() else torch.device("cpu")
     return device
 
 
-def fix_seed(seed):
+def fix_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -23,17 +25,17 @@ def fix_seed(seed):
 
 def get_now_datetime() -> str:
     """
-    获取现在的日期时间
+    get now datetime
     Returns:
-        2023-10-01 12:30:30格式的日期时间
+        2023-10-01 12:30:30
     """
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_now_date() -> str:
     """
-    获取今天的日期
+    get now date
     Returns:
-        20231001格式的日期
+        20231001
     """
     return datetime.now().strftime("%Y%m%d")
