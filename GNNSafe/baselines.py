@@ -66,7 +66,6 @@ class MSP(nn.Module):
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -140,7 +139,6 @@ class OE(nn.Module):
         logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
 
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -251,7 +249,6 @@ class ODIN(nn.Module):
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -473,7 +470,6 @@ class Mahalanobis(nn.Module):
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -545,7 +541,6 @@ class MaxLogits(nn.Module):
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -618,7 +613,6 @@ class EnergyModel(nn.Module):
         logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
 
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -724,7 +718,6 @@ class EnergyProp(nn.Module):
         logits_out = self.encoder(x_out, edge_index_out)
 
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -818,14 +811,14 @@ class GNNSafe(nn.Module):
             self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.optimizer = nn.Sequential(
-            nn.Linear(in_features=7, out_features=16, bias=True),
-            nn.ReLU(),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(),
-            nn.Linear(in_features=8, out_features=2, bias=True),
-            # nn.Softmax(dim=1)
-        )
+        # self.optimizer = nn.Sequential(
+        #     nn.Linear(in_features=7, out_features=16, bias=True),
+        #     nn.ReLU(),
+        #     nn.Linear(in_features=16, out_features=8, bias=True),
+        #     nn.ReLU(),
+        #     nn.Linear(in_features=8, out_features=2, bias=True),
+        #     # nn.Softmax(dim=1)
+        # )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -933,20 +926,20 @@ class GNNSafe(nn.Module):
         else:
             sample_sup_loss = 0
 
-        if args.generate_logit:
-            logit_point, sample_edge, sample_label = generate_outliers(
-                logits_in.clone().detach(),
-                device=device,
-                num_nodes=logits_in.shape[0],
-                num_features=logits_in.shape[1],
-                num_edges=dataset_ind.num_edges,
-            )
-            logit_label = torch.ones(logit_point.shape[0], dtype=torch.long, device=device).view(-1)
-            logit_sample_point_logits_out = self.optimizer(logit_point)
-            logit_sample_point_out = F.log_softmax(logit_sample_point_logits_out, dim=1)
-            logit_sample_sup_loss = criterion(logit_sample_point_out, logit_label)
-        else:
-            logit_sample_sup_loss = 0
+        # if args.generate_logit:
+        #     logit_point, sample_edge, sample_label = generate_outliers(
+        #         logits_in.clone().detach(),
+        #         device=device,
+        #         num_nodes=logits_in.shape[0],
+        #         num_features=logits_in.shape[1],
+        #         num_edges=dataset_ind.num_edges,
+        #     )
+        #     logit_label = torch.ones(logit_point.shape[0], dtype=torch.long, device=device).view(-1)
+        #     logit_sample_point_logits_out = self.optimizer(logit_point)
+        #     logit_sample_point_out = F.log_softmax(logit_sample_point_logits_out, dim=1)
+        #     logit_sample_sup_loss = criterion(logit_sample_point_out, logit_label)
+        # else:
+        #     logit_sample_sup_loss = 0
 
         train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
 
@@ -992,14 +985,16 @@ class GNNSafe(nn.Module):
         else:
             loss = sup_loss
 
+        # print(sample_sup_loss)
+        # print(loss)
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += 0.01 * sample_sup_loss
             # sample_sup_loss tensor(3.7787)
             # print("sample_sup_loss", sample_sup_loss)
             # print("sample_sup_loss", 0.001 * sample_sup_loss)
 
-        if args.generate_logit:
-            loss += 0.01 * logit_sample_sup_loss
+        # if args.generate_logit:
+        #     loss += 0.01 * logit_sample_sup_loss
             # logit_sample_sup_loss tensor(0.7226)
             # print("logit_sample_sup_loss", logit_sample_sup_loss)
             # print("logit_sample_sup_loss", 0.01 * logit_sample_sup_loss)

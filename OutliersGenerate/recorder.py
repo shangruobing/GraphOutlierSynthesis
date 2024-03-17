@@ -7,8 +7,6 @@ import pandas as pd
 from OutliersGenerate.config import FOLDER_PATH, RUNNING_RESULT_PATH
 from OutliersGenerate.utils import get_now_datetime
 
-FILE_PATH = RUNNING_RESULT_PATH
-
 
 def insert_row(
         args: Namespace,
@@ -17,7 +15,7 @@ def insert_row(
         AUROC: str,
         AUPR: str,
         FPR: str,
-        SCORE: str,
+        SCORE: str
 ) -> None:
     """
     将LLM的回答等信息存入运行结果表格
@@ -30,6 +28,7 @@ def insert_row(
         FPR: str,
         SCORE: str,
     """
+    FILE_PATH = FOLDER_PATH / f"{args.dataset}.csv"
     if not os.path.exists(FOLDER_PATH):
         os.mkdir(FOLDER_PATH)
     if os.path.exists(FILE_PATH):

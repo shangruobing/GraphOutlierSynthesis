@@ -335,7 +335,7 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
 
         # if dataset_name in ('cora', 'citeseer', 'pubmed'):
         #     split_idx = dataset.splits
-        if dataset_name in ('cora', 'citeseer', 'pubmed', 'arxiv'):
+        if dataset_name in ('cora', 'citeseer', 'pubmed', 'arxiv', "actor"):
             split_idx = dataset.splits
             tensor_split_idx = {}
             idx = torch.arange(label.size(0))

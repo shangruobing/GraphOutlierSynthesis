@@ -54,3 +54,5 @@ watch -n 2 -d nvidia-smi
 
 - Cora
 - Actor
+- Coauthor-CS
+- Amazon-Photo

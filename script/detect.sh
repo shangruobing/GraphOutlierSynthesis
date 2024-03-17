@@ -3,13 +3,22 @@
 # conda deactivate && cd RuobingShang && source venv/bin/activate
 # cd GraphOOD-GNNSafe/script
 # bash detect.sh
-#--method gnnsafe --backbone gcn --dataset cora --ood_type label --mode detect --use_bn --device 3 --epochs 50 --generate_ood
+# python main.py \
+# --method gnnsafe \
+# --backbone gcn \
+# --dataset cora \
+# --ood_type label \
+# --mode detect \
+# --use_bn \
+# --device 3 \
+# --epochs 50 \
+# --generate_ood
 
 cd ../GNNSafe || exit
 
 epochs=100
-device=0
-datasets=("cora" "actor")
+device=3
+datasets=("cora" "actor" "coauthor-cs" "amazon-photo")
 ood_types=("structure" "feature" "label")
 
 for dataset in "${datasets[@]}"; do

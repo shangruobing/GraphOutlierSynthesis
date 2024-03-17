@@ -21,6 +21,14 @@ def generate_outliers(
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Generate outliers using the KNN algorithm.
+    我们利用每个训练批次的 ID 数据生成 OOD 数据。
+    首先，对输入数据进行归一化处理，然后根据设定的采样率参数，选取部分数据存入 Faiss 中等待检索。
+    我们使用 KNN 找到每个元素的 K 个最近邻，然后选择其最远的邻居。这一过程有助于找到处于数据集边界的样本。
+    然后，我们使用均值为 0、协方差矩阵为单位矩阵的多元高斯分布生成噪音点。
+    将找到的边界点和噪音点合并，形成采样点集合。
+    我们再次利用 Faiss 进行检索，找到每个采样点的 K 个最近邻，然后选择其最远的邻居。这一过程有助于找到加入噪音点后的采样点。
+    我们将利用这个采样点集合与原始数据集中边数目与节点数目的比例生成采样边。
+    这个步骤生成的OOD数据集将被输入encoder，从而得到当前模型对于OOD数据预测的loss。
     Args:
         dataset: the input dataset
         num_nodes: the number of nodes
@@ -96,7 +104,14 @@ def generate_outliers(
         size=(2, edge_node_radio * num_sample_points),
         device=device
     )
-    sample_labels = torch.zeros(size=num_sample_points, dtype=torch.long, device=device)
+    sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
+
+    # print("num_nodes", num_nodes)
+    # print("num_features", num_features)
+    # print("num_edges", num_edges)
+    # print("sample_points", sample_points.size())
+    # print("sample_edges", sample_edges.size())
+    # print("sample_labels", sample_labels.size())
     return sample_points, sample_edges, sample_labels
 
 
