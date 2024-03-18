@@ -309,26 +309,7 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
         label = dataset.y
         unique_elements = torch.unique(label)
         class_t = int(np.median(unique_elements))
-        # print("class_t", class_t)
-        # if dataset_name == 'cora':
-        #     class_t = 3
-        # elif dataset_name == 'amazon-photo':
-        #     class_t = 4
-        # elif dataset_name == 'coauthor-cs':
-        #     class_t = 4
-        # elif dataset_name == 'wiki-cs':
-        #     class_t = 4
-        # elif dataset_name == 'actor':
-        #     class_t = 2
-        # elif dataset_name == 'webkb':
-        #     class_t = 3
-        # label = dataset.y
 
-        # unique_elements = torch.unique(label)
-        # print('Unique elements:', unique_elements)
-        # print('Unique elements:', unique_elements.tolist())
-        # median_value = np.median(unique_elements)
-        # print(median_value)
         center_node_mask_ind = (label > class_t)
         idx = torch.arange(label.size(0))
         dataset_ind.node_idx = idx[center_node_mask_ind]
@@ -344,7 +325,6 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
                 mask[torch.as_tensor(split_idx[key])] = True
                 tensor_split_idx[key] = idx[mask * center_node_mask_ind]
             dataset_ind.splits = tensor_split_idx
-            # print("dataset_ind.splits", dataset_ind.splits)
 
         dataset_ood_tr = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
         dataset_ood_te = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)

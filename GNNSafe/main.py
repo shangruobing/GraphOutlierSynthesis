@@ -24,19 +24,6 @@ fix_seed(args.seed)
 device = get_device(args)
 
 dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
-"""
-Actor Datasets:
-dataset_ind:
-Data(x=[7600, 932], edge_index=[2, 30019], y=[7600], 
-    train_mask=[7600, 10], val_mask=[7600, 10], test_mask=[7600, 10], 
-    node_idx=[7600])
-
-dataset_ood_tr
-Data(x=[7600, 932], edge_index=[2, 21146], y=[7600], node_idx=[7600])
-
-dataset_ood_te
-Data(x=[7600, 932], edge_index=[2, 21106], y=[7600], node_idx=[7600])
-"""
 
 if len(dataset_ind.y.shape) == 1:
     dataset_ind.y = dataset_ind.y.unsqueeze(1)
@@ -62,13 +49,6 @@ print(f"ind    dataset {args.dataset}: all nodes {dataset_ind.num_nodes} | cente
 print(f"ood tr dataset {args.dataset}: all nodes {dataset_ood_tr.num_nodes} | centered nodes {dataset_ood_tr.node_idx.shape[0]} | edges {dataset_ood_tr.edge_index.size(1)}")
 print(f"ood te dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | centered nodes {dataset_ood_te.node_idx.shape[0]} | edges {dataset_ood_te.edge_index.size(1)}")
 
-# if isinstance(dataset_ood_te, list):
-#     for i, data in enumerate(dataset_ood_te):
-#         print(
-#             f"ood te dataset {i} {args.dataset}: all nodes {data.num_nodes} | centered nodes {data.node_idx.shape[0]} | edges {data.edge_index.size(1)}")
-# else:
-#     print(f"ood te dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | centered nodes {dataset_ood_te.node_idx.shape[0]} | edges {dataset_ood_te.edge_index.size(1)}")
-
 if args.method == 'msp':
     model = MSP(d, c, args)
 elif args.method in 'gnnsafe':
@@ -79,18 +59,12 @@ elif args.method == "ODIN":
     model = ODIN(d, c, args)
 elif args.method == "Mahalanobis":
     model = Mahalanobis(d, c, args)
-# GKN
 elif args.method == 'maxlogits':
     model = MaxLogits(d, c, args).to(device)
 elif args.method == 'energymodel':
     model = EnergyModel(d, c, args).to(device)
 elif args.method == 'energyprop':
     model = EnergyProp(d, c, args).to(device)
-# elif args.method == 'GPN':
-#     model = GPN(d, c, args).to(device)
-# elif args.method == 'SGCN':
-#     teacher = MaxLogits(d, c, args).to(device)
-#     model = SGCN(d, c, args).to(device)
 else:
     raise ValueError(f"Unknown method: {args.method}")
 
@@ -117,41 +91,16 @@ for run in range(args.runs):
     model.reset_parameters()
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-
-    # if args.method == 'GPN':
-    #     optimizer, _ = model.get_optimizer(lr=args.lr, weight_decay=args.weight_decay)
-    #     warmup_optimizer = model.get_warmup_optimizer(lr=args.lr, weight_decay=args.weight_decay)
-    # else:
-    #     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-
-    # if args.method == 'SGCN':
-    #     teacher_optimizer = torch.optim.Adam(teacher.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    #     for epoch in range(args.epochs):
-    #         teacher.train()
-    #         # for d_in, d_out in zip(train_loader_ind, train_loader_ood):
-    #         teacher_optimizer.zero_grad()
-    #         teacher_loss = teacher.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
-    #         teacher_loss.backward()
-    #         teacher_optimizer.step()
-    #     model.create_storage(dataset_ind, teacher, device)
+    classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     for epoch in range(args.epochs):
         model.train()
         optimizer.zero_grad()
+        classifier_optimizer.zero_grad()
         loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
         loss.backward()
         optimizer.step()
-
-        # if args.method == 'GPN' and epoch < args.GPN_warmup:
-        #     warmup_optimizer.zero_grad()
-        #     loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
-        #     loss.backward()
-        #     warmup_optimizer.step()
-        # else:
-        #     optimizer.zero_grad()
-        #     loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
-        #     loss.backward()
-        #     optimizer.step()
+        classifier_optimizer.step()
 
         if args.mode == 'classify':
             result = evaluate_classify(model, dataset_ind, eval_func, criterion, args, device)

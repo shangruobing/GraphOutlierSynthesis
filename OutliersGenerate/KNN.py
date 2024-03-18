@@ -5,6 +5,7 @@ import torch
 from faiss import GpuIndexFlat
 from torch import Tensor
 from torch.distributions import MultivariateNormal
+from icecream import ic
 
 
 def generate_outliers(
@@ -13,10 +14,10 @@ def generate_outliers(
         num_features: int,
         num_edges: int,
         k=300,
-        top=200,
+        top=1000,
         cov_mat=0.1,
         sampling_ratio=1.0,
-        pic_nums=10,
+        pic_nums=500,
         device=torch.device("cpu"),
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """
@@ -69,25 +70,37 @@ def generate_outliers(
         covariance_matrix=torch.eye(num_features, device=device)
     )
     # 从高斯分布采样1/2节点数目的数据作为噪声2708 // 2 = 1354
-    noises = gaussian_distribution.rsample(sample_shape=(num_nodes // 2,))
+    noises = gaussian_distribution.rsample(sample_shape=(max_distance_index.shape[0],))
 
     # 噪声个数 1354
     num_noises = noises.shape[0]
 
+    # ic.disable()
+    #
+    # ic(max_distance_index.size())
+    # ic(num_noises)
+
+    sampling_dataset = dataset[max_distance_index]
+    # sampling_dataset += num_noises
+
     # 重复10次，每一次都补足为采样的length，把这10次结果拼起来
     # 1433个特征，复制1354行，10个就是13540行，共10组特征
-    sample_points = torch.cat([
-        dataset[index].repeat(num_noises, 1) for index in max_distance_index
-    ])
+    # sample_points = torch.cat([
+    #     dataset[index].repeat(num_noises, 1) for index in max_distance_index
+    # ])
 
     # 负采样同样重复10次，变成10组，13540行
-    noise_cov = cov_mat * noises.repeat(pic_nums, 1)
+    noise_cov = cov_mat * noises
     # 采样点加入噪声
-    sample_points += noise_cov
+    sampling_dataset += noise_cov
 
-    nums_point = num_nodes // 20
+    # nums_point = 10
+    nums_point = pic_nums
+    # ic(nums_point)
+    # ic(k)
+    # nums_point = num_nodes // 20
     sample_points = generate_negative_samples(
-        target=sample_points,
+        target=sampling_dataset,
         index=faiss_index,
         k=k,
         num_points=nums_point,
@@ -97,6 +110,8 @@ def generate_outliers(
     faiss_index.reset()
 
     num_sample_points = sample_points.shape[0]
+
+    # ic(num_sample_points)
     edge_node_radio = num_edges // num_nodes
     sample_edges = torch.randint(
         low=0,
@@ -112,6 +127,7 @@ def generate_outliers(
     # print("sample_points", sample_points.size())
     # print("sample_edges", sample_edges.size())
     # print("sample_labels", sample_labels.size())
+    # ic(sample_points.size(), sample_edges.size(), sample_labels.size())
     return sample_points, sample_edges, sample_labels
 
 
@@ -182,7 +198,8 @@ def generate_negative_samples(
     [A,B,C,D,E,F]    =>    [[A,B],[C,D],[E,F]]
     """
     k_th = k_th_distance.view(num_negative_samples, -1)
-
+    # ic(k_th.size())
+    # ic(num_points)
     # 挑选负样本个数
     distance, minD_idx = torch.topk(k_th, num_points, dim=0)
     point_list = [i * num_negative_samples + minD_idx[:, i] for i in range(minD_idx.shape[1])]

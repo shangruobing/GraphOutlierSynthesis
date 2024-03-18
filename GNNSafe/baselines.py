@@ -12,6 +12,7 @@ from torch_geometric.utils import degree
 
 from OutliersGenerate.KNN import generate_outliers
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
+from icecream import ic
 
 
 class MSP(nn.Module):
@@ -39,6 +40,14 @@ class MSP(nn.Module):
             self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -74,8 +83,13 @@ class MSP(nn.Module):
                 num_edges=dataset_ind.num_edges,
             )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -86,7 +100,7 @@ class MSP(nn.Module):
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += sample_sup_loss
         return loss
 
 
@@ -111,6 +125,14 @@ class OE(nn.Module):
             self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -147,8 +169,13 @@ class OE(nn.Module):
                 num_edges=dataset_ind.num_edges,
             )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -161,7 +188,7 @@ class OE(nn.Module):
         loss += 0.5 * -(logits_out.mean(1) - torch.logsumexp(logits_out, dim=1)).mean()
 
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += sample_sup_loss
         return loss
 
 
@@ -186,6 +213,14 @@ class ODIN(nn.Module):
             self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -257,8 +292,13 @@ class ODIN(nn.Module):
                 num_edges=dataset_ind.num_edges,
             )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -269,7 +309,7 @@ class ODIN(nn.Module):
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += sample_sup_loss
         return loss
 
 
@@ -294,6 +334,14 @@ class Mahalanobis(nn.Module):
             self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -478,8 +526,13 @@ class Mahalanobis(nn.Module):
                 num_edges=dataset_ind.num_edges,
             )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -490,7 +543,7 @@ class Mahalanobis(nn.Module):
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += sample_sup_loss
         return loss
 
 
@@ -515,6 +568,14 @@ class MaxLogits(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -549,8 +610,13 @@ class MaxLogits(nn.Module):
                 num_edges=dataset_ind.num_edges,
             )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -561,7 +627,7 @@ class MaxLogits(nn.Module):
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += sample_sup_loss
         return loss
 
 
@@ -586,6 +652,14 @@ class EnergyModel(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -621,8 +695,13 @@ class EnergyModel(nn.Module):
                 num_edges=dataset_ind.num_edges,
             )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -652,7 +731,7 @@ class EnergyModel(nn.Module):
         loss = sup_loss
 
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += sample_sup_loss
 
         return loss
 
@@ -678,6 +757,14 @@ class EnergyProp(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -726,8 +813,13 @@ class EnergyProp(nn.Module):
                 num_edges=dataset_ind.num_edges,
             )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -762,7 +854,7 @@ class EnergyProp(nn.Module):
         loss = sup_loss
 
         if args.generate_ood:
-            loss += 0.001 * sample_sup_loss
+            loss += sample_sup_loss
 
         return loss
 
@@ -780,14 +872,6 @@ class GNNSafe(nn.Module):
     def __init__(self, d, c, args: Namespace):
         super(GNNSafe, self).__init__()
         if args.backbone == 'gcn':
-            """
-            Actor Datasets:
-            in_channels=932
-            hidden_channels=64
-            out_channels=5
-            num_layers=2
-            dropout=0.0
-            """
             self.encoder = GCN(
                 in_channels=d,
                 hidden_channels=args.hidden_channels,
@@ -811,14 +895,14 @@ class GNNSafe(nn.Module):
             self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        # self.optimizer = nn.Sequential(
-        #     nn.Linear(in_features=7, out_features=16, bias=True),
-        #     nn.ReLU(),
-        #     nn.Linear(in_features=16, out_features=8, bias=True),
-        #     nn.ReLU(),
-        #     nn.Linear(in_features=8, out_features=2, bias=True),
-        #     # nn.Softmax(dim=1)
-        # )
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=c, out_features=16, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=16, out_features=8, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=8, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -826,11 +910,6 @@ class GNNSafe(nn.Module):
     def forward(self, dataset, device):
         """return predicted logits"""
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        """
-        Actor Datasets:
-        x torch.Size([7600, 932])
-        edge_index torch.Size([2, 30019])
-        """
         return self.encoder(x, edge_index)
 
     def propagation(self, e, edge_index, prop_layers=1, alpha=0.5):
@@ -862,54 +941,13 @@ class GNNSafe(nn.Module):
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         """return loss for training"""
-        """
-        Actor Datasets:
-        dataset_ind:
-        Data(x=[7600, 932], edge_index=[2, 30019], y=[7600], 
-            train_mask=[7600, 10], val_mask=[7600, 10], test_mask=[7600, 10], 
-            node_idx=[7600])
-        
-        dataset_ood_tr
-        Data(x=[7600, 932], edge_index=[2, 21146], y=[7600], node_idx=[7600])
-        
-        dataset_ood_te
-        Data(x=[7600, 932], edge_index=[2, 21106], y=[7600], node_idx=[7600])
-        
-        # ind dataset actor: all nodes 7600 | centered nodes 7600 | edges 30019 | classes 5 | feats 932
-        # ood tr dataset actor: all nodes 7600 | centered nodes 7600 | edges 21146
-        """
         x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
         x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
-        """
-        x_in torch.Size([7600, 932])
-        edge_index_in torch.Size([2, 30019])
-        x_out torch.Size([7600, 932])
-        edge_index_out torch.Size([2, 21146])
-        """
 
-        # print(x_in.size())
-        # x_in torch.Size([2708, 1433])
-        # logits_in torch.Size([2708, 7])
         logits_in = self.encoder(x_in, edge_index_in)
-        # print(logits_in.size())
-        """
-        x_in torch.Size([7600, 932]) edge_index_in torch.Size([2, 30019])
-        logits_in torch.Size([7600, 5])
-        """
 
         logits_out = self.encoder(x_out, edge_index_out)
-        """
-        x_out torch.Size([7600, 932]) edge_index_out torch.Size([2, 21146])
-        logits_out torch.Size([7600, 5])
-        """
-        # print("edge_index_in", edge_index_in.size())
-        # print(dataset_ind)
-        # print(type(dataset_ind))
-        # print(dataset_ind.x)
-        # print(type(dataset_ind.x))
-
         if args.generate_ood:
-            # print("begin generate_ood")
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -917,29 +955,16 @@ class GNNSafe(nn.Module):
                 num_features=dataset_ind.num_features,
                 num_edges=dataset_ind.num_edges,
             )
-            # print(sample_point.size())
-            # print(sample_edge.size())
-            # print(sample_label.size())
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            sample_point_out = F.log_softmax(sample_point_logits_out, dim=1)
-            sample_sup_loss = criterion(sample_point_out, sample_label)
+
+            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
+            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
+                                       torch.zeros(len(sample_point_logits_out), device=device)])
+            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
-
-        # if args.generate_logit:
-        #     logit_point, sample_edge, sample_label = generate_outliers(
-        #         logits_in.clone().detach(),
-        #         device=device,
-        #         num_nodes=logits_in.shape[0],
-        #         num_features=logits_in.shape[1],
-        #         num_edges=dataset_ind.num_edges,
-        #     )
-        #     logit_label = torch.ones(logit_point.shape[0], dtype=torch.long, device=device).view(-1)
-        #     logit_sample_point_logits_out = self.optimizer(logit_point)
-        #     logit_sample_point_out = F.log_softmax(logit_sample_point_logits_out, dim=1)
-        #     logit_sample_sup_loss = criterion(logit_sample_point_out, logit_label)
-        # else:
-        #     logit_sample_sup_loss = 0
 
         train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
 
@@ -947,11 +972,6 @@ class GNNSafe(nn.Module):
         if args.dataset in ('proteins', 'ppi'):
             sup_loss = criterion(logits_in[train_in_idx], dataset_ind.y[train_in_idx].to(device).to(torch.float))
         else:
-            """
-            torch.Size([7600, 5])
-            torch.Size([760])
-            torch.Size([760, 5])
-            """
             pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
             sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
 
@@ -985,18 +1005,7 @@ class GNNSafe(nn.Module):
         else:
             loss = sup_loss
 
-        # print(sample_sup_loss)
-        # print(loss)
         if args.generate_ood:
-            loss += 0.01 * sample_sup_loss
-            # sample_sup_loss tensor(3.7787)
-            # print("sample_sup_loss", sample_sup_loss)
-            # print("sample_sup_loss", 0.001 * sample_sup_loss)
-
-        # if args.generate_logit:
-        #     loss += 0.01 * logit_sample_sup_loss
-            # logit_sample_sup_loss tensor(0.7226)
-            # print("logit_sample_sup_loss", logit_sample_sup_loss)
-            # print("logit_sample_sup_loss", 0.01 * logit_sample_sup_loss)
+            loss += sample_sup_loss
 
         return loss

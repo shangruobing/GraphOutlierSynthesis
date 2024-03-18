@@ -6,8 +6,7 @@ datasets=("cora")
 #ood_types=("structure" "feature" "label")
 ood_types=("structure")
 backbones=("gcn")
-methods=("gnnsafe")
-#methods=("msp" "gnnsafe" "OE" "ODIN" "Mahalanobis" "maxlogits" "energymodel" "energyprop")
+methods=("msp" "gnnsafe" "OE" "ODIN" "Mahalanobis" "maxlogits" "energymodel" "energyprop")
 
 for dataset in "${datasets[@]}"; do
   for ood_type in "${ood_types[@]}"; do
