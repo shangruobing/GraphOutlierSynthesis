@@ -14,10 +14,10 @@ def generate_outliers(
         num_features: int,
         num_edges: int,
         k=300,
-        top=1000,
+        # top=1000,
         cov_mat=0.1,
         sampling_ratio=1.0,
-        pic_nums=500,
+        # pic_nums=500,
         device=torch.device("cpu"),
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """
@@ -44,6 +44,9 @@ def generate_outliers(
     Returns:
         the generated outliers, the edges of the generated outliers, the labels of the generated outliers
     """
+
+    top = num_nodes // 2
+    pic_nums = num_nodes // 5
 
     # 将输入的数据集归一化，根据采样率选择数据集范围，然后存入向量库
     resource = faiss.StandardGpuResources()

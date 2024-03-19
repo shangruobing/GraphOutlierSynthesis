@@ -52,7 +52,12 @@ watch -n 2 -d nvidia-smi
 
 # Dataset
 
-- Cora
-- Actor
-- Coauthor-CS
-- Amazon-Photo
+| name         | num_nodes | num_features | num_classes | num_edges |
+|--------------|-----------|--------------|-------------|-----------|
+| Cora         | 1433      | 2708         | 7           | 10556     |
+| Amazon-Photo | 7650      | 745          | 8           | 238162    |
+| Actor        | 7600      | 932          | 5           | 30019     |
+| GitHub       | 37000     | 128          | 2           | 578006    |      
+| Wiki-CS      | 11701     | 300          | 10          | 431726    |   
+| Coauthor-CS  | 18333     | 6805         | 15          | 163788    |
+

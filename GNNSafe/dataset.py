@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch_geometric.transforms as T
 from torch_geometric.data import Data
-from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB
+from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB, GitHub
 from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
 
 from data_utils import to_sparse_tensor
@@ -37,7 +37,8 @@ def load_dataset(args: Namespace):
         'cora', "actor",
         'citeseer', 'pubmed',
         'amazon-photo', 'amazon-computer', 'coauthor-cs',
-        'coauthor-physics', "wiki-cs", "actor", "webkb"
+        'coauthor-physics', "wiki-cs", "actor", "webkb",
+        "github"
     ]:
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
 
@@ -268,7 +269,6 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
             'valid': idx[dataset.val_mask],
             'test': idx[dataset.test_mask],
         }
-        # print("dataset.splits", dataset.splits)
     elif dataset_name == 'amazon-photo':
         torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Photo', transform=transform)
         dataset = torch_dataset[0]
@@ -282,22 +282,28 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
         torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='Physics', transform=transform)
         dataset = torch_dataset[0]
     elif dataset_name == 'wiki-cs':
-        torch_dataset = WikiCS(root=f'{data_dir}WikiCS', transform=transform)
+        torch_dataset = WikiCS(root=f'{data_dir}WikiCS', transform=transform, is_undirected=False)
         dataset = torch_dataset[0]
     elif dataset_name == 'actor':
         torch_dataset = Actor(root=f'{data_dir}Actor', transform=transform)
         dataset = torch_dataset[0]
+        idx = torch.arange(dataset.num_nodes)
+        dataset.splits = {
+            'train': idx[dataset.train_mask[:, 0]],
+            'valid': idx[dataset.val_mask[:, 0]],
+            'test': idx[dataset.test_mask[:, 0]],
+        }
     elif dataset_name == 'webkb':
         torch_dataset = WebKB(name="Cornell", root=f'{data_dir}WebKB', transform=transform)
+        dataset = torch_dataset[0]
+    elif dataset_name == 'github':
+        torch_dataset = GitHub(root=f'{data_dir}GitHub', transform=transform)
         dataset = torch_dataset[0]
     else:
         raise NotImplementedError
 
-    # print("dataset.num_nodes", dataset.num_nodes)
     dataset.node_idx = torch.arange(dataset.num_nodes)
     dataset_ind = dataset
-
-    # print("ood_type", ood_type)
 
     if ood_type == 'structure':
         dataset_ood_tr = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
@@ -335,5 +341,4 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
         dataset_ood_te.node_idx = idx[center_node_mask_ood_te]
     else:
         raise NotImplementedError
-
     return dataset_ind, dataset_ood_tr, dataset_ood_te

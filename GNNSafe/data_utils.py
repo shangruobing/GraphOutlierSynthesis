@@ -1,6 +1,5 @@
 from collections import defaultdict
 
-import torch
 from scipy import sparse as sp
 from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 
@@ -28,101 +27,101 @@ def rand_splits(node_idx, train_prop=.5, valid_prop=.25):
     return splits
 
 
-def load_fixed_splits(data_dir, dataset, name, protocol):
-    splits_lst = []
-    if name in ['cora', 'citeseer', 'pubmed'] and protocol == 'semi':
-        splits = {}
-        splits['train'] = torch.as_tensor(dataset.train_mask.nonzero().squeeze(1))
-        splits['valid'] = torch.as_tensor(dataset.val_mask.nonzero().squeeze(1))
-        splits['test'] = torch.as_tensor(dataset.test_mask.nonzero().squeeze(1))
-        splits_lst.append(splits)
-    elif name in ['cora', 'citeseer', 'pubmed', 'chameleon', 'squirrel', 'film', 'cornell', 'texas', 'wisconsin']:
-        for i in range(10):
-            splits_file_path = '{}/geom-gcn/splits/{}'.format(data_dir, name) + '_split_0.6_0.2_' + str(i) + '.npz'
-            splits = {}
-            with np.load(splits_file_path) as splits_file:
-                splits['train'] = torch.BoolTensor(splits_file['train_mask'])
-                splits['valid'] = torch.BoolTensor(splits_file['val_mask'])
-                splits['test'] = torch.BoolTensor(splits_file['test_mask'])
-            splits_lst.append(splits)
-    else:
-        raise NotImplementedError
-
-    return splits_lst
-
-
-def even_quantile_labels(vals, nclasses, verbose=True):
-    """ partitions vals into nclasses by a quantile based split,
-    where the first class is less than the 1/nclasses quantile,
-    second class is less than the 2/nclasses quantile, and so on
-    
-    vals is np array
-    returns a np array of int class labels
-    """
-    label = -1 * np.ones(vals.shape[0], dtype=np.int)
-    interval_lst = []
-    lower = -np.inf
-    for k in range(nclasses - 1):
-        upper = np.quantile(vals, (k + 1) / nclasses)
-        interval_lst.append((lower, upper))
-        inds = (vals >= lower) * (vals < upper)
-        label[inds] = k
-        lower = upper
-    label[vals >= lower] = nclasses - 1
-    interval_lst.append((lower, np.inf))
-    if verbose:
-        print('Class Label Intervals:')
-        for class_idx, interval in enumerate(interval_lst):
-            print(f'Class {class_idx}: [{interval[0]}, {interval[1]})]')
-    return label
+# def load_fixed_splits(data_dir, dataset, name, protocol):
+#     splits_lst = []
+#     if name in ['cora', 'citeseer', 'pubmed'] and protocol == 'semi':
+#         splits = {}
+#         splits['train'] = torch.as_tensor(dataset.train_mask.nonzero().squeeze(1))
+#         splits['valid'] = torch.as_tensor(dataset.val_mask.nonzero().squeeze(1))
+#         splits['test'] = torch.as_tensor(dataset.test_mask.nonzero().squeeze(1))
+#         splits_lst.append(splits)
+#     elif name in ['cora', 'citeseer', 'pubmed', 'chameleon', 'squirrel', 'film', 'cornell', 'texas', 'wisconsin']:
+#         for i in range(10):
+#             splits_file_path = '{}/geom-gcn/splits/{}'.format(data_dir, name) + '_split_0.6_0.2_' + str(i) + '.npz'
+#             splits = {}
+#             with np.load(splits_file_path) as splits_file:
+#                 splits['train'] = torch.BoolTensor(splits_file['train_mask'])
+#                 splits['valid'] = torch.BoolTensor(splits_file['val_mask'])
+#                 splits['test'] = torch.BoolTensor(splits_file['test_mask'])
+#             splits_lst.append(splits)
+#     else:
+#         raise NotImplementedError
+#
+#     return splits_lst
 
 
-def to_planetoid(dataset):
-    """
-        Takes in a NCDataset and returns the dataset in H2GCN Planetoid form, as follows:
-        x => the feature vectors of the training instances as scipy.sparse.csr.csr_matrix object;
-        tx => the feature vectors of the test instances as scipy.sparse.csr.csr_matrix object;
-        allx => the feature vectors of both labeled and unlabeled training instances
-            (a superset of ind.dataset_str.x) as scipy.sparse.csr.csr_matrix object;
-        y => the one-hot labels of the labeled training instances as numpy.ndarray object;
-        ty => the one-hot labels of the test instances as numpy.ndarray object;
-        ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
-        graph => a dict in the format {index: [index_of_neighbor_nodes]} as collections.defaultdict
-            object;
-        split_idx => The ogb dictionary that contains the train, valid, test splits
-    """
-    split_idx = dataset.get_idx_split('random', 0.25)
-    train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
+# def even_quantile_labels(vals, nclasses, verbose=True):
+#     """ partitions vals into nclasses by a quantile based split,
+#     where the first class is less than the 1/nclasses quantile,
+#     second class is less than the 2/nclasses quantile, and so on
+#
+#     vals is np array
+#     returns a np array of int class labels
+#     """
+#     label = -1 * np.ones(vals.shape[0], dtype=np.int)
+#     interval_lst = []
+#     lower = -np.inf
+#     for k in range(nclasses - 1):
+#         upper = np.quantile(vals, (k + 1) / nclasses)
+#         interval_lst.append((lower, upper))
+#         inds = (vals >= lower) * (vals < upper)
+#         label[inds] = k
+#         lower = upper
+#     label[vals >= lower] = nclasses - 1
+#     interval_lst.append((lower, np.inf))
+#     if verbose:
+#         print('Class Label Intervals:')
+#         for class_idx, interval in enumerate(interval_lst):
+#             print(f'Class {class_idx}: [{interval[0]}, {interval[1]})]')
+#     return label
 
-    graph, label = dataset[0]
 
-    label = torch.squeeze(label)
-
-    print("generate x")
-    x = graph['node_feat'][train_idx].numpy()
-    x = sp.csr_matrix(x)
-
-    tx = graph['node_feat'][test_idx].numpy()
-    tx = sp.csr_matrix(tx)
-
-    allx = graph['node_feat'].numpy()
-    allx = sp.csr_matrix(allx)
-
-    y = F.one_hot(label[train_idx]).numpy()
-    ty = F.one_hot(label[test_idx]).numpy()
-    ally = F.one_hot(label).numpy()
-
-    edge_index = graph['edge_index'].T
-
-    graph = defaultdict(list)
-
-    for i in range(0, label.shape[0]):
-        graph[i].append(i)
-
-    for start_edge, end_edge in edge_index:
-        graph[start_edge.item()].append(end_edge.item())
-
-    return x, tx, allx, y, ty, ally, graph, split_idx
+# def to_planetoid(dataset):
+#     """
+#         Takes in a NCDataset and returns the dataset in H2GCN Planetoid form, as follows:
+#         x => the feature vectors of the training instances as scipy.sparse.csr.csr_matrix object;
+#         tx => the feature vectors of the test instances as scipy.sparse.csr.csr_matrix object;
+#         allx => the feature vectors of both labeled and unlabeled training instances
+#             (a superset of ind.dataset_str.x) as scipy.sparse.csr.csr_matrix object;
+#         y => the one-hot labels of the labeled training instances as numpy.ndarray object;
+#         ty => the one-hot labels of the test instances as numpy.ndarray object;
+#         ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
+#         graph => a dict in the format {index: [index_of_neighbor_nodes]} as collections.defaultdict
+#             object;
+#         split_idx => The ogb dictionary that contains the train, valid, test splits
+#     """
+#     split_idx = dataset.get_idx_split('random', 0.25)
+#     train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
+#
+#     graph, label = dataset[0]
+#
+#     label = torch.squeeze(label)
+#
+#     print("generate x")
+#     x = graph['node_feat'][train_idx].numpy()
+#     x = sp.csr_matrix(x)
+#
+#     tx = graph['node_feat'][test_idx].numpy()
+#     tx = sp.csr_matrix(tx)
+#
+#     allx = graph['node_feat'].numpy()
+#     allx = sp.csr_matrix(allx)
+#
+#     y = F.one_hot(label[train_idx]).numpy()
+#     ty = F.one_hot(label[test_idx]).numpy()
+#     ally = F.one_hot(label).numpy()
+#
+#     edge_index = graph['edge_index'].T
+#
+#     graph = defaultdict(list)
+#
+#     for i in range(0, label.shape[0]):
+#         graph[i].append(i)
+#
+#     for start_edge, end_edge in edge_index:
+#         graph[start_edge.item()].append(end_edge.item())
+#
+#     return x, tx, allx, y, ty, ally, graph, split_idx
 
 
 def to_sparse_tensor(edge_index, edge_feat, num_nodes):

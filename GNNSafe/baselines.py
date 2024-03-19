@@ -69,7 +69,6 @@ class MSP(nn.Module):
             return sp.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
-
         train_idx = dataset_ind.splits['train']
         x_in = dataset_ind.x.to(device)
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]

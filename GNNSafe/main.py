@@ -37,7 +37,7 @@ else:
     if len(dataset_ood_te.y.shape) == 1:
         dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
 
-if args.dataset in ['cora', 'citeseer', 'pubmed']:
+if args.dataset in ['cora', 'citeseer', 'pubmed', "actor"]:
     pass
 else:
     dataset_ind.splits = rand_splits(dataset_ind.node_idx, train_prop=args.train_prop, valid_prop=args.valid_prop)

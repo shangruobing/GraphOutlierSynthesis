@@ -1,8 +1,7 @@
 def parser_add_main_args(parser):
     # setup and protocol
     parser.add_argument('--dataset', type=str, default='cora')
-    parser.add_argument('--ood_type', type=str, default='structure', choices=['structure', 'label', 'feature'],
-                        help='only for cora/amazon/arxiv datasets')
+    parser.add_argument('--ood_type', type=str, default='structure', choices=['structure', 'label', 'feature'])
     parser.add_argument('--data_dir', type=str, default='../data/')
     parser.add_argument('--device', type=int, default=0, help='which gpu to use if any (default: 0)')
     parser.add_argument('--cpu', action='store_true')
@@ -20,6 +19,8 @@ def parser_add_main_args(parser):
     parser.add_argument('--gat_heads', type=int, default=8, help='attention heads for gat')
     parser.add_argument('--out_heads', type=int, default=1, help='out heads for gat')
     parser.add_argument('--hops', type=int, default=2, help='power of adjacency matrix for sgc')
+    parser.add_argument('--prop_layers', type=int, default=2)
+
 
     # GnnSafe hyper
     parser.add_argument('--T', type=float, default=1.0, help='temperature for Softmax')
@@ -42,12 +43,7 @@ def parser_add_main_args(parser):
 
     # display and utility
     parser.add_argument('--display_step', type=int, default=1, help='how often to print')
-    parser.add_argument('--cached', action='store_true', help='set to use faster sgc')
-    parser.add_argument('--print_prop', action='store_true', help='print proportions of predicted class')
-    parser.add_argument('--print_args', action='store_true', help='print args for hyper-parameter searching')
     parser.add_argument('--mode', type=str, default='detect', choices=['classify', 'detect'])
 
     # generate outliers
     parser.add_argument('--generate_ood', action='store_true')
-
-    parser.add_argument('--prop_layers', type=int, default=2)
