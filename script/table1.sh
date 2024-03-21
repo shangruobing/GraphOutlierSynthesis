@@ -1,8 +1,8 @@
 cd ../GNNSafe || exit
 
 epochs=50
-device=3
-datasets=("coauthor-cs")
+device=2
+datasets=("amazon-photo")
 #ood_types=("structure" "feature" "label")
 ood_types=("structure")
 backbones=("gcn")

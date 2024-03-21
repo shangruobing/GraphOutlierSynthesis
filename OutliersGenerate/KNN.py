@@ -13,12 +13,10 @@ def generate_outliers(
         num_nodes: int,
         num_features: int,
         num_edges: int,
-        k=300,
-        # top=1000,
         cov_mat=0.1,
         sampling_ratio=1.0,
-        # pic_nums=500,
         device=torch.device("cpu"),
+        debug=False
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Generate outliers using the KNN algorithm.
@@ -35,26 +33,33 @@ def generate_outliers(
         num_nodes: the number of nodes
         num_features: the number of features
         num_edges: the number of edges
-        k: The number of nearest neighbors to return
-        top: How many ID samples to pick to define as points near the boundary of the sample space
+        # k: The number of nearest neighbors to return
+        # top: How many ID samples to pick to define as points near the boundary of the sample space
         cov_mat: The weight before the covariance matrix to determine the sampling range
         sampling_ratio: Sampling ratio
-        pic_nums: Number of ID samples used to generate outliers
+        # pic_nums: Number of ID samples used to generate outliers
         device: torch device
+        debug:
     Returns:
         the generated outliers, the edges of the generated outliers, the labels of the generated outliers
     """
 
-    top = num_nodes // 2
-    pic_nums = num_nodes // 5
+    # How many ID samples to pick to define as points near the boundary of the sample space
+    top = num_nodes // 10
+    # The number of nearest neighbors to return
+    k = min(len(dataset), 100)
+
+    # Number of ID samples used to generate outliers
+    pic_nums = num_nodes // 20
+
+    num_sample_points = int(num_nodes * sampling_ratio)
 
     # 将输入的数据集归一化，根据采样率选择数据集范围，然后存入向量库
     resource = faiss.StandardGpuResources()
     faiss_index = faiss.GpuIndexFlatL2(resource, num_features)
-    normed_data = dataset / torch.norm(dataset, p=2, dim=1, keepdim=True)
     # 随机生成所要采样的数据集索引列表
-    rand_index = np.random.choice(num_nodes, int(num_nodes * sampling_ratio), replace=False)
-    faiss_index.add(normed_data[rand_index].cpu().numpy())
+    rand_index = np.random.choice(num_nodes, num_sample_points, replace=False)
+    faiss_index.add(dataset[rand_index].cpu().numpy())
 
     # 找出数据集内每个元素最边界的k个元素，再从中挑取top个，做到挑选整个数据集最边界的元素
     max_distance_index, max_distance = search_max_distance(
@@ -64,7 +69,9 @@ def generate_outliers(
         top=top
     )
 
-    # 到此找到了最远的数据点，从最远的集合中随机选择10个
+    all_max_distance_index = max_distance_index
+
+    # 到此找到了最远的数据点，从最远的集合中随机选择
     max_distance_index = max_distance_index[np.random.choice(top, pic_nums, replace=False)]
 
     # 生成一个多元高斯分布，均值为0，协方差矩阵为单位矩阵
@@ -72,66 +79,46 @@ def generate_outliers(
         loc=torch.zeros(num_features, device=device),
         covariance_matrix=torch.eye(num_features, device=device)
     )
+
+    # 从高斯分布采样1/2节点数目的数据作为噪声2708
+
+    # 重复10次，每一次都补足为采样的length，把这10次结果拼起来,每个采样点贡献10个特征
+    sampling_dataset = torch.cat([
+        dataset[index].repeat(num_nodes // pic_nums, 1) for index in max_distance_index
+    ])
+
     # 从高斯分布采样1/2节点数目的数据作为噪声2708 // 2 = 1354
-    noises = gaussian_distribution.rsample(sample_shape=(max_distance_index.shape[0],))
+    noises = gaussian_distribution.rsample(sample_shape=(sampling_dataset.shape[0],))
 
-    # 噪声个数 1354
-    num_noises = noises.shape[0]
-
-    # ic.disable()
-    #
-    # ic(max_distance_index.size())
-    # ic(num_noises)
-
-    sampling_dataset = dataset[max_distance_index]
-    # sampling_dataset += num_noises
-
-    # 重复10次，每一次都补足为采样的length，把这10次结果拼起来
-    # 1433个特征，复制1354行，10个就是13540行，共10组特征
-    # sample_points = torch.cat([
-    #     dataset[index].repeat(num_noises, 1) for index in max_distance_index
-    # ])
-
-    # 负采样同样重复10次，变成10组，13540行
     noise_cov = cov_mat * noises
     # 采样点加入噪声
     sampling_dataset += noise_cov
 
-    # nums_point = 10
-    nums_point = pic_nums
-    # ic(nums_point)
-    # ic(k)
-    # nums_point = num_nodes // 20
     sample_points = generate_negative_samples(
         target=sampling_dataset,
         index=faiss_index,
         k=k,
-        num_points=nums_point,
-        num_negative_samples=num_noises
+        num_points=pic_nums,
+        num_negative_samples=num_sample_points
     )
 
     faiss_index.reset()
 
     num_sample_points = sample_points.shape[0]
 
-    # ic(num_sample_points)
     edge_node_radio = num_edges // num_nodes
     sample_edges = torch.randint(
         low=0,
         high=num_sample_points - 1,
-        size=(2, edge_node_radio * num_sample_points),
+        size=(2, int(edge_node_radio * num_sample_points)),
         device=device
     )
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
-    # print("num_nodes", num_nodes)
-    # print("num_features", num_features)
-    # print("num_edges", num_edges)
-    # print("sample_points", sample_points.size())
-    # print("sample_edges", sample_edges.size())
-    # print("sample_labels", sample_labels.size())
-    # ic(sample_points.size(), sample_edges.size(), sample_labels.size())
-    return sample_points, sample_edges, sample_labels
+    if debug:
+        return sample_points, sample_edges, sample_labels, all_max_distance_index, max_distance_index, f"top:{top} k:{k} pic_nums:{pic_nums}"
+    else:
+        return sample_points, sample_edges, sample_labels
 
 
 def search_max_distance(
@@ -142,9 +129,10 @@ def search_max_distance(
 ) -> Tuple[Tensor, Tensor]:
     """
     从数据集中找到每个元素的k个邻居，再选择每个元素距离最远的（第k个）邻居，最终从邻居中选择最远的num_selects个邻居
-                        [[B,A],           [[A],
-    [[A,B,C,D,E]]   =>   [C,D]       =>    [D],     => [B,D]
-                         [E,B]]            [B]]
+    k = 2
+                        [[B,C],           [[C],
+    [[A,B,C]]   =>       [A,C]       =>    [C],     => [B,C]
+                         [A,B]]            [B]]
     Args:
         target: the target of the search
         index: The index structure used for the search.
@@ -154,13 +142,14 @@ def search_max_distance(
     Returns: max_distance_index, max_distance_value
 
     """
-    normed_target = target / torch.norm(target, p=2, dim=1, keepdim=True)
     # 找出每个元素最近的k个元素，返回距离列表和索引列表
-    distance, output_index = index.search(normed_target.cpu().numpy(), k)
+    distance, output_index = index.search(target.cpu().numpy(), k)
     # 取每个元素最后（最远）的一个元素
     k_th_distance = torch.tensor(distance[:, -1])
+    # ic(k_th_distance)
     # 找出整个数据集最远的select个元素
     max_distance, max_distance_index = torch.topk(k_th_distance, top)
+    # ic(max_distance_index)
     return max_distance_index, max_distance
 
 
@@ -183,14 +172,7 @@ def generate_negative_samples(
     Returns: sample_points
 
     """
-
-    """
-    负样本数目为nums_negative_samples，13540
-    nums_point为每个点，2706//20=1354
-    故分为13540/1354=10组
-    """
-    normed_target = target / torch.norm(target, p=2, dim=1, keepdim=True)
-    distance, output_index = index.search(normed_target.cpu().numpy(), k)
+    distance, output_index = index.search(target.cpu().numpy(), k)
     # 取每个元素最后（最远）的一个元素，取k个邻居的最后一个
     k_th_distance = torch.tensor(distance[:, -1])
     # 特征为横向排列，如下变化
@@ -200,10 +182,61 @@ def generate_negative_samples(
     nums => nums_negative_samples,pic_nums
     [A,B,C,D,E,F]    =>    [[A,B],[C,D],[E,F]]
     """
-    k_th = k_th_distance.view(num_negative_samples, -1)
-    # ic(k_th.size())
-    # ic(num_points)
-    # 挑选负样本个数
-    distance, minD_idx = torch.topk(k_th, num_points, dim=0)
-    point_list = [i * num_negative_samples + minD_idx[:, i] for i in range(minD_idx.shape[1])]
-    return target[torch.cat(point_list)]
+    # max_distance, max_distance_index = torch.topk(k_th_distance, k_th_distance.shape[0], dim=0)
+    max_distance, max_distance_index = torch.topk(k_th_distance, num_points, dim=0)
+
+    outliers = target[max_distance_index].repeat(repeats=(num_negative_samples // num_points, 1))
+    nosies = torch.cat([torch.rand_like(outliers) * -0.05, torch.rand_like(outliers) * 0.05])
+    shape = nosies.shape
+    flattened_tensor = nosies.view(-1)
+    shuffled_indices = torch.randperm(flattened_tensor.size(0))
+    shuffled_tensor = flattened_tensor[shuffled_indices]
+    nosies = shuffled_tensor.view(shape)[:shape[0] // 2, :]
+    return outliers + nosies
+
+
+def normalize(dataset: Tensor) -> Tensor:
+    min_value = dataset.min(dim=0)[0]
+    max_value = dataset.max(dim=0)[0]
+    normalized_dataset = (dataset - min_value) / (max_value - min_value)
+    normalized_dataset[torch.isnan(normalized_dataset)] = 0
+    return normalized_dataset
+
+
+if __name__ == '__main__':
+    from visualize import visualize_2D, visualize_3D
+
+    dataset = torch.rand(2000, 2)
+
+    num_nodes, num_features = dataset.shape[0], dataset.shape[1]
+    num_edges = 10
+    sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
+        dataset=dataset,
+        num_nodes=num_nodes,
+        num_features=num_features,
+        num_edges=num_edges,
+        debug=True
+    )
+
+    # sample_point = sample_point / torch.norm(sample_point, p=2, dim=1, keepdim=True)
+    # ic(dataset)
+    # ic(dataset.size())
+    # ic(sample_point)
+    # ic(sample_point.size())
+    # ic(max_distance_index)
+    # ic(max_distance_index.size())
+
+    visualize_2D(dataset=dataset, all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point, title=title)
+
+    # dataset = torch.rand(500, 3)
+    # num_nodes, num_features = dataset.shape[0], dataset.shape[1]
+    # num_edges = 10
+    # sample_point, sample_edge, sample_label, max_distance_index = generate_outliers(
+    #     dataset=dataset,
+    #     num_nodes=num_nodes,
+    #     num_features=num_features,
+    #     num_edges=num_edges,
+    #     debug=True
+    # )
+
+    # visualize_3D(dataset=dataset, boundary=max_distance_index, outlier=sample_point)

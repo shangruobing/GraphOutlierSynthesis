@@ -11,6 +11,7 @@ from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
 
 from OutliersGenerate.KNN import generate_outliers
+from OutliersGenerate.bakcup import generate_outliers as NPOS
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
 from icecream import ic
 
@@ -40,14 +41,7 @@ class MSP(nn.Module):
             self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -74,20 +68,32 @@ class MSP(nn.Module):
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
         if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
+            if args.npos:
+                sample_point, sample_edge, sample_label = NPOS(
+                    x_in,
+                    device=device,
+                    num_nodes=dataset_ind.num_nodes,
+                    num_features=dataset_ind.num_features,
+                    num_edges=dataset_ind.num_edges,
+                )
+            else:
+                sample_point, sample_edge, sample_label = generate_outliers(
+                    x_in,
+                    device=device,
+                    num_nodes=dataset_ind.num_nodes,
+                    num_features=dataset_ind.num_features,
+                    num_edges=dataset_ind.num_edges,
+                )
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
+            # sp = torch.softmax(torch.cat([logits_in, sample_point_logits_out]), dim=-1)
+            # input_for_lr = sp.max(dim=1)[0]
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            # criterion_BCE = nn.BCELoss()
+            criterion_BCE = nn.BCEWithLogitsLoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            # ic(sample_sup_loss)
             sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
@@ -124,14 +130,7 @@ class OE(nn.Module):
             self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -212,14 +211,7 @@ class ODIN(nn.Module):
             self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -333,14 +325,7 @@ class Mahalanobis(nn.Module):
             self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -357,7 +342,6 @@ class Mahalanobis(nn.Module):
         for out in temp_list:
             feature_list[count] = out.size(1)
             count += 1
-        # print('get sample mean and covariance', count)
         num_classes = len(torch.unique(train_set.y))
         sample_mean, precision = self.sample_estimator(num_classes, feature_list, train_set, train_idx, device)
         in_score = self.get_Mahalanobis_score(test_set, node_idx, device, num_classes, sample_mean, precision,
@@ -567,14 +551,7 @@ class MaxLogits(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -651,14 +628,7 @@ class EnergyModel(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -756,14 +726,7 @@ class EnergyProp(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -894,14 +857,7 @@ class GNNSafe(nn.Module):
             self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=c, out_features=16, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=16, out_features=8, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=8, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        self.classifier = init_classifier(in_features=c)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -1008,3 +964,22 @@ class GNNSafe(nn.Module):
             loss += sample_sup_loss
 
         return loss
+
+
+def init_classifier(in_features: int):
+    """
+    Initialize a classifier for encoder output.
+    Args:
+        in_features: number of input features
+
+    Returns:
+
+    """
+    return nn.Sequential(
+        nn.Linear(in_features=in_features, out_features=32, bias=True),
+        nn.ReLU(inplace=True),
+        nn.Linear(in_features=32, out_features=16, bias=True),
+        nn.ReLU(inplace=True),
+        nn.Linear(in_features=16, out_features=1, bias=True),
+        nn.Sigmoid()
+    )

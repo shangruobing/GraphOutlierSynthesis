@@ -21,7 +21,6 @@ def parser_add_main_args(parser):
     parser.add_argument('--hops', type=int, default=2, help='power of adjacency matrix for sgc')
     parser.add_argument('--prop_layers', type=int, default=2)
 
-
     # GnnSafe hyper
     parser.add_argument('--T', type=float, default=1.0, help='temperature for Softmax')
     parser.add_argument('--use_reg', action='store_true', help='whether to use energy regularization loss')
@@ -47,3 +46,4 @@ def parser_add_main_args(parser):
 
     # generate outliers
     parser.add_argument('--generate_ood', action='store_true')
+    parser.add_argument('--npos', action='store_true')
