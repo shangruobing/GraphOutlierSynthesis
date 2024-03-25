@@ -54,34 +54,58 @@ def visualize_2D(dataset, all_boundary, boundary, outlier, title="visualize_2D")
     plt.show()
 
 
-def visualize_3D(dataset, boundary, outlier, title="visualize_3D"):
+def visualize_3D(dataset, all_boundary, boundary, outlier, title="visualize_3D"):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(
-        dataset[:, 0],
-        dataset[:, 1],
-        dataset[:, 2],
-        c='tab:orange',
-        label="dataset",
-        alpha=0.5
-    )
+    scatter_configs = [
+        {
+            "x": dataset[:, 0],
+            "y": dataset[:, 1],
+            "z": dataset[:, 2],
+            "c": 'tab:orange',
+            'label': "dataset",
+            "alpha": 0.5
+        },
+        {
+            "x": dataset[all_boundary, 0],
+            "y": dataset[all_boundary, 1],
+            "z": dataset[all_boundary, 2],
+            "c": 'tab:blue',
+            'label': "boundary",
+            "alpha": 0.7
+        },
+        {
+            "x": outlier[:, 0],
+            "y": outlier[:, 1],
+            "z": outlier[:, 2],
+            "c": 'tab:green',
+            'label': "outlier",
+            "alpha": 0.5
+        }
+    ]
+    for config in scatter_configs:
+        ax.scatter(
+            config["x"],
+            config["y"],
+            config["z"],
+            c=config["c"],
+            label=config["label"],
+            alpha=config["alpha"]
+        )
     ax.scatter(
         dataset[boundary, 0],
         dataset[boundary, 1],
         dataset[boundary, 2],
-        c='tab:blue',
-        label="boundary",
-        alpha=0.5
+        label="selected boundary",
+        alpha=0.7,
+        s=200,
+        marker='o',
+        facecolor='none',
+        edgecolor='tab:red',
+        linestyle='dashed',
+        linewidth=2
     )
-    ax.scatter(
-        outlier[:, 0],
-        outlier[:, 1],
-        outlier[:, 2],
-        c='tab:green',
-        label="outlier",
-        alpha=0.5
-    )
-    ax.title(title)
+    plt.title(title)
     ax.legend()
     plt.show()
 

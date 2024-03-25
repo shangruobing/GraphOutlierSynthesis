@@ -5,15 +5,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.autograd as autograd
+from icecream import ic
 from torch.autograd import Variable
 from torch_geometric.data import Data
 from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
 
 from OutliersGenerate.KNN import generate_outliers
-from OutliersGenerate.bakcup import generate_outliers as NPOS
+from OutliersGenerate.test import visualize, line
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
-from icecream import ic
+
+count = 0
 
 
 class MSP(nn.Module):
@@ -51,7 +53,7 @@ class MSP(nn.Module):
         return self.encoder(x, edge_index)
 
     def detect(self, dataset, node_idx, device, args):
-
+        # 是否需要把这个函数替换为分类器
         logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
         if args.dataset in ('proteins', 'ppi'):
             pred = torch.sigmoid(logits).unsqueeze(-1)
@@ -59,40 +61,61 @@ class MSP(nn.Module):
             max_sp = pred.max(dim=-1)[0]
             return max_sp.sum(dim=1)
         else:
-            sp = torch.softmax(logits, dim=-1)
-            return sp.max(dim=1)[0]
+            return self.classifier(logits).view(-1)
+            # sp = torch.softmax(logits, dim=-1)
+            # return sp.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
         train_idx = dataset_ind.splits['train']
         x_in = dataset_ind.x.to(device)
+        # 数据集的编码结果
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
+        # outputs = torch.randn(100, 128)
+        # y = torch.randint(
+        #     low=0,
+        #     high=7,
+        #     size=(len(outputs),),
+        # )
+
+        # visualize(logits_in, color=dataset_ind.y[train_idx], epoch=1)
 
         if args.generate_ood:
-            if args.npos:
-                sample_point, sample_edge, sample_label = NPOS(
-                    x_in,
-                    device=device,
-                    num_nodes=dataset_ind.num_nodes,
-                    num_features=dataset_ind.num_features,
-                    num_edges=dataset_ind.num_edges,
-                )
-            else:
-                sample_point, sample_edge, sample_label = generate_outliers(
-                    x_in,
-                    device=device,
-                    num_nodes=dataset_ind.num_nodes,
-                    num_features=dataset_ind.num_features,
-                    num_edges=dataset_ind.num_edges,
-                )
+            # ic(x_in.size())
+            sample_point, sample_edge, sample_label = generate_outliers(
+                x_in,
+                device=device,
+                num_nodes=len(logits_in),
+                # num_nodes=dataset_ind.num_nodes,
+                num_features=dataset_ind.num_features,
+                num_edges=dataset_ind.num_edges,
+            )
+            # ic(x_in[0])
+            # ic(sample_point[0])
+            # 异常值的编码结果
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            # sp = torch.softmax(torch.cat([logits_in, sample_point_logits_out]), dim=-1)
-            # input_for_lr = sp.max(dim=1)[0]
+            # ic(logits_in.size())
+            # ic(sample_point_logits_out.size())
+            # 让分类器来对数据集和异常值的编码结果进行分类
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            # criterion_BCE = nn.BCELoss()
+            # ic(input_for_lr.size())
+            # ic(input_for_lr )
+            labels_for_lr = torch.cat([
+                torch.ones(len(logits_in), device=device),
+                torch.zeros(len(sample_point_logits_out), device=device)
+            ])
+            global count
+            count += 1
+            if count % 10 == 0:
+                pass
+                # line(x=input_for_lr.cpu().detach().numpy(), y=labels_for_lr.cpu().detach().numpy())
+                # visualize(torch.cat([logits_in, sample_point_logits_out]), color=labels_for_lr, epoch=count)
+
+            # ic(input_for_lr)
+            # ic(torch.sigmoid(input_for_lr))
             criterion_BCE = nn.BCEWithLogitsLoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+            # line(x=input_for_lr, y=labels_for_lr)
+
             # ic(sample_sup_loss)
             sample_sup_loss.backward(retain_graph=True)
         else:
@@ -104,6 +127,7 @@ class MSP(nn.Module):
             pred_in = F.log_softmax(logits_in, dim=1)
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
+        # loss= encoder的loss + 分类器的loss
         if args.generate_ood:
             loss += sample_sup_loss
         return loss
@@ -156,7 +180,7 @@ class OE(nn.Module):
 
         x_in = dataset_ind.x.to(device)
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_in_idx]
-        logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
+        # logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
 
         if args.generate_ood:
             sample_point, sample_edge, sample_label = generate_outliers(
@@ -183,7 +207,7 @@ class OE(nn.Module):
         else:
             pred_in = F.log_softmax(logits_in, dim=1)
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-        loss += 0.5 * -(logits_out.mean(1) - torch.logsumexp(logits_out, dim=1)).mean()
+        # loss += 0.5 * -(logits_out.mean(1) - torch.logsumexp(logits_out, dim=1)).mean()
 
         if args.generate_ood:
             loss += sample_sup_loss
@@ -649,11 +673,12 @@ class EnergyModel(nn.Module):
 
     def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
 
-        train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
+        # train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
+        train_in_idx = dataset_ind.splits['train']
 
         x_in = dataset_ind.x.to(device)
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_in_idx]
-        logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
+        # logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
 
         if args.generate_ood:
             sample_point, sample_edge, sample_label = generate_outliers(
@@ -762,9 +787,9 @@ class EnergyProp(nn.Module):
 
     def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
         x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
-        x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
+        # x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
         logits_in = self.encoder(x_in, edge_index_in)
-        logits_out = self.encoder(x_out, edge_index_out)
+        # logits_out = self.encoder(x_out, edge_index_out)
 
         if args.generate_ood:
             sample_point, sample_edge, sample_label = generate_outliers(
@@ -897,11 +922,11 @@ class GNNSafe(nn.Module):
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         """return loss for training"""
         x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
-        x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
+        # x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
 
         logits_in = self.encoder(x_in, edge_index_in)
 
-        logits_out = self.encoder(x_out, edge_index_out)
+        # logits_out = self.encoder(x_out, edge_index_out)
         if args.generate_ood:
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
@@ -930,35 +955,36 @@ class GNNSafe(nn.Module):
             pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
             sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
 
-        if args.use_reg:  # If you use energy regularization
-            if args.dataset in ('proteins', 'ppi'):  # for multi-label binary classification
-                logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
-                logits_out = torch.stack([logits_out, torch.zeros_like(logits_out)], dim=2)
-                energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1).sum(dim=1)
-                energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1).sum(dim=1)
-            else:  # for single-label multi-class classification
-                energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
-                energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
-
-            if args.use_prop:  # use energy belief propagation
-                energy_in = self.propagation(energy_in, edge_index_in, args.K, args.alpha)[train_in_idx]
-                energy_out = self.propagation(energy_out, edge_index_out, args.K, args.alpha)[train_ood_idx]
-            else:
-                energy_in = energy_in[train_in_idx]
-                energy_out = energy_out[train_in_idx]
-
-            # truncate to have the same length
-            if energy_in.shape[0] != energy_out.shape[0]:
-                min_n = min(energy_in.shape[0], energy_out.shape[0])
-                energy_in = energy_in[:min_n]
-                energy_out = energy_out[:min_n]
-
-            # compute regularization loss
-            reg_loss = torch.mean(F.relu(energy_in - args.m_in) ** 2 + F.relu(args.m_out - energy_out) ** 2)
-
-            loss = sup_loss + args.lamda * reg_loss
-        else:
-            loss = sup_loss
+        # if args.use_reg:  # If you use energy regularization
+        #     if args.dataset in ('proteins', 'ppi'):  # for multi-label binary classification
+        #         logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
+        #         # logits_out = torch.stack([logits_out, torch.zeros_like(logits_out)], dim=2)
+        #         energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1).sum(dim=1)
+        #         # energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1).sum(dim=1)
+        #     else:  # for single-label multi-class classification
+        #         energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
+        #         # energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
+        #
+        #     if args.use_prop:  # use energy belief propagation
+        #         energy_in = self.propagation(energy_in, edge_index_in, args.K, args.alpha)[train_in_idx]
+        #         # energy_out = self.propagation(energy_out, edge_index_out, args.K, args.alpha)[train_ood_idx]
+        #     else:
+        #         energy_in = energy_in[train_in_idx]
+        #         # energy_out = energy_out[train_in_idx]
+        #
+        #     # truncate to have the same length
+        #     # if energy_in.shape[0] != energy_out.shape[0]:
+        #     #     min_n = min(energy_in.shape[0], energy_out.shape[0])
+        #     #     energy_in = energy_in[:min_n]
+        #     #     energy_out = energy_out[:min_n]
+        #
+        #     # compute regularization loss
+        #     reg_loss = torch.mean(F.relu(energy_in - args.m_in) ** 2 + F.relu(args.m_out - energy_out) ** 2)
+        #
+        #     loss = sup_loss + args.lamda * reg_loss
+        # else:
+        #     loss = sup_loss
+        loss = sup_loss
 
         if args.generate_ood:
             loss += sample_sup_loss
@@ -983,3 +1009,12 @@ def init_classifier(in_features: int):
         nn.Linear(in_features=16, out_features=1, bias=True),
         nn.Sigmoid()
     )
+
+
+class Classifier(nn.Module):
+    def __init__(self, in_features):
+        super(Classifier, self).__init__()
+        self.classifier = init_classifier(in_features=in_features)
+
+    def forward(self, x):
+        return self.classifier(x)

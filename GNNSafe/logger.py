@@ -77,11 +77,11 @@ class ClassifyLogger:
             best_results.append((train1, test1, valid, train2, test2))
         best_result = torch.tensor(best_results)
         return {
-            "Highest Train": round(best_result[:, 0].mean().item(), 4),
-            "Highest Test": round(best_result[:, 1].mean().item(), 4),
-            "Highest Valid": round(best_result[:, 2].mean().item(), 4),
-            "Final Train": round(best_result[:, 3].mean().item(), 4),
-            "Final Test": round(best_result[:, 4].mean().item(), 4),
+            "Highest Train": round(best_result[:, 0].mean().item(), 2),
+            "Highest Test": round(best_result[:, 1].mean().item(), 2),
+            "Highest Valid": round(best_result[:, 2].mean().item(), 2),
+            "Final Train": round(best_result[:, 3].mean().item(), 2),
+            "Final Test": round(best_result[:, 4].mean().item(), 2),
         }
 
 
@@ -169,10 +169,10 @@ class DetectLogger:
             best_results.append(ood_result_val + [score_val])
         best_result = torch.tensor(best_results)
         return {
-            "AUROC": round(best_result[:, 0].mean().item(), 4),
-            "AUPR": round(best_result[:, 1].mean().item(), 4),
-            "FPR": round(best_result[:, 2].mean().item(), 4),
-            "SCORE": round(best_result[:, 3].mean().item(), 4),
+            "AUROC": round(best_result[:, 0].mean().item(), 2),
+            "AUPR": round(best_result[:, 1].mean().item(), 2),
+            "FPR": round(best_result[:, 2].mean().item(), 2),
+            "SCORE": round(best_result[:, 3].mean().item(), 2),
         }
 
 # def save_result(results, args):

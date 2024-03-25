@@ -5,7 +5,7 @@ from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 
 from baselines import *
 
-
+from icecream import ic
 def rand_splits(node_idx, train_prop=.5, valid_prop=.25):
     """ randomly splits label into train/valid/test splits """
     splits = {}
@@ -364,6 +364,9 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         else:
             with torch.no_grad():
                 test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
+
+        # ic(test_ind_score)
+        # ic(test_ood_score)
         auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
         result = [auroc] + [aupr] + [fpr]
 
@@ -423,14 +426,14 @@ def get_gpu_memory_map():
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
-dataset_drive_url = {
-    'snap-patents': '1ldh23TSY1PwXia6dU0MYcpyEgX-w3Hia',
-    'pokec': '1dNs5E7BrWJbgcHeQ_zuy5Ozp2tRCWG0y',
-    'yelp-chi': '1fAXtTVQS4CfEk4asqrFw9EPmlUPGbGtJ',
-}
-
-splits_drive_url = {
-    'snap-patents': '12xbBRqd8mtG_XkNLH8dRRNZJvVM4Pw-N',
-    'pokec': '1ZhpAiyTNc0cE_hhgyiqxnkKREHK7MK-_',
-}
+#
+# dataset_drive_url = {
+#     'snap-patents': '1ldh23TSY1PwXia6dU0MYcpyEgX-w3Hia',
+#     'pokec': '1dNs5E7BrWJbgcHeQ_zuy5Ozp2tRCWG0y',
+#     'yelp-chi': '1fAXtTVQS4CfEk4asqrFw9EPmlUPGbGtJ',
+# }
+#
+# splits_drive_url = {
+#     'snap-patents': '12xbBRqd8mtG_XkNLH8dRRNZJvVM4Pw-N',
+#     'pokec': '1ZhpAiyTNc0cE_hhgyiqxnkKREHK7MK-_',
+# }

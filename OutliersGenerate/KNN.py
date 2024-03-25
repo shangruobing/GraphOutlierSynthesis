@@ -2,7 +2,7 @@ from typing import Tuple
 import faiss
 import numpy as np
 import torch
-from faiss import GpuIndexFlat
+from faiss import GpuIndexFlat, IndexFlat
 from torch import Tensor
 from torch.distributions import MultivariateNormal
 from icecream import ic
@@ -55,8 +55,11 @@ def generate_outliers(
     num_sample_points = int(num_nodes * sampling_ratio)
 
     # 将输入的数据集归一化，根据采样率选择数据集范围，然后存入向量库
-    resource = faiss.StandardGpuResources()
-    faiss_index = faiss.GpuIndexFlatL2(resource, num_features)
+    faiss_index = faiss.IndexFlatL2(num_features)
+    if device.type != "cpu":
+        resource = faiss.StandardGpuResources()
+        faiss_index = faiss.index_cpu_to_gpu(provider=resource, device=device.index, index=faiss_index)
+
     # 随机生成所要采样的数据集索引列表
     rand_index = np.random.choice(num_nodes, num_sample_points, replace=False)
     faiss_index.add(dataset[rand_index].cpu().numpy())
@@ -116,14 +119,14 @@ def generate_outliers(
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
     if debug:
-        return sample_points, sample_edges, sample_labels, all_max_distance_index, max_distance_index, f"top:{top} k:{k} pic_nums:{pic_nums}"
+        return sample_points, sample_edges, sample_labels, all_max_distance_index, max_distance_index, f"top:{top} k:{k} pic_nums:{pic_nums} dataset:{dataset.size()} sample_points:{sample_points.size()}"
     else:
         return sample_points, sample_edges, sample_labels
 
 
 def search_max_distance(
         target: Tensor,
-        index: GpuIndexFlat,
+        index: IndexFlat,
         k: int,
         top: int
 ) -> Tuple[Tensor, Tensor]:
@@ -155,7 +158,7 @@ def search_max_distance(
 
 def generate_negative_samples(
         target: Tensor,
-        index: GpuIndexFlat,
+        index: IndexFlat,
         k: int,
         num_points: int,
         num_negative_samples: int
@@ -206,8 +209,21 @@ def normalize(dataset: Tensor) -> Tensor:
 if __name__ == '__main__':
     from visualize import visualize_2D, visualize_3D
 
-    dataset = torch.rand(2000, 2)
+    # dataset = torch.rand(2000, 2)
+    #
+    # num_nodes, num_features = dataset.shape[0], dataset.shape[1]
+    # num_edges = 10
+    # sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
+    #     dataset=dataset,
+    #     num_nodes=num_nodes,
+    #     num_features=num_features,
+    #     num_edges=num_edges,
+    #     debug=True,
+    # )
 
+    # visualize_2D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
+
+    dataset = torch.rand(500, 3)
     num_nodes, num_features = dataset.shape[0], dataset.shape[1]
     num_edges = 10
     sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
@@ -215,28 +231,8 @@ if __name__ == '__main__':
         num_nodes=num_nodes,
         num_features=num_features,
         num_edges=num_edges,
-        debug=True
+        debug=True,
     )
 
-    # sample_point = sample_point / torch.norm(sample_point, p=2, dim=1, keepdim=True)
-    # ic(dataset)
-    # ic(dataset.size())
-    # ic(sample_point)
-    # ic(sample_point.size())
-    # ic(max_distance_index)
-    # ic(max_distance_index.size())
+    visualize_3D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
 
-    visualize_2D(dataset=dataset, all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point, title=title)
-
-    # dataset = torch.rand(500, 3)
-    # num_nodes, num_features = dataset.shape[0], dataset.shape[1]
-    # num_edges = 10
-    # sample_point, sample_edge, sample_label, max_distance_index = generate_outliers(
-    #     dataset=dataset,
-    #     num_nodes=num_nodes,
-    #     num_features=num_features,
-    #     num_edges=num_edges,
-    #     debug=True
-    # )
-
-    # visualize_3D(dataset=dataset, boundary=max_distance_index, outlier=sample_point)
