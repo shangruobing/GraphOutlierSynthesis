@@ -1,127 +1,49 @@
-from collections import defaultdict
+from typing import Tuple
 
-from scipy import sparse as sp
-from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
-
-from baselines import *
-
-from icecream import ic
-def rand_splits(node_idx, train_prop=.5, valid_prop=.25):
-    """ randomly splits label into train/valid/test splits """
-    splits = {}
-    n = node_idx.size(0)
-
-    train_num = int(n * train_prop)
-    valid_num = int(n * valid_prop)
-
-    perm = torch.as_tensor(np.random.permutation(n))
-
-    train_indices = perm[:train_num]
-    val_indices = perm[train_num:train_num + valid_num]
-    test_indices = perm[train_num + valid_num:]
-
-    splits['train'] = node_idx[train_indices]
-    splits['valid'] = node_idx[val_indices]
-    splits['test'] = node_idx[test_indices]
-
-    return splits
+from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
+import torch
+import numpy as np
+from torch_sparse import SparseTensor
+import torch.nn.functional as F
+from baselines import ODIN, Mahalanobis
+from torch import BoolTensor
 
 
-# def load_fixed_splits(data_dir, dataset, name, protocol):
-#     splits_lst = []
-#     if name in ['cora', 'citeseer', 'pubmed'] and protocol == 'semi':
-#         splits = {}
-#         splits['train'] = torch.as_tensor(dataset.train_mask.nonzero().squeeze(1))
-#         splits['valid'] = torch.as_tensor(dataset.val_mask.nonzero().squeeze(1))
-#         splits['test'] = torch.as_tensor(dataset.test_mask.nonzero().squeeze(1))
-#         splits_lst.append(splits)
-#     elif name in ['cora', 'citeseer', 'pubmed', 'chameleon', 'squirrel', 'film', 'cornell', 'texas', 'wisconsin']:
-#         for i in range(10):
-#             splits_file_path = '{}/geom-gcn/splits/{}'.format(data_dir, name) + '_split_0.6_0.2_' + str(i) + '.npz'
-#             splits = {}
-#             with np.load(splits_file_path) as splits_file:
-#                 splits['train'] = torch.BoolTensor(splits_file['train_mask'])
-#                 splits['valid'] = torch.BoolTensor(splits_file['val_mask'])
-#                 splits['test'] = torch.BoolTensor(splits_file['test_mask'])
-#             splits_lst.append(splits)
-#     else:
-#         raise NotImplementedError
-#
-#     return splits_lst
+def rand_splits(num_nodes, train_ratio=0.5, test_ratio=0.25) -> Tuple[BoolTensor, BoolTensor, BoolTensor]:
+    """
+    Randomly split the nodes into train, val, and test sets
+    Args:
+        num_nodes:
+        train_ratio:
+        test_ratio:
 
+    Returns:
 
-# def even_quantile_labels(vals, nclasses, verbose=True):
-#     """ partitions vals into nclasses by a quantile based split,
-#     where the first class is less than the 1/nclasses quantile,
-#     second class is less than the 2/nclasses quantile, and so on
-#
-#     vals is np array
-#     returns a np array of int class labels
-#     """
-#     label = -1 * np.ones(vals.shape[0], dtype=np.int)
-#     interval_lst = []
-#     lower = -np.inf
-#     for k in range(nclasses - 1):
-#         upper = np.quantile(vals, (k + 1) / nclasses)
-#         interval_lst.append((lower, upper))
-#         inds = (vals >= lower) * (vals < upper)
-#         label[inds] = k
-#         lower = upper
-#     label[vals >= lower] = nclasses - 1
-#     interval_lst.append((lower, np.inf))
-#     if verbose:
-#         print('Class Label Intervals:')
-#         for class_idx, interval in enumerate(interval_lst):
-#             print(f'Class {class_idx}: [{interval[0]}, {interval[1]})]')
-#     return label
+    """
 
+    train_size = int(train_ratio * num_nodes)
+    test_size = int(test_ratio * num_nodes)
 
-# def to_planetoid(dataset):
-#     """
-#         Takes in a NCDataset and returns the dataset in H2GCN Planetoid form, as follows:
-#         x => the feature vectors of the training instances as scipy.sparse.csr.csr_matrix object;
-#         tx => the feature vectors of the test instances as scipy.sparse.csr.csr_matrix object;
-#         allx => the feature vectors of both labeled and unlabeled training instances
-#             (a superset of ind.dataset_str.x) as scipy.sparse.csr.csr_matrix object;
-#         y => the one-hot labels of the labeled training instances as numpy.ndarray object;
-#         ty => the one-hot labels of the test instances as numpy.ndarray object;
-#         ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
-#         graph => a dict in the format {index: [index_of_neighbor_nodes]} as collections.defaultdict
-#             object;
-#         split_idx => The ogb dictionary that contains the train, valid, test splits
-#     """
-#     split_idx = dataset.get_idx_split('random', 0.25)
-#     train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
-#
-#     graph, label = dataset[0]
-#
-#     label = torch.squeeze(label)
-#
-#     print("generate x")
-#     x = graph['node_feat'][train_idx].numpy()
-#     x = sp.csr_matrix(x)
-#
-#     tx = graph['node_feat'][test_idx].numpy()
-#     tx = sp.csr_matrix(tx)
-#
-#     allx = graph['node_feat'].numpy()
-#     allx = sp.csr_matrix(allx)
-#
-#     y = F.one_hot(label[train_idx]).numpy()
-#     ty = F.one_hot(label[test_idx]).numpy()
-#     ally = F.one_hot(label).numpy()
-#
-#     edge_index = graph['edge_index'].T
-#
-#     graph = defaultdict(list)
-#
-#     for i in range(0, label.shape[0]):
-#         graph[i].append(i)
-#
-#     for start_edge, end_edge in edge_index:
-#         graph[start_edge.item()].append(end_edge.item())
-#
-#     return x, tx, allx, y, ty, ally, graph, split_idx
+    # 创建索引
+    indices = torch.arange(num_nodes)
+
+    # 随机打乱索引
+    indices = indices[torch.randperm(num_nodes)]
+
+    # 划分数据集
+    train_indices = indices[:train_size]
+    test_indices = indices[train_size:train_size + test_size]
+    val_indices = indices[train_size + test_size:]
+
+    # 创建布尔索引
+    train_mask = torch.zeros(num_nodes, dtype=torch.bool)
+    test_mask = torch.zeros(num_nodes, dtype=torch.bool)
+    val_mask = torch.zeros(num_nodes, dtype=torch.bool)
+    train_mask[train_indices] = True
+    test_mask[test_indices] = True
+    val_mask[val_indices] = True
+
+    return train_mask, val_mask, test_mask
 
 
 def to_sparse_tensor(edge_index, edge_feat, num_nodes):
@@ -137,38 +59,10 @@ def to_sparse_tensor(edge_index, edge_feat, num_nodes):
     adj_t = SparseTensor(row=col, col=row, value=value,
                          sparse_sizes=(N, N), is_sorted=True)
 
-    # Pre-process some important attributes.
     adj_t.storage.rowptr()
     adj_t.storage.csr2csc()
 
     return adj_t
-
-
-def normalize(edge_index):
-    """ normalizes the edge_index
-    """
-    adj_t = edge_index.set_diag()
-    deg = adj_t.sum(dim=1).to(torch.float)
-    deg_inv_sqrt = deg.pow(-0.5)
-    deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-    adj_t = deg_inv_sqrt.view(-1, 1) * adj_t * deg_inv_sqrt.view(1, -1)
-    return adj_t
-
-
-def gen_normalized_adjs(dataset):
-    """ returns the normalized adjacency matrix
-    """
-    row, col = dataset.graph['edge_index']
-    N = dataset.graph['num_nodes']
-    adj = SparseTensor(row=row, col=col, sparse_sizes=(N, N))
-    deg = adj.sum(dim=1).to(torch.float)
-    D_isqrt = deg.pow(-0.5)
-    D_isqrt[D_isqrt == float('inf')] = 0
-
-    DAD = D_isqrt.view(-1, 1) * adj * D_isqrt.view(1, -1)
-    DA = D_isqrt.view(-1, 1) * D_isqrt.view(-1, 1) * adj
-    AD = adj * D_isqrt.view(1, -1) * D_isqrt.view(1, -1)
-    return DAD, DA, AD
 
 
 def stable_cumsum(arr, rtol=1e-05, atol=1e-08):
@@ -191,6 +85,17 @@ def stable_cumsum(arr, rtol=1e-05, atol=1e-08):
 
 
 def fpr_and_fdr_at_recall(y_true, y_score, recall_level=0.95, pos_label=None):
+    """
+    Calculate the FPR95
+    Args:
+        y_true:
+        y_score:
+        recall_level:
+        pos_label:
+
+    Returns:
+
+    """
     classes = np.unique(y_true)
     if (pos_label is None and
             not (np.array_equal(classes, [0, 1]) or
@@ -236,53 +141,52 @@ def fpr_and_fdr_at_recall(y_true, y_score, recall_level=0.95, pos_label=None):
 
 
 def get_measures(_pos, _neg, recall_level=0.95):
+    """
+    The OOD detection performance
+    Args:
+        _pos:
+        _neg:
+        recall_level:
+
+    Returns:
+
+    """
     pos = np.array(_pos[:]).reshape((-1, 1))
     neg = np.array(_neg[:]).reshape((-1, 1))
     examples = np.squeeze(np.vstack((pos, neg)))
     labels = np.zeros(len(examples), dtype=np.int32)
     labels[:len(pos)] += 1
-
     auroc = roc_auc_score(labels, examples)
     aupr = average_precision_score(labels, examples)
     fpr, threshould = fpr_and_fdr_at_recall(labels, examples, recall_level)
-
     return auroc, aupr, fpr, threshould
 
 
-def eval_f1(y_true, y_pred):
-    acc_list = []
-    y_true = y_true.detach().cpu().numpy()
-    if y_pred.shape == y_true.shape:
-        y_pred = y_pred.detach().cpu().numpy()
-    else:
-        y_pred = y_pred.argmax(dim=-1, keepdim=True).detach().cpu().numpy()
-
-    for i in range(y_true.shape[1]):
-        f1 = f1_score(y_true, y_pred, average='micro')
-        acc_list.append(f1)
-
-    return sum(acc_list) / len(acc_list)
-
-
 def eval_acc(y_true, y_pred):
-    acc_list = []
+    """
+    The model prediction performance
+    Args:
+        y_true:
+        y_pred:
+
+    Returns:
+
+    """
     y_true = y_true.detach().cpu().numpy()
-    if y_pred.shape == y_true.shape:
-        y_pred = y_pred.detach().cpu().numpy()
-    else:
-        y_pred = y_pred.argmax(dim=-1, keepdim=True).detach().cpu().numpy()
-
-    for i in range(y_true.shape[1]):
-        is_labeled = y_true[:, i] == y_true[:, i]
-        correct = y_true[is_labeled, i] == y_pred[is_labeled, i]
-        acc_list.append(float(np.sum(correct)) / len(correct))
-
-    return sum(acc_list) / len(acc_list)
+    y_pred = y_pred.argmax(dim=-1, keepdim=True).detach().cpu().numpy().reshape(-1)
+    return accuracy_score(y_true=y_true, y_pred=y_pred)
 
 
 def eval_rocauc(y_true, y_pred):
-    """ adapted from ogb
-    https://github.com/snap-stanford/ogb/blob/master/ogb/nodeproppred/evaluate.py"""
+    """
+    Model binary classification performance
+    https://github.com/snap-stanford/ogb/blob/master/ogb/nodeproppred/evaluate.py
+    Args:
+        y_true:
+        y_pred:
+
+    Returns:
+    """
     rocauc_list = []
     y_true = y_true.detach().cpu().numpy()
     if y_true.shape[1] == 1:
@@ -310,7 +214,7 @@ def eval_rocauc(y_true, y_pred):
 def evaluate_classify(model, dataset, eval_func, criterion, args, device):
     model.eval()
 
-    train_idx, valid_idx, test_idx = dataset.splits['train'], dataset.splits['valid'], dataset.splits['test']
+    train_idx, valid_idx, test_idx = dataset.train_mask, dataset.val_mask, dataset.test_mask
     y = dataset.y
     out = model(dataset, device).cpu()
 
@@ -330,55 +234,49 @@ def evaluate_classify(model, dataset, eval_func, criterion, args, device):
         return train_score, valid_score, test_score
 
 
-# @torch.no_grad()
-def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args, device, return_score=False):
+def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args, device):
+    """
+    OOD detection performance
+    Args:
+        model:
+        dataset_ind:
+        dataset_ood:
+        criterion:
+        eval_func:
+        args:
+        device:
+
+    Returns:
+
+    """
     model.eval()
 
     if isinstance(model, Mahalanobis):
-        test_ind_score = model.detect(dataset_ind, dataset_ind.splits['train'], dataset_ind, dataset_ind.splits['test'],
+        test_ind_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ind, dataset_ind.test_mask,
                                       device, args)
     elif isinstance(model, ODIN):
-        test_ind_score = model.detect(dataset_ind, dataset_ind.splits['test'], device, args).cpu()
+        test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
     else:
         with torch.no_grad():
-            test_ind_score = model.detect(dataset_ind, dataset_ind.splits['test'], device, args).cpu()
-    if isinstance(dataset_ood, list):
-        result = []
-        for d in dataset_ood:
-            if isinstance(model, Mahalanobis):
-                test_ood_score = model.detect(dataset_ind, dataset_ind.splits['train'], d, d.node_idx, device,
-                                              args).cpu()
-            elif isinstance(model, ODIN):
-                test_ood_score = model.detect(d, d.node_idx, device, args).cpu()
-            else:
-                with torch.no_grad():
-                    test_ood_score = model.detect(d, d.node_idx, device, args).cpu()
-            auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
-            result += [auroc] + [aupr] + [fpr]
+            test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
+    if isinstance(model, Mahalanobis):
+        test_ood_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ood, dataset_ood.node_idx,
+                                      device, args).cpu()
+    elif isinstance(model, ODIN):
+        test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
     else:
-        if isinstance(model, Mahalanobis):
-            test_ood_score = model.detect(dataset_ind, dataset_ind.splits['train'], dataset_ood, dataset_ood.node_idx,
-                                          device, args).cpu()
-        elif isinstance(model, ODIN):
+        with torch.no_grad():
             test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
-        else:
-            with torch.no_grad():
-                test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
 
-        # ic(test_ind_score)
-        # ic(test_ood_score)
-        auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
-        result = [auroc] + [aupr] + [fpr]
+    auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
+    result = [auroc] + [aupr] + [fpr]
 
     out = model(dataset_ind, device).cpu()
-    test_idx = dataset_ind.splits['test']
+    test_idx = dataset_ind.test_mask
+    # test_idx = dataset_ind.test_mask
     test_score = eval_func(dataset_ind.y[test_idx], out[test_idx])
 
-    # valid_loss = 0.
-    # for i, (d_in, d_out) in enumerate(zip(valid_loader_ind, valid_loader_ood)):
-    #     valid_loss += model.loss_compute(d_in, d_out, criterion, device, args)
-    # valid_loss /= (i+1)
-    valid_idx = dataset_ind.splits['valid']
+    valid_idx = dataset_ind.val_mask
     if args.dataset in ('proteins', 'ppi'):
         valid_loss = criterion(out[valid_idx], dataset_ind.y[valid_idx].to(torch.float))
     else:
@@ -386,54 +284,4 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         valid_loss = criterion(valid_out, dataset_ind.y[valid_idx].squeeze(1))
 
     result += [test_score] + [valid_loss]
-
-    # if return_score:
-    #     return result, test_ind_score, test_ood_score
-    # else:
     return result
-
-
-def convert_to_adj(edge_index, n_node):
-    """convert from pyg format edge_index to n by n adj matrix"""
-    adj = torch.zeros((n_node, n_node))
-    row, col = edge_index
-    adj[row, col] = 1
-    return adj
-
-
-import subprocess
-
-
-def get_gpu_memory_map():
-    """Get the current gpu usage.
-    Returns
-    -------
-    usage: dict
-        Keys are device ids as integers.
-        Values are memory usage as integers in MB.
-    """
-    result = subprocess.check_output(
-        [
-            'nvidia-smi', '--query-gpu=memory.used',
-            '--format=csv,nounits,noheader'
-        ], encoding='utf-8')
-    # Convert lines into a dictionary
-    gpu_memory = np.array([int(x) for x in result.strip().split('\n')])
-    # gpu_memory_map = dict(zip(range(len(gpu_memory)), gpu_memory))
-    return gpu_memory
-
-
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-#
-# dataset_drive_url = {
-#     'snap-patents': '1ldh23TSY1PwXia6dU0MYcpyEgX-w3Hia',
-#     'pokec': '1dNs5E7BrWJbgcHeQ_zuy5Ozp2tRCWG0y',
-#     'yelp-chi': '1fAXtTVQS4CfEk4asqrFw9EPmlUPGbGtJ',
-# }
-#
-# splits_drive_url = {
-#     'snap-patents': '12xbBRqd8mtG_XkNLH8dRRNZJvVM4Pw-N',
-#     'pokec': '1ZhpAiyTNc0cE_hhgyiqxnkKREHK7MK-_',
-# }

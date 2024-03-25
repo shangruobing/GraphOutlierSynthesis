@@ -61,12 +61,12 @@ class MSP(nn.Module):
             max_sp = pred.max(dim=-1)[0]
             return max_sp.sum(dim=1)
         else:
-            return self.classifier(logits).view(-1)
-            # sp = torch.softmax(logits, dim=-1)
-            # return sp.max(dim=1)[0]
+            # return self.classifier(logits).view(-1)
+            sp = torch.softmax(logits, dim=-1)
+            return sp.max(dim=1)[0]
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
-        train_idx = dataset_ind.splits['train']
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
+        train_idx = dataset_ind.train_mask
         x_in = dataset_ind.x.to(device)
         # 数据集的编码结果
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
@@ -174,12 +174,12 @@ class OE(nn.Module):
         else:
             return logits.max(dim=1)[0]
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
 
-        train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
+        train_idx = dataset_ind.train_mask
 
         x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_in_idx]
+        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
         # logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
 
         if args.generate_ood:
@@ -201,7 +201,6 @@ class OE(nn.Module):
         else:
             sample_sup_loss = 0
 
-        train_idx = dataset_ind.splits['train']
         if args.dataset in ('proteins', 'ppi'):
             loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
         else:
@@ -292,9 +291,9 @@ class ODIN(nn.Module):
 
         return nnOutputs
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
 
-        train_idx = dataset_ind.splits['train']
+        train_idx = dataset_ind.train_mask
         x_in = dataset_ind.x.to(device)
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
@@ -518,9 +517,9 @@ class Mahalanobis(nn.Module):
 
         return sample_class_mean, precision
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
 
-        train_idx = dataset_ind.splits['train']
+        train_idx = dataset_ind.train_mask
         x_in = dataset_ind.x.to(device)
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
@@ -595,9 +594,9 @@ class MaxLogits(nn.Module):
         else:
             return logits.max(dim=1)[0]
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
 
-        train_idx = dataset_ind.splits['train']
+        train_idx = dataset_ind.train_mask
         x_in = dataset_ind.x.to(device)
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
 
@@ -671,13 +670,12 @@ class EnergyModel(nn.Module):
             neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
         return neg_energy
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
 
-        # train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
-        train_in_idx = dataset_ind.splits['train']
+        train_idx = dataset_ind.train_mask
 
         x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_in_idx]
+        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
         # logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
 
         if args.generate_ood:
@@ -700,10 +698,10 @@ class EnergyModel(nn.Module):
             sample_sup_loss = 0
 
         if args.dataset in ('proteins', 'ppi'):
-            sup_loss = criterion(logits_in, dataset_ind.y[train_in_idx].to(device).to(torch.float))
+            sup_loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
         else:
             pred_in = F.log_softmax(logits_in, dim=1)
-            sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
+            sup_loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         '''if args.dataset in ('proteins', 'ppi'):
             logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
@@ -782,13 +780,16 @@ class EnergyProp(nn.Module):
             neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
         else:
             neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
-        neg_energy_prop = self.propagation(neg_energy, edge_index, args.prop_layers, args.alpha)
+        neg_energy_prop = self.propagation(neg_energy, edge_index)
         return neg_energy_prop[node_idx]
 
-    def loss_compute(self, dataset_ind, dataset_ood, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
         x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
         # x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
-        logits_in = self.encoder(x_in, edge_index_in)
+
+        train_idx = dataset_ind.train_mask
+
+        logits_in = self.encoder(x_in, edge_index_in)[train_idx]
         # logits_out = self.encoder(x_out, edge_index_out)
 
         if args.generate_ood:
@@ -810,13 +811,11 @@ class EnergyProp(nn.Module):
         else:
             sample_sup_loss = 0
 
-        train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
-
         if args.dataset in ('proteins', 'ppi'):
-            sup_loss = criterion(logits_in[train_in_idx], dataset_ind.y[train_in_idx].to(device).to(torch.float))
+            sup_loss = criterion(logits_in[train_idx], dataset_ind.y[train_idx].to(device).to(torch.float))
         else:
-            pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
-            sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
+            pred_in = F.log_softmax(logits_in[train_idx], dim=1)
+            sup_loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         '''if args.dataset in ('proteins', 'ppi'):
             logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
@@ -849,11 +848,6 @@ class EnergyProp(nn.Module):
 class GNNSafe(nn.Module):
     """
     The model class of energy-based models for out-of-distribution detection
-    The parameter args.use_reg and args.use_prop control the model versions:
-        Energy: args.use_reg = False, args.use_prop = False
-        Energy FT: args.use_reg = True, args.use_prop = False
-        GNNSafe: args.use_reg = False, args.use_prop = True
-        GNNSafe++ args.use_reg = True, args.use_prop = True
     """
 
     def __init__(self, d, c, args: Namespace):
@@ -915,16 +909,18 @@ class GNNSafe(nn.Module):
             neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
         else:  # for single-label multi-class classification
             neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
-        if args.use_prop:  # use energy belief propagation
-            neg_energy = self.propagation(neg_energy, edge_index, args.K, args.alpha)
+        # if args.use_prop:  # use energy belief propagation
+        #     neg_energy = self.propagation(neg_energy, edge_index, args.K, args.alpha)
         return neg_energy[node_idx]
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, criterion, device, args):
         """return loss for training"""
+        train_idx = dataset_ind.train_mask
+
         x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
         # x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
 
-        logits_in = self.encoder(x_in, edge_index_in)
+        logits_in = self.encoder(x_in, edge_index_in)[train_idx]
 
         # logits_out = self.encoder(x_out, edge_index_out)
         if args.generate_ood:
@@ -946,44 +942,13 @@ class GNNSafe(nn.Module):
         else:
             sample_sup_loss = 0
 
-        train_in_idx, train_ood_idx = dataset_ind.splits['train'], dataset_ood.node_idx
-
         # compute supervised training loss
         if args.dataset in ('proteins', 'ppi'):
-            sup_loss = criterion(logits_in[train_in_idx], dataset_ind.y[train_in_idx].to(device).to(torch.float))
+            sup_loss = criterion(logits_in[train_idx], dataset_ind.y[train_idx].to(device).to(torch.float))
         else:
-            pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
-            sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
+            pred_in = F.log_softmax(logits_in[train_idx], dim=1)
+            sup_loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
-        # if args.use_reg:  # If you use energy regularization
-        #     if args.dataset in ('proteins', 'ppi'):  # for multi-label binary classification
-        #         logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
-        #         # logits_out = torch.stack([logits_out, torch.zeros_like(logits_out)], dim=2)
-        #         energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1).sum(dim=1)
-        #         # energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1).sum(dim=1)
-        #     else:  # for single-label multi-class classification
-        #         energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
-        #         # energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
-        #
-        #     if args.use_prop:  # use energy belief propagation
-        #         energy_in = self.propagation(energy_in, edge_index_in, args.K, args.alpha)[train_in_idx]
-        #         # energy_out = self.propagation(energy_out, edge_index_out, args.K, args.alpha)[train_ood_idx]
-        #     else:
-        #         energy_in = energy_in[train_in_idx]
-        #         # energy_out = energy_out[train_in_idx]
-        #
-        #     # truncate to have the same length
-        #     # if energy_in.shape[0] != energy_out.shape[0]:
-        #     #     min_n = min(energy_in.shape[0], energy_out.shape[0])
-        #     #     energy_in = energy_in[:min_n]
-        #     #     energy_out = energy_out[:min_n]
-        #
-        #     # compute regularization loss
-        #     reg_loss = torch.mean(F.relu(energy_in - args.m_in) ** 2 + F.relu(args.m_out - energy_out) ** 2)
-        #
-        #     loss = sup_loss + args.lamda * reg_loss
-        # else:
-        #     loss = sup_loss
         loss = sup_loss
 
         if args.generate_ood:

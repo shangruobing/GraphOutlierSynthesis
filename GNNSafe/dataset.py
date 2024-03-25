@@ -42,7 +42,7 @@ def load_dataset(args: Namespace):
         'coauthor-physics', "wiki-cs", "actor", "webkb",
         "github"
     ]:
-        dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
+        dataset_ind, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
 
     else:
         raise NotImplementedError
@@ -78,7 +78,7 @@ def load_dataset(args: Namespace):
     #     ])
     #     , epoch=1)
 
-    return dataset_ind, dataset_ood_tr, dataset_ood_te
+    return dataset_ind, dataset_ood_te
 
 
 def load_twitch_dataset(data_dir):
@@ -213,24 +213,7 @@ def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):
     edge_probs = torch.ones((num_blocks, num_blocks)) * p_ij
     edge_probs[torch.arange(num_blocks), torch.arange(num_blocks)] = p_ii
     edge_index = stochastic_blockmodel_graph(block_sizes, edge_probs)
-
-    # print("data", data)
-    # print("data.x", data.x)
-    # print("data.y", data.y)
     dataset = Data(x=data.x, edge_index=edge_index, y=data.y)
-    # print(dataset.num_nodes)
-    # dataset.node_idx = torch.arange(dataset.num_nodes)
-    # print(dataset)
-
-    # if hasattr(data, 'train_mask'):
-    #     tensor_split_idx = {}
-    #     idx = torch.arange(data.num_nodes)
-    #     tensor_split_idx['train'] = idx[data.train_mask]
-    #     tensor_split_idx['valid'] = idx[data.val_mask]
-    #     tensor_split_idx['test'] = idx[data.test_mask]
-    #
-    #     dataset.splits = tensor_split_idx
-
     return dataset
 
 
@@ -243,16 +226,6 @@ def create_feat_noise_dataset(data):
 
     dataset = Data(x=x_new, edge_index=data.edge_index, y=data.y)
     dataset.node_idx = torch.arange(n)
-
-    # if hasattr(data, 'train_mask'):
-    #     tensor_split_idx = {}
-    #     idx = torch.arange(data.num_nodes)
-    #     tensor_split_idx['train'] = idx[data.train_mask]
-    #     tensor_split_idx['valid'] = idx[data.val_mask]
-    #     tensor_split_idx['test'] = idx[data.test_mask]
-    #
-    #     dataset.splits = tensor_split_idx
-
     return dataset
 
 
@@ -265,16 +238,6 @@ def create_label_noise_dataset(data):
 
     dataset = Data(x=data.x, edge_index=data.edge_index, y=y_new)
     dataset.node_idx = torch.arange(n)
-
-    # if hasattr(data, 'train_mask'):
-    #     tensor_split_idx = {}
-    #     idx = torch.arange(data.num_nodes)
-    #     tensor_split_idx['train'] = idx[data.train_mask]
-    #     tensor_split_idx['valid'] = idx[data.val_mask]
-    #     tensor_split_idx['test'] = idx[data.test_mask]
-    #
-    #     dataset.splits = tensor_split_idx
-
     return dataset
 
 
@@ -298,12 +261,6 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
             transform=transform
         )
         dataset = torch_dataset[0]
-        idx = torch.arange(dataset.num_nodes)
-        dataset.splits = {
-            'train': idx[dataset.train_mask],
-            'valid': idx[dataset.val_mask],
-            'test': idx[dataset.test_mask],
-        }
     elif dataset_name == 'amazon-photo':
         torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Photo', transform=transform)
         dataset = torch_dataset[0]
@@ -322,12 +279,6 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
     elif dataset_name == 'actor':
         torch_dataset = Actor(root=f'{data_dir}Actor', transform=transform)
         dataset = torch_dataset[0]
-        idx = torch.arange(dataset.num_nodes)
-        dataset.splits = {
-            'train': idx[dataset.train_mask[:, 0]],
-            'valid': idx[dataset.val_mask[:, 0]],
-            'test': idx[dataset.test_mask[:, 0]],
-        }
     elif dataset_name == 'webkb':
         torch_dataset = WebKB(name="Cornell", root=f'{data_dir}WebKB', transform=transform)
         dataset = torch_dataset[0]
@@ -337,24 +288,15 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
     else:
         raise NotImplementedError
 
+    # print("Have train_mask", len(dataset.train_mask) > 0)
+
     dataset.node_idx = torch.arange(dataset.num_nodes)
     dataset_ind = dataset
 
     if ood_type == 'structure':
-        # dataset_ood_tr = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
         dataset_ood_te = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
-        # sample_point, sample_edge, sample_label = generate_outliers(
-        #     dataset.x,
-        #     num_nodes=len(dataset.x),
-        #     # num_nodes=dataset_ind.num_nodes,
-        #     num_features=dataset.num_features,
-        #     num_edges=dataset.num_edges,
-        # )
-        # dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)
-        # dataset.node_idx = torch.arange(dataset.num_nodes)
-        # dataset_ood_te = dataset
+        dataset_ood_te.node_idx = torch.arange(dataset.num_nodes)
     elif ood_type == 'feature':
-        dataset_ood_tr = create_feat_noise_dataset(dataset)
         dataset_ood_te = create_feat_noise_dataset(dataset)
     elif ood_type == 'label':
         label = dataset.y
@@ -365,8 +307,6 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
         idx = torch.arange(label.size(0))
         dataset_ind.node_idx = idx[center_node_mask_ind]
 
-        # if dataset_name in ('cora', 'citeseer', 'pubmed'):
-        #     split_idx = dataset.splits
         if dataset_name in ('cora', 'citeseer', 'pubmed', 'arxiv', "actor"):
             split_idx = dataset.splits
             tensor_split_idx = {}
@@ -386,5 +326,4 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
         dataset_ood_te.node_idx = idx[center_node_mask_ood_te]
     else:
         raise NotImplementedError
-    return dataset_ind, None, dataset_ood_te
-    # return dataset_ind, dataset_ood_tr, dataset_ood_te
+    return dataset_ind, dataset_ood_te

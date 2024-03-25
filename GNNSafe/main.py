@@ -23,48 +23,58 @@ pprint(vars(args))
 fix_seed(args.seed)
 device = get_device(args)
 
-dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
+dataset_ind, dataset_ood_te = load_dataset(args)
 
 if len(dataset_ind.y.shape) == 1:
     dataset_ind.y = dataset_ind.y.unsqueeze(1)
-if len(dataset_ood_tr.y.shape) == 1:
-    dataset_ood_tr.y = dataset_ood_tr.y.unsqueeze(1)
-if isinstance(dataset_ood_te, list):
-    for data in dataset_ood_te:
-        if len(data.y.shape) == 1:
-            data.y = data.y.unsqueeze(1)
+# if isinstance(dataset_ood_te, list):
+#     for data in dataset_ood_te:
+#         if len(data.y.shape) == 1:
+#             data.y = data.y.unsqueeze(1)
+# else:
+#     if len(dataset_ood_te.y.shape) == 1:
+#         dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
+if len(dataset_ood_te.y.shape) == 1:
+    dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
+
+if hasattr(dataset_ind, "train_mask"):
+    print("Using provided splits")
 else:
-    if len(dataset_ood_te.y.shape) == 1:
-        dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
+    print("Using random splits")
+    train_mask, val_mask, test_mask = rand_splits(dataset_ind.num_nodes)
+    dataset_ind.train_mask = train_mask
+    dataset_ind.val_mask = val_mask
+    dataset_ind.test_mask = test_mask
 
-if args.dataset in ['cora', 'citeseer', 'pubmed', "actor"]:
-    pass
-else:
-    dataset_ind.splits = rand_splits(dataset_ind.node_idx, train_prop=args.train_prop, valid_prop=args.valid_prop)
+print(type(dataset_ind))
+# print("Have train_mask", len(dataset_ind.train_mask) > 0)
 
-c = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
-d = dataset_ind.x.shape[1]
+from icecream import ic
 
-print(f"ind    dataset {args.dataset}: all nodes {dataset_ind.num_nodes} | centered nodes {dataset_ind.node_idx.shape[0]} | edges {dataset_ind.edge_index.size(1)} | classes {c} | feats {d}")
-print(f"ood tr dataset {args.dataset}: all nodes {dataset_ood_tr.num_nodes} | centered nodes {dataset_ood_tr.node_idx.shape[0]} | edges {dataset_ood_tr.edge_index.size(1)}")
-print(f"ood te dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | centered nodes {dataset_ood_te.node_idx.shape[0]} | edges {dataset_ood_te.edge_index.size(1)}")
+# ic(dataset_ind.__dict__)
+
+num_classes = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
+num_features = dataset_ind.x.shape[1]
+
+print(f"ind train dataset {args.dataset}: all nodes {dataset_ind.num_nodes} | edges {dataset_ind.edge_index.size(1)} | classes {num_classes} | feats {num_features}")
+print(f"ood test  dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | edges {dataset_ood_te.edge_index.size(1)}")
 
 if args.method == 'msp':
-    model = MSP(d, c, args)
+    model = MSP(num_features, num_classes, args)
 elif args.method in 'gnnsafe':
-    model = GNNSafe(d, c, args)
+    model = GNNSafe(num_features, num_classes, args)
 elif args.method == 'OE':
-    model = OE(d, c, args)
+    model = OE(num_features, num_classes, args)
 elif args.method == "ODIN":
-    model = ODIN(d, c, args)
+    model = ODIN(num_features, num_classes, args)
 elif args.method == "Mahalanobis":
-    model = Mahalanobis(d, c, args)
+    model = Mahalanobis(num_features, num_classes, args)
 elif args.method == 'maxlogits':
-    model = MaxLogits(d, c, args).to(device)
+    model = MaxLogits(num_features, num_classes, args)
 elif args.method == 'energymodel':
-    model = EnergyModel(d, c, args).to(device)
+    model = EnergyModel(num_features, num_classes, args)
 elif args.method == 'energyprop':
-    model = EnergyProp(d, c, args).to(device)
+    model = EnergyProp(num_features, num_classes, args)
 else:
     raise ValueError(f"Unknown method: {args.method}")
 
@@ -79,48 +89,45 @@ else:
     eval_func = eval_acc
 
 if args.mode == 'classify':
-    logger = ClassifyLogger(args.runs, args)
+    logger = ClassifyLogger()
 else:
-    logger = DetectLogger(args.runs, args)
+    logger = DetectLogger()
 
 model.train()
-print(model)
+# print(model)
 
 epoch_info = ""
-for run in range(args.runs):
-    model.reset_parameters()
-    model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+model.reset_parameters()
+model.to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr * 10, weight_decay=args.weight_decay)
 
-    for epoch in range(args.epochs):
-        model.train()
-        optimizer.zero_grad()
-        classifier_optimizer.zero_grad()
-        loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
-        loss.backward()
-        optimizer.step()
-        classifier_optimizer.step()
+for epoch in range(args.epochs):
+    model.train()
+    optimizer.zero_grad()
+    classifier_optimizer.zero_grad()
+    loss = model.loss_compute(dataset_ind, criterion, device, args)
+    # loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
+    loss.backward()
+    optimizer.step()
+    classifier_optimizer.step()
 
-        if args.mode == 'classify':
-            result = evaluate_classify(model, dataset_ind, eval_func, criterion, args, device)
-            logger.add_result(run, result)
+    if args.mode == 'classify':
+        result = evaluate_classify(model, dataset_ind, eval_func, criterion, args, device)
+        logger.add_result(result)
 
-            if epoch % args.display_step == 0:
-                info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Train: {100 * result[0]:.2f}%, Valid: {100 * result[1]:.2f}%, Test: {100 * result[2]:.2f}%'
-                epoch_info += info + '\n'
-                print(info)
-        else:
-            result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
-            logger.add_result(run, result)
+        if epoch % args.display_step == 0:
+            info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Train: {100 * result[0]:.2f}%, Valid: {100 * result[1]:.2f}%, Test: {100 * result[2]:.2f}%'
+            epoch_info += info + '\n'
+            print(info)
+    else:
+        result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
+        logger.add_result(result)
 
-            if epoch % args.display_step == 0:
-                info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Test Score: {100 * result[-2]:.2f}%'
-                epoch_info += info + '\n'
-                print(info)
-    logger.print_statistics(run)
-
-logger.print_statistics()
+        if epoch % args.display_step == 0:
+            info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Test Score: {100 * result[-2]:.2f}%'
+            epoch_info += info + '\n'
+            print(info)
 
 metrics = logger.get_statistics()
 insert_row(
