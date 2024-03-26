@@ -61,7 +61,6 @@ class MSP(nn.Module):
             max_sp = pred.max(dim=-1)[0]
             return max_sp.sum(dim=1)
         else:
-            # return self.classifier(logits).view(-1)
             sp = torch.softmax(logits, dim=-1)
             return sp.max(dim=1)[0]
 
@@ -98,11 +97,19 @@ class MSP(nn.Module):
             # 让分类器来对数据集和异常值的编码结果进行分类
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             # ic(input_for_lr.size())
-            # ic(input_for_lr )
             labels_for_lr = torch.cat([
                 torch.ones(len(logits_in), device=device),
                 torch.zeros(len(sample_point_logits_out), device=device)
             ])
+            # ic(logits_in.size())
+            # ic(sample_point_logits_out.size())
+            # ic(logits_in[:10])
+            # ic(sample_point_logits_out[:10])
+            # ic(input_for_lr[:5])
+            # ic(labels_for_lr[:5])
+            # ic("=====")
+            # ic(input_for_lr[-5:])
+            # ic(labels_for_lr[-5:])
             global count
             count += 1
             if count % 10 == 0:
@@ -112,11 +119,13 @@ class MSP(nn.Module):
 
             # ic(input_for_lr)
             # ic(torch.sigmoid(input_for_lr))
+            # criterion_BCE = nn.BCELoss()
             criterion_BCE = nn.BCEWithLogitsLoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
             # line(x=input_for_lr, y=labels_for_lr)
-
             # ic(sample_sup_loss)
+
+            # 导致OOM
             sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
@@ -972,7 +981,7 @@ def init_classifier(in_features: int):
         nn.Linear(in_features=32, out_features=16, bias=True),
         nn.ReLU(inplace=True),
         nn.Linear(in_features=16, out_features=1, bias=True),
-        nn.Sigmoid()
+        # nn.Sigmoid()
     )
 
 

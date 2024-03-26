@@ -46,18 +46,11 @@ else:
     dataset_ind.val_mask = val_mask
     dataset_ind.test_mask = test_mask
 
-print(type(dataset_ind))
-# print("Have train_mask", len(dataset_ind.train_mask) > 0)
-
-from icecream import ic
-
-# ic(dataset_ind.__dict__)
-
 num_classes = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
-num_features = dataset_ind.x.shape[1]
+num_features = dataset_ind.num_features
 
-print(f"ind train dataset {args.dataset}: all nodes {dataset_ind.num_nodes} | edges {dataset_ind.edge_index.size(1)} | classes {num_classes} | feats {num_features}")
-print(f"ood test  dataset {args.dataset}: all nodes {dataset_ood_te.num_nodes} | edges {dataset_ood_te.edge_index.size(1)}")
+print(f"ind train dataset {args.dataset}: nodes {dataset_ind.num_nodes} | edges {dataset_ind.num_edges} | classes {num_classes} | features {num_features}")
+print(f"ood test  dataset {args.dataset}: nodes {dataset_ood_te.num_nodes} | edges {dataset_ood_te.num_edges}")
 
 if args.method == 'msp':
     model = MSP(num_features, num_classes, args)
@@ -99,8 +92,8 @@ model.train()
 epoch_info = ""
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr * 10, weight_decay=args.weight_decay)
+optimizer = torch.optim.Adam(model.encoder.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
 for epoch in range(args.epochs):
     model.train()

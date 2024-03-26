@@ -1,4 +1,5 @@
 from argparse import Namespace
+from typing import Tuple
 
 import numpy as np
 import torch
@@ -12,7 +13,7 @@ from OutliersGenerate.test import visualize
 from data_utils import to_sparse_tensor
 
 
-def load_dataset(args: Namespace):
+def load_dataset(args: Namespace) -> Tuple[Data, Data]:
     """
     Load dataset according to the dataset name and ood type
     Args:
@@ -202,6 +203,56 @@ def load_proteins_dataset(data_dir, inductive=True):
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
+def load_graph_dataset(data_dir, dataset_name, ood_type):
+    """
+    single graph, use original as ind, modified graphs as ood
+    Args:
+        data_dir:
+        dataset_name:
+        ood_type:
+
+    Returns:
+
+    """
+    transform = T.NormalizeFeatures()
+    if dataset_name in ('cora', 'citeseer', 'pubmed'):
+        torch_dataset = Planetoid(root=f'{data_dir}Planetoid', split='public', name=dataset_name, transform=transform)
+    elif dataset_name == 'amazon-photo':
+        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Photo', transform=transform)
+    elif dataset_name == 'amazon-computer':
+        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Computers', transform=transform)
+    elif dataset_name == 'coauthor-cs':
+        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='CS', transform=transform)
+    elif dataset_name == 'coauthor-physics':
+        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='Physics', transform=transform)
+    elif dataset_name == 'wiki-cs':
+        torch_dataset = WikiCS(root=f'{data_dir}WikiCS', transform=transform, is_undirected=False)
+    elif dataset_name == 'actor':
+        torch_dataset = Actor(root=f'{data_dir}Actor', transform=transform)
+    elif dataset_name == 'webkb':
+        torch_dataset = WebKB(name="Cornell", root=f'{data_dir}WebKB', transform=transform)
+    elif dataset_name == 'github':
+        torch_dataset = GitHub(root=f'{data_dir}GitHub', transform=transform)
+    else:
+        raise NotImplementedError
+
+    # print("Have train_mask", len(dataset.train_mask) > 0)
+
+    dataset = torch_dataset[0]
+    dataset.node_idx = torch.arange(dataset.num_nodes)
+    dataset_ind = dataset
+
+    if ood_type == 'structure':
+        dataset_ood_te = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
+    elif ood_type == 'feature':
+        dataset_ood_te = create_feat_noise_dataset(dataset)
+    elif ood_type == 'label':
+        dataset_ood_te = create_label_leave_out_dataset(dataset, dataset_ind, dataset_name)
+    else:
+        raise NotImplementedError
+    return dataset_ind, dataset_ood_te
+
+
 def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):
     n = data.num_nodes
 
@@ -214,6 +265,7 @@ def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):
     edge_probs[torch.arange(num_blocks), torch.arange(num_blocks)] = p_ii
     edge_index = stochastic_blockmodel_graph(block_sizes, edge_probs)
     dataset = Data(x=data.x, edge_index=edge_index, y=data.y)
+    dataset.node_idx = torch.arange(n)
     return dataset
 
 
@@ -229,101 +281,26 @@ def create_feat_noise_dataset(data):
     return dataset
 
 
-def create_label_noise_dataset(data):
-    y = data.y
-    n = data.num_nodes
-    idx = torch.randperm(n)[:int(n * 0.5)]
-    y_new = y.clone()
-    y_new[idx] = torch.randint(0, y.max(), (int(n * 0.5),))
+def create_label_leave_out_dataset(dataset, dataset_ind, dataset_name):
+    label = dataset.y
+    unique_elements = torch.unique(label)
+    class_t = int(np.median(unique_elements))
 
-    dataset = Data(x=data.x, edge_index=data.edge_index, y=y_new)
-    dataset.node_idx = torch.arange(n)
-    return dataset
+    center_node_mask_ind = (label > class_t)
+    idx = torch.arange(label.size(0))
+    dataset_ind.node_idx = idx[center_node_mask_ind]
 
-
-def load_graph_dataset(data_dir, dataset_name, ood_type):
-    """
-    single graph, use original as ind, modified graphs as ood
-    Args:
-        data_dir:
-        dataset_name:
-        ood_type:
-
-    Returns:
-
-    """
-    transform = T.NormalizeFeatures()
-    if dataset_name in ('cora', 'citeseer', 'pubmed'):
-        torch_dataset = Planetoid(
-            root=f'{data_dir}Planetoid',
-            split='public',
-            name=dataset_name,
-            transform=transform
-        )
-        dataset = torch_dataset[0]
-    elif dataset_name == 'amazon-photo':
-        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Photo', transform=transform)
-        dataset = torch_dataset[0]
-    elif dataset_name == 'amazon-computer':
-        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Computers', transform=transform)
-        dataset = torch_dataset[0]
-    elif dataset_name == 'coauthor-cs':
-        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='CS', transform=transform)
-        dataset = torch_dataset[0]
-    elif dataset_name == 'coauthor-physics':
-        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='Physics', transform=transform)
-        dataset = torch_dataset[0]
-    elif dataset_name == 'wiki-cs':
-        torch_dataset = WikiCS(root=f'{data_dir}WikiCS', transform=transform, is_undirected=False)
-        dataset = torch_dataset[0]
-    elif dataset_name == 'actor':
-        torch_dataset = Actor(root=f'{data_dir}Actor', transform=transform)
-        dataset = torch_dataset[0]
-    elif dataset_name == 'webkb':
-        torch_dataset = WebKB(name="Cornell", root=f'{data_dir}WebKB', transform=transform)
-        dataset = torch_dataset[0]
-    elif dataset_name == 'github':
-        torch_dataset = GitHub(root=f'{data_dir}GitHub', transform=transform)
-        dataset = torch_dataset[0]
-    else:
-        raise NotImplementedError
-
-    # print("Have train_mask", len(dataset.train_mask) > 0)
-
-    dataset.node_idx = torch.arange(dataset.num_nodes)
-    dataset_ind = dataset
-
-    if ood_type == 'structure':
-        dataset_ood_te = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
-        dataset_ood_te.node_idx = torch.arange(dataset.num_nodes)
-    elif ood_type == 'feature':
-        dataset_ood_te = create_feat_noise_dataset(dataset)
-    elif ood_type == 'label':
-        label = dataset.y
-        unique_elements = torch.unique(label)
-        class_t = int(np.median(unique_elements))
-
-        center_node_mask_ind = (label > class_t)
+    if dataset_name in ('cora', 'citeseer', 'pubmed', 'arxiv', "actor"):
+        split_idx = ["train_mask", "val_mask", "test_mask"]
+        tensor_split_idx = {}
         idx = torch.arange(label.size(0))
-        dataset_ind.node_idx = idx[center_node_mask_ind]
+        for key in split_idx:
+            mask = torch.zeros(label.size(0), dtype=torch.bool)
+            mask[torch.as_tensor(split_idx[key])] = True
+            tensor_split_idx[key] = idx[mask * center_node_mask_ind]
+        dataset_ind.splits = tensor_split_idx
 
-        if dataset_name in ('cora', 'citeseer', 'pubmed', 'arxiv', "actor"):
-            split_idx = dataset.splits
-            tensor_split_idx = {}
-            idx = torch.arange(label.size(0))
-            for key in split_idx:
-                mask = torch.zeros(label.size(0), dtype=torch.bool)
-                mask[torch.as_tensor(split_idx[key])] = True
-                tensor_split_idx[key] = idx[mask * center_node_mask_ind]
-            dataset_ind.splits = tensor_split_idx
-
-        dataset_ood_tr = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
-        dataset_ood_te = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
-
-        center_node_mask_ood_tr = (label == class_t)
-        center_node_mask_ood_te = (label < class_t)
-        dataset_ood_tr.node_idx = idx[center_node_mask_ood_tr]
-        dataset_ood_te.node_idx = idx[center_node_mask_ood_te]
-    else:
-        raise NotImplementedError
-    return dataset_ind, dataset_ood_te
+    dataset_ood_te = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
+    center_node_mask_ood_te = (label <= class_t)
+    dataset_ood_te.node_idx = idx[center_node_mask_ood_te]
+    return dataset_ood_te

@@ -269,11 +269,9 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
             test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
 
     auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
-    result = [auroc] + [aupr] + [fpr]
 
     out = model(dataset_ind, device).cpu()
     test_idx = dataset_ind.test_mask
-    # test_idx = dataset_ind.test_mask
     test_score = eval_func(dataset_ind.y[test_idx], out[test_idx])
 
     valid_idx = dataset_ind.val_mask
@@ -283,5 +281,4 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         valid_out = F.log_softmax(out[valid_idx], dim=1)
         valid_loss = criterion(valid_out, dataset_ind.y[valid_idx].squeeze(1))
 
-    result += [test_score] + [valid_loss]
-    return result
+    return auroc, aupr, fpr, test_score, valid_loss

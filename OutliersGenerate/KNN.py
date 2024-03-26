@@ -209,21 +209,8 @@ def normalize(dataset: Tensor) -> Tensor:
 if __name__ == '__main__':
     from visualize import visualize_2D, visualize_3D
 
-    # dataset = torch.rand(2000, 2)
-    #
-    # num_nodes, num_features = dataset.shape[0], dataset.shape[1]
-    # num_edges = 10
-    # sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
-    #     dataset=dataset,
-    #     num_nodes=num_nodes,
-    #     num_features=num_features,
-    #     num_edges=num_edges,
-    #     debug=True,
-    # )
+    dataset = torch.rand(2000, 2)
 
-    # visualize_2D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
-
-    dataset = torch.rand(500, 3)
     num_nodes, num_features = dataset.shape[0], dataset.shape[1]
     num_edges = 10
     sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
@@ -234,5 +221,18 @@ if __name__ == '__main__':
         debug=True,
     )
 
-    visualize_3D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
+    visualize_2D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
+
+    # dataset = torch.rand(500, 3)
+    # num_nodes, num_features = dataset.shape[0], dataset.shape[1]
+    # num_edges = 10
+    # sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
+    #     dataset=dataset,
+    #     num_nodes=num_nodes,
+    #     num_features=num_features,
+    #     num_edges=num_edges,
+    #     debug=True,
+    # )
+    #
+    # visualize_3D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
 
