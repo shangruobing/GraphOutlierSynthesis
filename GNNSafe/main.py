@@ -92,18 +92,19 @@ model.train()
 epoch_info = ""
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.encoder.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+# optimizer = torch.optim.Adam(model.encoder.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+# classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr * 10, weight_decay=args.weight_decay)
 
 for epoch in range(args.epochs):
     model.train()
     optimizer.zero_grad()
-    classifier_optimizer.zero_grad()
+    # classifier_optimizer.zero_grad()
     loss = model.loss_compute(dataset_ind, criterion, device, args)
     # loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
     loss.backward()
+    # classifier_optimizer.step()
     optimizer.step()
-    classifier_optimizer.step()
 
     if args.mode == 'classify':
         result = evaluate_classify(model, dataset_ind, eval_func, criterion, args, device)

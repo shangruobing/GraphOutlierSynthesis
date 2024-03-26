@@ -15,10 +15,12 @@ class DetectLogger:
     def get_statistics(self):
         result = 100 * torch.tensor(self.results)
         ood_result, test_score, valid_loss = result[:, :-2], result[:, -2], result[:, -1]
-        score_val = test_score[valid_loss.argmin()].item()
-        auroc_val = ood_result[valid_loss.argmin(), 0].item()
-        aupr_val = ood_result[valid_loss.argmin(), 1].item()
-        fpr_val = ood_result[valid_loss.argmin(), 2].item()
+        min_index = valid_loss.argmin().item()
+        score_val = test_score[min_index].item()
+        auroc_val = ood_result[min_index, 0].item()
+        aupr_val = ood_result[min_index, 1].item()
+        fpr_val = ood_result[min_index, 2].item()
+        print(f'Choose Epoch: {min_index}')
         print(f'OOD Test Final AUROC: {auroc_val:.2f}')
         print(f'OOD Test Final AUPR: {aupr_val:.2f}')
         print(f'OOD Test Final FPR: {fpr_val:.2f}')

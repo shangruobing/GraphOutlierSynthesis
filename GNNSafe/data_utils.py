@@ -271,6 +271,8 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
     auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
 
     out = model(dataset_ind, device).cpu()
+    # out, _ = model(dataset_ind, device)
+    # out = out.cpu()
     test_idx = dataset_ind.test_mask
     test_score = eval_func(dataset_ind.y[test_idx], out[test_idx])
 

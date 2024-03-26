@@ -13,6 +13,7 @@ def generate_outliers(
         num_nodes: int,
         num_features: int,
         num_edges: int,
+        # num_classes: int = 2,
         cov_mat=0.1,
         sampling_ratio=1.0,
         device=torch.device("cpu"),
@@ -29,6 +30,7 @@ def generate_outliers(
     我们将利用这个采样点集合与原始数据集中边数目与节点数目的比例生成采样边。
     这个步骤生成的OOD数据集将被输入encoder，从而得到当前模型对于OOD数据预测的loss。
     Args:
+        # num_classes:
         dataset: the input dataset
         num_nodes: the number of nodes
         num_features: the number of features
@@ -116,6 +118,14 @@ def generate_outliers(
         size=(2, int(edge_node_radio * num_sample_points)),
         device=device
     )
+
+    # sample_labels = torch.randint(
+    #     low=0,
+    #     high=num_classes,
+    #     size=(int(num_sample_points),),
+    #     device=device
+    # )
+    # 生成的都是0label
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
     if debug:
@@ -235,4 +245,3 @@ if __name__ == '__main__':
     # )
     #
     # visualize_3D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
-

@@ -53,7 +53,6 @@ class MSP(nn.Module):
         return self.encoder(x, edge_index)
 
     def detect(self, dataset, node_idx, device, args):
-        # 是否需要把这个函数替换为分类器
         logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
         if args.dataset in ('proteins', 'ppi'):
             pred = torch.sigmoid(logits).unsqueeze(-1)
@@ -67,19 +66,10 @@ class MSP(nn.Module):
     def loss_compute(self, dataset_ind: Data, criterion, device, args):
         train_idx = dataset_ind.train_mask
         x_in = dataset_ind.x.to(device)
-        # 数据集的编码结果
         logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
-        # outputs = torch.randn(100, 128)
-        # y = torch.randint(
-        #     low=0,
-        #     high=7,
-        #     size=(len(outputs),),
-        # )
-
         # visualize(logits_in, color=dataset_ind.y[train_idx], epoch=1)
 
         if args.generate_ood:
-            # ic(x_in.size())
             sample_point, sample_edge, sample_label = generate_outliers(
                 x_in,
                 device=device,
@@ -88,45 +78,23 @@ class MSP(nn.Module):
                 num_features=dataset_ind.num_features,
                 num_edges=dataset_ind.num_edges,
             )
-            # ic(x_in[0])
-            # ic(sample_point[0])
             # 异常值的编码结果
             sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            # ic(logits_in.size())
-            # ic(sample_point_logits_out.size())
             # 让分类器来对数据集和异常值的编码结果进行分类
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            # ic(input_for_lr.size())
             labels_for_lr = torch.cat([
                 torch.ones(len(logits_in), device=device),
                 torch.zeros(len(sample_point_logits_out), device=device)
             ])
-            # ic(logits_in.size())
-            # ic(sample_point_logits_out.size())
-            # ic(logits_in[:10])
-            # ic(sample_point_logits_out[:10])
-            # ic(input_for_lr[:5])
-            # ic(labels_for_lr[:5])
-            # ic("=====")
-            # ic(input_for_lr[-5:])
-            # ic(labels_for_lr[-5:])
             global count
             count += 1
-            if count % 10 == 0:
-                pass
-                # line(x=input_for_lr.cpu().detach().numpy(), y=labels_for_lr.cpu().detach().numpy())
+            if count % 30 == 0:
+                # classifier performance
+                line(x=input_for_lr.cpu().detach().numpy(), y=labels_for_lr.cpu().detach().numpy())
                 # visualize(torch.cat([logits_in, sample_point_logits_out]), color=labels_for_lr, epoch=count)
 
-            # ic(input_for_lr)
-            # ic(torch.sigmoid(input_for_lr))
-            # criterion_BCE = nn.BCELoss()
-            criterion_BCE = nn.BCEWithLogitsLoss()
+            criterion_BCE = nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            # line(x=input_for_lr, y=labels_for_lr)
-            # ic(sample_sup_loss)
-
-            # 导致OOM
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -135,10 +103,8 @@ class MSP(nn.Module):
         else:
             pred_in = F.log_softmax(logits_in, dim=1)
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-
-        # loss= encoder的loss + 分类器的loss
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
         return loss
 
 
@@ -204,9 +170,8 @@ class OE(nn.Module):
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            criterion_BCE = torch.nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -218,7 +183,7 @@ class OE(nn.Module):
         # loss += 0.5 * -(logits_out.mean(1) - torch.logsumexp(logits_out, dim=1)).mean()
 
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
         return loss
 
 
@@ -319,9 +284,8 @@ class ODIN(nn.Module):
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            criterion_BCE = torch.nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -332,7 +296,7 @@ class ODIN(nn.Module):
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
         return loss
 
 
@@ -545,9 +509,8 @@ class Mahalanobis(nn.Module):
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            criterion_BCE = torch.nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -558,7 +521,7 @@ class Mahalanobis(nn.Module):
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
         return loss
 
 
@@ -622,9 +585,8 @@ class MaxLogits(nn.Module):
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            criterion_BCE = torch.nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -635,7 +597,7 @@ class MaxLogits(nn.Module):
             loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
 
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
         return loss
 
 
@@ -700,9 +662,8 @@ class EnergyModel(nn.Module):
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            criterion_BCE = torch.nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -732,7 +693,7 @@ class EnergyModel(nn.Module):
         loss = sup_loss
 
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
 
         return loss
 
@@ -814,9 +775,8 @@ class EnergyProp(nn.Module):
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            criterion_BCE = torch.nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -849,7 +809,7 @@ class EnergyProp(nn.Module):
         loss = sup_loss
 
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
 
         return loss
 
@@ -945,9 +905,8 @@ class GNNSafe(nn.Module):
             input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
             labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
                                        torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCEWithLogitsLoss()
+            criterion_BCE = torch.nn.BCELoss()
             sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-            sample_sup_loss.backward(retain_graph=True)
         else:
             sample_sup_loss = 0
 
@@ -961,7 +920,7 @@ class GNNSafe(nn.Module):
         loss = sup_loss
 
         if args.generate_ood:
-            loss += sample_sup_loss
+            loss += 0.1 * sample_sup_loss
 
         return loss
 
@@ -981,14 +940,5 @@ def init_classifier(in_features: int):
         nn.Linear(in_features=32, out_features=16, bias=True),
         nn.ReLU(inplace=True),
         nn.Linear(in_features=16, out_features=1, bias=True),
-        # nn.Sigmoid()
+        nn.Sigmoid()
     )
-
-
-class Classifier(nn.Module):
-    def __init__(self, in_features):
-        super(Classifier, self).__init__()
-        self.classifier = init_classifier(in_features=in_features)
-
-    def forward(self, x):
-        return self.classifier(x)
