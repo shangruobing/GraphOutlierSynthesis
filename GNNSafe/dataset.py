@@ -13,7 +13,7 @@ from OutliersGenerate.test import visualize
 from data_utils import to_sparse_tensor
 
 
-def load_dataset(args: Namespace) -> Tuple[Data, Data]:
+def load_dataset(args: Namespace) -> Tuple[Data, Data, Data]:
     """
     Load dataset according to the dataset name and ood type
     Args:
@@ -43,7 +43,7 @@ def load_dataset(args: Namespace) -> Tuple[Data, Data]:
         'coauthor-physics', "wiki-cs", "actor", "webkb",
         "github"
     ]:
-        dataset_ind, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
+        dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
 
     else:
         raise NotImplementedError
@@ -79,7 +79,7 @@ def load_dataset(args: Namespace) -> Tuple[Data, Data]:
     #     ])
     #     , epoch=1)
 
-    return dataset_ind, dataset_ood_te
+    return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
 def load_twitch_dataset(data_dir):
@@ -243,14 +243,17 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
     dataset_ind = dataset
 
     if ood_type == 'structure':
+        dataset_ood_tr = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
         dataset_ood_te = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
     elif ood_type == 'feature':
+        dataset_ood_tr = create_feat_noise_dataset(dataset)
         dataset_ood_te = create_feat_noise_dataset(dataset)
     elif ood_type == 'label':
+        dataset_ood_tr = create_label_leave_out_dataset(dataset, dataset_ind, dataset_name)
         dataset_ood_te = create_label_leave_out_dataset(dataset, dataset_ind, dataset_name)
     else:
         raise NotImplementedError
-    return dataset_ind, dataset_ood_te
+    return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
 def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):

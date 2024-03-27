@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.autograd as autograd
-from icecream import ic
 from torch.autograd import Variable
 from torch_geometric.data import Data
 from torch_sparse import SparseTensor, matmul
@@ -15,210 +14,127 @@ from OutliersGenerate.KNN import generate_outliers
 from OutliersGenerate.test import visualize, line
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
 
-count = 0
-
 
 class MSP(nn.Module):
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(MSP, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=d,
+            self.encoder = GCN(in_channels=num_features,
                                hidden_channels=args.hidden_channels,
-                               out_channels=c,
+                               out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mixhop':
-            self.encoder = MixHop(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = MixHop(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         elif args.backbone == 'gcnjk':
-            self.encoder = GCNJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GCNJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         elif args.backbone == 'gatjk':
-            self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def detect(self, dataset, node_idx, device, args):
-        logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
-        if args.dataset in ('proteins', 'ppi'):
-            pred = torch.sigmoid(logits).unsqueeze(-1)
-            pred = torch.cat([pred, 1 - pred], dim=-1)
-            max_sp = pred.max(dim=-1)[0]
-            return max_sp.sum(dim=1)
-        else:
-            sp = torch.softmax(logits, dim=-1)
-            return sp.max(dim=1)[0]
+        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        return self.classifier(penultimate[node_idx]).squeeze()
 
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
-        train_idx = dataset_ind.train_mask
-        x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
-        # visualize(logits_in, color=dataset_ind.y[train_idx], epoch=1)
-
-        if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=len(logits_in),
-                # num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            # 异常值的编码结果
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-            # 让分类器来对数据集和异常值的编码结果进行分类
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([
-                torch.ones(len(logits_in), device=device),
-                torch.zeros(len(sample_point_logits_out), device=device)
-            ])
-            global count
-            count += 1
-            if count % 30 == 0:
-                # classifier performance
-                line(x=input_for_lr.cpu().detach().numpy(), y=labels_for_lr.cpu().detach().numpy())
-                # visualize(torch.cat([logits_in, sample_point_logits_out]), color=labels_for_lr, epoch=count)
-
-            criterion_BCE = nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        if args.dataset in ('proteins', 'ppi'):
-            loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in, dim=1)
-            loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
-        return loss
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
 class OE(nn.Module):
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(OE, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=d,
+            self.encoder = GCN(in_channels=num_features,
                                hidden_channels=args.hidden_channels,
-                               out_channels=c,
+                               out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         elif args.backbone == 'appnp':
-            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
+            self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def detect(self, dataset, node_idx, device, args):
+        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        return self.classifier(penultimate[node_idx]).squeeze()
 
-        logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
-        if args.dataset in ('proteins', 'ppi'):
-            pred = torch.sigmoid(logits).unsqueeze(-1)
-            pred = torch.cat([pred, 1 - pred], dim=-1)
-            max_logits = pred.max(dim=-1)[0]
-            return max_logits.sum(dim=1)
-        else:
-            return logits.max(dim=1)[0]
-
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
-
-        train_idx = dataset_ind.train_mask
-
-        x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
-        # logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
-
-        if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        if args.dataset in ('proteins', 'ppi'):
-            loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in, dim=1)
-            loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-        # loss += 0.5 * -(logits_out.mean(1) - torch.logsumexp(logits_out, dim=1)).mean()
-
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
-        return loss
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
 class ODIN(nn.Module):
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(ODIN, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=d,
+            self.encoder = GCN(in_channels=num_features,
                                hidden_channels=args.hidden_channels,
-                               out_channels=c,
+                               out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         elif args.backbone == 'appnp':
-            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
+            self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def detect(self, dataset, node_idx, device, args):
-
+        """
+        @issue
+        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        logits, penultimate = logits[node_idx], penultimate[node_idx]
+        return self.classifier(penultimate).squeeze()
+        """
         odin_score = self.ODIN(dataset, node_idx, device, args.T, args.noise)
         return torch.Tensor(-np.max(odin_score, 1))
 
@@ -228,7 +144,8 @@ class ODIN(nn.Module):
         data = dataset.x.to(device)
         data = Variable(data, requires_grad=True)
         edge_index = dataset.edge_index.to(device)
-        outputs = self.encoder(data, edge_index)[node_idx]
+        outputs, penultimate = self.encoder(data, edge_index)
+        outputs, penultimate = outputs[node_idx], penultimate[node_idx]
         criterion = nn.CrossEntropyLoss()
 
         maxIndexTemp = np.argmax(outputs.data.cpu().numpy(), axis=1)
@@ -255,7 +172,8 @@ class ODIN(nn.Module):
         tempInputs = torch.add(input=data.data, other=-noiseMagnitude, out=gradient)
         # tempInputs = torch.add(data.data, -noiseMagnitude1, gradient)
 
-        outputs = self.encoder(Variable(tempInputs), edge_index)[node_idx]
+        outputs, penultimate = self.encoder(Variable(tempInputs), edge_index)
+        outputs, penultimate = outputs[node_idx], penultimate[node_idx]
         outputs = outputs / temper
         # Calculating the confidence after adding perturbations
         nnOutputs = outputs.data.cpu()
@@ -265,70 +183,74 @@ class ODIN(nn.Module):
 
         return nnOutputs
 
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        train_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
+        logits_in, penultimate = self.encoder(dataset_ind.x, dataset_ind.edge_index)
+        logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
 
-        train_idx = dataset_ind.train_mask
-        x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
+        sample_point, sample_edge, sample_label = generate_outliers(
+            dataset_ind.x,
+            device=device,
+            num_nodes=len(logits_in),
+            # num_nodes=dataset_ind.num_nodes,
+            num_features=dataset_ind.num_features,
+            num_edges=dataset_ind.num_edges,
+        )
+        ood = torch.cat([dataset_ood.x, sample_point])
+        sample_logits, sampling_penultimate = self.encoder(ood, dataset_ood.edge_index)
+        sample_logits, sampling_penultimate = sample_logits[train_ood_idx], sampling_penultimate[train_ood_idx]
 
+        min_length = min(len(logits_in), len(sample_logits))
+
+        input_for_lr = self.classifier(torch.cat(tensors=[penultimate[:min_length], sampling_penultimate[:min_length]],
+                                                 dim=0)).squeeze()
+        labels_for_lr = torch.cat([
+            torch.ones(min_length, device=device),
+            torch.zeros(min_length, device=device)
+        ])
+
+        criterion_BCE = nn.BCELoss()
+        sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1))
+
+        loss += 0.5 * -(sample_logits.mean(1) - torch.logsumexp(sample_logits, dim=1)).mean()
         if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        if args.dataset in ('proteins', 'ppi'):
-            loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in, dim=1)
-            loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
+            loss += sample_sup_loss
         return loss
 
 
 class Mahalanobis(nn.Module):
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(Mahalanobis, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=d,
+            self.encoder = GCN(in_channels=num_features,
                                hidden_channels=args.hidden_channels,
-                               out_channels=c,
+                               out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         elif args.backbone == 'appnp':
-            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
+            self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def detect(self, train_set, train_idx, test_set, node_idx, device, args):
         temp_list = self.encoder.feature_list(train_set.x.to(device), train_set.edge_index.to(device))[1]
@@ -431,7 +353,6 @@ class Mahalanobis(nn.Module):
                 temp_list.append(0)
             list_features.append(temp_list)
 
-        total = len(node_idx)
         output, out_features = self.encoder.feature_list(dataset.x.to(device), dataset.edge_index.to(device))
         output = output[node_idx]
 
@@ -447,7 +368,7 @@ class Mahalanobis(nn.Module):
         correct += equal_flag.sum()
 
         # construct the sample matrix
-        for i in range(total):
+        for i in range(target):
             label = target[i]
             if num_sample_per_class[label] == 0:
                 out_count = 0
@@ -490,243 +411,118 @@ class Mahalanobis(nn.Module):
 
         return sample_class_mean, precision
 
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
-
-        train_idx = dataset_ind.train_mask
-        x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
-
-        if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        if args.dataset in ('proteins', 'ppi'):
-            loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in, dim=1)
-            loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
-        return loss
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
 class MaxLogits(nn.Module):
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(MaxLogits, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=d,
+            self.encoder = GCN(in_channels=num_features,
                                hidden_channels=args.hidden_channels,
-                               out_channels=c,
+                               out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'appnp':
-            self.encoder = APPNP_Net(d, args.hidden_channels, c, dropout=args.dropout)
+            self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def detect(self, dataset, node_idx, device, args):
+        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        return self.classifier(penultimate[node_idx]).squeeze()
 
-        logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
-        if args.dataset in ('proteins', 'ppi'):
-            pred = torch.sigmoid(logits).unsqueeze(-1)
-            pred = torch.cat([pred, 1 - pred], dim=-1)
-            max_logits = pred.max(dim=-1)[0]
-            return max_logits.sum(dim=1)
-        else:
-            return logits.max(dim=1)[0]
-
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
-
-        train_idx = dataset_ind.train_mask
-        x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
-
-        if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        if args.dataset in ('proteins', 'ppi'):
-            loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in, dim=1)
-            loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
-        return loss
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
 class EnergyModel(nn.Module):
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(EnergyModel, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=d,
+            self.encoder = GCN(in_channels=num_features,
                                hidden_channels=args.hidden_channels,
-                               out_channels=c,
+                               out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'sgc':
-            self.encoder = SGC(in_channels=d, out_channels=c, hops=args.hops)
+            self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=args.hops)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def detect(self, dataset, node_idx, device, args):
+        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        return self.classifier(penultimate[node_idx]).squeeze()
 
-        logits = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
-        if args.dataset in ('proteins', 'ppi'):
-            logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
-            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
-        else:
-            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
-        return neg_energy
-
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
-
-        train_idx = dataset_ind.train_mask
-
-        x_in = dataset_ind.x.to(device)
-        logits_in = self.encoder(x_in, dataset_ind.edge_index.to(device))[train_idx]
-        # logits_out = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))[train_ood_idx]
-
-        if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        if args.dataset in ('proteins', 'ppi'):
-            sup_loss = criterion(logits_in, dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in, dim=1)
-            sup_loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-
-        '''if args.dataset in ('proteins', 'ppi'):
-            logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
-            logits_out = torch.stack([logits_out, torch.zeros_like(logits_out)], dim=2)
-            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1).sum(dim=1)
-            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1).sum(dim=1)
-        else:
-            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
-            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
-        if energy_in.shape[0] != energy_out.shape[0]:
-            min_n = min(energy_in.shape[0], energy_out.shape[0])
-            energy_in = energy_in[:min_n]
-            energy_out = energy_out[:min_n]
-        print(energy_in.mean().data, energy_out.mean().data)
-        reg_loss = torch.mean(F.relu(energy_in - args.m_in) ** 2 + F.relu(args.m_out - energy_out) ** 2)
-        # reg_loss = torch.mean(F.relu(energy_in - energy_out - args.m) ** 2)
-
-        loss = sup_loss + args.lamda * reg_loss'''
-        loss = sup_loss
-
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
-
-        return loss
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
 class EnergyProp(nn.Module):
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(EnergyProp, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=d,
+            self.encoder = GCN(in_channels=num_features,
                                hidden_channels=args.hidden_channels,
-                               out_channels=c,
+                               out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'sgc':
-            self.encoder = SGC(in_channels=d, out_channels=c, hops=args.hops)
+            self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=args.hops)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
                                dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def propagation(self, e, edge_index, l=1, alpha=0.5):
         e = e.unsqueeze(1)
@@ -742,9 +538,10 @@ class EnergyProp(nn.Module):
         return e.squeeze(1)
 
     def detect(self, dataset, node_idx, device, args):
+        # @issue
 
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        logits = self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
         if args.dataset in ('proteins', 'ppi'):
             logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
             neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
@@ -753,65 +550,8 @@ class EnergyProp(nn.Module):
         neg_energy_prop = self.propagation(neg_energy, edge_index)
         return neg_energy_prop[node_idx]
 
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
-        x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
-        # x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
-
-        train_idx = dataset_ind.train_mask
-
-        logits_in = self.encoder(x_in, edge_index_in)[train_idx]
-        # logits_out = self.encoder(x_out, edge_index_out)
-
-        if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        if args.dataset in ('proteins', 'ppi'):
-            sup_loss = criterion(logits_in[train_idx], dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in[train_idx], dim=1)
-            sup_loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-
-        '''if args.dataset in ('proteins', 'ppi'):
-            logits_in = torch.stack([logits_in, torch.zeros_like(logits_in)], dim=2)
-            logits_out = torch.stack([logits_out, torch.zeros_like(logits_out)], dim=2)
-            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1).sum(dim=1)
-            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1).sum(dim=1)
-        else:
-            energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
-            energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
-        energy_prop_in = self.propagation(energy_in, edge_index_in, args.prop_layers, args.alpha)[train_in_idx]
-        energy_prop_out = self.propagation(energy_out, edge_index_out, args.prop_layers, args.alpha)[train_ood_idx]
-
-        if energy_prop_in.shape[0] != energy_prop_out.shape[0]:
-            min_n = min(energy_prop_in.shape[0], energy_prop_out.shape[0])
-            energy_prop_in = energy_prop_in[:min_n]
-            energy_prop_out = energy_prop_out[:min_n]
-        print(energy_prop_in.mean().data, energy_prop_out.mean().data)
-        reg_loss = torch.mean(F.relu(energy_prop_in - args.m_in) ** 2 + F.relu(args.m_out - energy_prop_out) ** 2)
-        # reg_loss = torch.mean(F.relu(energy_prop_in - energy_prop_out - args.m) ** 2)
-
-        loss = sup_loss + args.lamda * reg_loss'''
-        loss = sup_loss
-
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
-
-        return loss
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
 class GNNSafe(nn.Module):
@@ -819,33 +559,33 @@ class GNNSafe(nn.Module):
     The model class of energy-based models for out-of-distribution detection
     """
 
-    def __init__(self, d, c, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Namespace):
         super(GNNSafe, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(
-                in_channels=d,
+                in_channels=num_features,
                 hidden_channels=args.hidden_channels,
-                out_channels=c,
+                out_channels=num_classes,
                 num_layers=args.num_layers,
                 dropout=args.dropout,
                 use_bn=args.use_bn
             )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=d, hidden_channels=args.hidden_channels,
-                               out_channels=c, num_layers=args.num_layers,
+            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
+                               out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
-            self.encoder = GAT(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout,
+            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout,
                                use_bn=args.use_bn)
         elif args.backbone == 'mixhop':
-            self.encoder = MixHop(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = MixHop(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         elif args.backbone == 'gcnjk':
-            self.encoder = GCNJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GCNJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         elif args.backbone == 'gatjk':
-            self.encoder = GATJK(d, args.hidden_channels, c, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = init_classifier(in_features=c)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -853,7 +593,8 @@ class GNNSafe(nn.Module):
     def forward(self, dataset, device):
         """return predicted logits"""
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        return self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
+        return logits
 
     def propagation(self, e, edge_index, prop_layers=1, alpha=0.5):
         """energy belief propagation, return the energy after propagation"""
@@ -870,9 +611,10 @@ class GNNSafe(nn.Module):
         return e.squeeze(1)
 
     def detect(self, dataset, node_idx, device, args):
+        # issue
         """return negative energy, a vector for all input nodes"""
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
-        logits = self.encoder(x, edge_index)
+        logits, penultimate = self.encoder(x, edge_index)
         if args.dataset in ('proteins', 'ppi'):  # for multi-label binary classification
             logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
             neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
@@ -882,63 +624,82 @@ class GNNSafe(nn.Module):
         #     neg_energy = self.propagation(neg_energy, edge_index, args.K, args.alpha)
         return neg_energy[node_idx]
 
-    def loss_compute(self, dataset_ind: Data, criterion, device, args):
-        """return loss for training"""
-        train_idx = dataset_ind.train_mask
-
-        x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
-        # x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
-
-        logits_in = self.encoder(x_in, edge_index_in)[train_idx]
-
-        # logits_out = self.encoder(x_out, edge_index_out)
-        if args.generate_ood:
-            sample_point, sample_edge, sample_label = generate_outliers(
-                x_in,
-                device=device,
-                num_nodes=dataset_ind.num_nodes,
-                num_features=dataset_ind.num_features,
-                num_edges=dataset_ind.num_edges,
-            )
-            sample_point_logits_out = self.encoder(sample_point, sample_edge)
-
-            input_for_lr = self.classifier(torch.cat([logits_in, sample_point_logits_out])).squeeze()
-            labels_for_lr = torch.cat([torch.ones(len(logits_in), device=device),
-                                       torch.zeros(len(sample_point_logits_out), device=device)])
-            criterion_BCE = torch.nn.BCELoss()
-            sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-        else:
-            sample_sup_loss = 0
-
-        # compute supervised training loss
-        if args.dataset in ('proteins', 'ppi'):
-            sup_loss = criterion(logits_in[train_idx], dataset_ind.y[train_idx].to(device).to(torch.float))
-        else:
-            pred_in = F.log_softmax(logits_in[train_idx], dim=1)
-            sup_loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
-
-        loss = sup_loss
-
-        if args.generate_ood:
-            loss += 0.1 * sample_sup_loss
-
-        return loss
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
-def init_classifier(in_features: int):
+class Classifier(nn.Module):
     """
-    Initialize a classifier for encoder output.
+    A classifier for encoder penultimate output.
+    """
+
+    def __init__(self, in_features):
+        """
+        Initialize a classifier for encoder output.
+        Args:
+            in_features: number of input features
+        """
+        super().__init__()
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=in_features // 2, out_features=in_features // 4, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=in_features // 4, out_features=1, bias=True),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return self.classifier(x).squeeze()
+
+
+def compute_loss(dataset_ind: Data, dataset_ood: Data, encoder, classifier, criterion, device, args):
+    """
+    Compute the loss for in-distribution and out-of-distribution datasets.
     Args:
-        in_features: number of input features
+        dataset_ind:
+        dataset_ood:
+        encoder:
+        classifier:
+        criterion:
+        device:
+        args:
 
     Returns:
 
     """
-    return nn.Sequential(
-        nn.Linear(in_features=in_features, out_features=32, bias=True),
-        nn.ReLU(inplace=True),
-        nn.Linear(in_features=32, out_features=16, bias=True),
-        nn.ReLU(inplace=True),
-        nn.Linear(in_features=16, out_features=1, bias=True),
-        nn.Sigmoid()
+    train_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
+    logits_in, penultimate = encoder(dataset_ind.x, dataset_ind.edge_index)
+    logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
+
+    sample_point, sample_edge, sample_label = generate_outliers(
+        dataset_ind.x,
+        device=device,
+        num_nodes=len(logits_in),
+        # num_nodes=dataset_ind.num_nodes,
+        num_features=dataset_ind.num_features,
+        num_edges=dataset_ind.num_edges,
     )
+    ood = torch.cat([dataset_ood.x, sample_point])
+    sample_logits, sampling_penultimate = encoder(ood, dataset_ood.edge_index)
+    sample_logits, sampling_penultimate = sample_logits[train_ood_idx], sampling_penultimate[train_ood_idx]
+
+    min_length = min(len(logits_in), len(sample_logits))
+
+    input_for_lr = classifier(torch.cat(tensors=[penultimate[:min_length], sampling_penultimate[:min_length]],
+                                        dim=0)).squeeze()
+    labels_for_lr = torch.cat([
+        torch.ones(min_length, device=device),
+        torch.zeros(min_length, device=device)
+    ])
+
+    criterion_BCE = nn.BCELoss()
+    sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
+
+    pred_in = F.log_softmax(logits_in, dim=1)
+    loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1))
+
+    loss += 0.5 * -(sample_logits.mean(1) - torch.logsumexp(sample_logits, dim=1)).mean()
+    if args.generate_ood:
+        loss += sample_sup_loss
+    return loss

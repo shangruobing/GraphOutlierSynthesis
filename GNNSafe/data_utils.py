@@ -1,10 +1,13 @@
 from typing import Tuple
 
+from icecream import ic
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
 import torch
 import numpy as np
 from torch_sparse import SparseTensor
 import torch.nn.functional as F
+
+from OutliersGenerate.test import line
 from baselines import ODIN, Mahalanobis
 from torch import BoolTensor
 
@@ -172,8 +175,10 @@ def eval_acc(y_true, y_pred):
     Returns:
 
     """
-    y_true = y_true.detach().cpu().numpy()
+    y_true = y_true.detach().cpu().numpy().reshape(-1)
     y_pred = y_pred.argmax(dim=-1, keepdim=True).detach().cpu().numpy().reshape(-1)
+    # print("y_true", y_true[:100])
+    # print("y_pred", y_pred[:100])
     return accuracy_score(y_true=y_true, y_pred=y_pred)
 
 
@@ -258,7 +263,11 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
     else:
         with torch.no_grad():
+            # print("ID")
             test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
+            # print(test_ind_score.size())
+            # print(test_ind_score[:20])
+            # print(test_ind_score[-20:])
     if isinstance(model, Mahalanobis):
         test_ood_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ood, dataset_ood.node_idx,
                                       device, args).cpu()
@@ -266,14 +275,30 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
     else:
         with torch.no_grad():
+            # print("OOD")
             test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
+            # print(test_ood_score.size())
+            # print(test_ood_score[:50])
+
+    # print("result test")
+    # # line(x=test_ind_score, y=[1 for _ in range(len(test_ind_score))])
+    # # line(x=test_ood_score, y=[0 for _ in range(len(test_ood_score))])
+    # print("ID")
+    # # print(test_ind_score.size())
+    # print(test_ind_score[:50])
+    # print("OOD")
+    # # print(test_ood_score.size())
+    # print(test_ood_score[:50])
+    # test_ood_score = test_ood_score[:1000]
 
     auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
 
-    out = model(dataset_ind, device).cpu()
-    # out, _ = model(dataset_ind, device)
-    # out = out.cpu()
+    out = model(dataset_ind, device)
+
     test_idx = dataset_ind.test_mask
+    # ic("任务准确率")
+    # ic(dataset_ind.y[test_idx][:20])
+    # ic(out[test_idx][:20])
     test_score = eval_func(dataset_ind.y[test_idx], out[test_idx])
 
     valid_idx = dataset_ind.val_mask

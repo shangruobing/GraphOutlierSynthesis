@@ -23,17 +23,12 @@ pprint(vars(args))
 fix_seed(args.seed)
 device = get_device(args)
 
-dataset_ind, dataset_ood_te = load_dataset(args)
+dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
 
 if len(dataset_ind.y.shape) == 1:
     dataset_ind.y = dataset_ind.y.unsqueeze(1)
-# if isinstance(dataset_ood_te, list):
-#     for data in dataset_ood_te:
-#         if len(data.y.shape) == 1:
-#             data.y = data.y.unsqueeze(1)
-# else:
-#     if len(dataset_ood_te.y.shape) == 1:
-#         dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
+if len(dataset_ood_tr.y.shape) == 1:
+    dataset_ood_tr.y = dataset_ood_tr.y.unsqueeze(1)
 if len(dataset_ood_te.y.shape) == 1:
     dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
 
@@ -50,7 +45,12 @@ num_classes = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
 num_features = dataset_ind.num_features
 
 print(f"ind train dataset {args.dataset}: nodes {dataset_ind.num_nodes} | edges {dataset_ind.num_edges} | classes {num_classes} | features {num_features}")
+print(f"ood train dataset {args.dataset}: nodes {dataset_ood_tr.num_nodes} | edges {dataset_ood_tr.num_edges}")
 print(f"ood test  dataset {args.dataset}: nodes {dataset_ood_te.num_nodes} | edges {dataset_ood_te.num_edges}")
+
+dataset_ind.to(device=device)
+dataset_ood_tr.to(device=device)
+dataset_ood_te.to(device=device)
 
 if args.method == 'msp':
     model = MSP(num_features, num_classes, args)
@@ -92,18 +92,19 @@ model.train()
 epoch_info = ""
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-# optimizer = torch.optim.Adam(model.encoder.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-# classifier_optimizer = torch.optim.Adam(model.classifier.parameters(), lr=args.lr * 10, weight_decay=args.weight_decay)
+optimizer = torch.optim.Adam(
+    params=[
+        {'params': model.encoder.parameters(), 'lr': args.lr},
+        {'params': model.classifier.parameters(), 'lr': args.lr * 10}
+    ],
+    lr=args.lr,
+    weight_decay=args.weight_decay)
 
 for epoch in range(args.epochs):
     model.train()
     optimizer.zero_grad()
-    # classifier_optimizer.zero_grad()
-    loss = model.loss_compute(dataset_ind, criterion, device, args)
-    # loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
+    loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
     loss.backward()
-    # classifier_optimizer.step()
     optimizer.step()
 
     if args.mode == 'classify':

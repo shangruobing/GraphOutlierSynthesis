@@ -61,3 +61,21 @@ watch -n 2 -d nvidia-smi
 | Wiki-CS      | 11701     | 300          | 10          | 431726    |   
 | Coauthor-CS  | 18333     | 6805         | 15          | 163788    |
 
+# Methodology
+
+## 原方法
+
+数据集分为3段，ID、训练用OOD、测试用OOD
+通过在训练时，加入OOD来计算loss。
+
+## 现有方法
+
+数据集分为2段，ID和测试用OOD
+
+训练时，ID输入KNN生成OOD数据集
+
+Encoder对ID数据集完成嵌入，ID结果标签为 1
+
+Encoder对OOD数据集完成嵌入，OOD结果标签为 0
+
+通过训练一个分类器完成识别，分类器贡献1个采样loss，加入GCN等预测的主loss函数中。

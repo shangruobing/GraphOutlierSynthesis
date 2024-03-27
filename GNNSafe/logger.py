@@ -21,10 +21,10 @@ class DetectLogger:
         aupr_val = ood_result[min_index, 1].item()
         fpr_val = ood_result[min_index, 2].item()
         print(f'Choose Epoch: {min_index}')
-        print(f'OOD Test Final AUROC: {auroc_val:.2f}')
-        print(f'OOD Test Final AUPR: {aupr_val:.2f}')
-        print(f'OOD Test Final FPR: {fpr_val:.2f}')
-        print(f'IND Test Score: {score_val:.2f}')
+        print(f'OOD Test Detect AUROC ↑: {auroc_val:.2f}(↑)')
+        print(f'OOD Test Detect AUPR  ↑: {aupr_val:.2f}')
+        print(f'OOD Test Detect FPR95 ↓: {fpr_val:.2f}')
+        print(f'IND Test Accuracy     ↑: {score_val:.2f}')
         return {
             "AUROC": round(score_val, 2),
             "AUPR": round(auroc_val, 2),

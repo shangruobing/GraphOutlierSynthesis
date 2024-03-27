@@ -40,8 +40,9 @@ class MLP(nn.Module):
             x = F.relu(x, inplace=True)
             x = self.bns[i](x)
             x = F.dropout(x, p=self.dropout, training=self.training)
+        penultimate = x
         x = self.lins[-1](x)
-        return x
+        return x, penultimate
 
     def intermediate_forward(self, x, edge_index=None, layer_index=None):
         for i, lin in enumerate(self.lins[:-1]):
@@ -125,18 +126,15 @@ class GCN(nn.Module):
             bn.reset_parameters()
 
     def forward(self, x, edge_index):
-        # x torch.Size([7600, 932])
-        # edge_index torch.Size([2, 30019])
-        # print(edge_index[0]) tensor([   0,    0,    0,  ..., 7599, 7599, 7599])
-        # print(edge_index[1]) tensor([ 812, 2051, 6341,  ..., 3685, 5156, 6979])
         for i, conv in enumerate(self.convs[:-1]):
             x = conv(x, edge_index)
             if self.use_bn:
                 x = self.bns[i](x)
             x = self.activation(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
+        penultimate = x
         x = self.convs[-1](x, edge_index)
-        return x
+        return x, penultimate
 
     def intermediate_forward(self, x, edge_index, layer_index):
         for i, conv in enumerate(self.convs[:-1]):
@@ -197,8 +195,9 @@ class GAT(nn.Module):
                 x = self.bns[i](x)
             x = self.activation(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
+        penultimate = x
         x = self.convs[-1](x, edge_index)
-        return x
+        return x, penultimate
 
     def intermediate_forward(self, x, edge_index, layer_index):
         x = F.dropout(x, p=self.dropout, training=self.training)
@@ -308,11 +307,13 @@ class MixHop(nn.Module):
             x = self.bns[i](x)
             x = self.activation(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
+
+        penultimate = x
         x = self.convs[-1](x, adj_t)
 
         x = self.final_project(x)
 
-        return x
+        return x, penultimate
 
 
 class GCNJK(nn.Module):
@@ -358,11 +359,12 @@ class GCNJK(nn.Module):
             x = self.activation(x)
             xs.append(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
+        penultimate = x
         x = self.convs[-1](x, edge_index)
         xs.append(x)
         x = self.jump(xs)
         x = self.final_project(x)
-        return x
+        return x, penultimate
 
 
 class GATJK(nn.Module):
@@ -409,11 +411,12 @@ class GATJK(nn.Module):
             x = self.activation(x)
             xs.append(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
+        penultimate = x
         x = self.convs[-1](x, edge_index)
         xs.append(x)
         x = self.jump(xs)
         x = self.final_project(x)
-        return x
+        return x, penultimate
 
 
 class H2GCNConv(nn.Module):
@@ -429,110 +432,6 @@ class H2GCNConv(nn.Module):
         x1 = matmul(adj_t, x)
         x2 = matmul(adj_t2, x)
         return torch.cat([x1, x2], dim=1)
-
-
-class H2GCN(nn.Module):
-    """ our implementation """
-
-    def __init__(self, in_channels, hidden_channels, out_channels, edge_index, num_nodes,
-                 num_layers=2, dropout=0.5, save_mem=False, num_mlp_layers=1,
-                 use_bn=True, conv_dropout=True):
-        super(H2GCN, self).__init__()
-
-        self.feature_embed = MLP(in_channels, hidden_channels,
-                                 hidden_channels, num_layers=num_mlp_layers, dropout=dropout)
-
-        self.convs = nn.ModuleList()
-        self.convs.append(H2GCNConv())
-
-        self.bns = nn.ModuleList()
-        self.bns.append(nn.BatchNorm1d(hidden_channels * 2 * len(self.convs)))
-
-        for l in range(num_layers - 1):
-            self.convs.append(H2GCNConv())
-            if l != num_layers - 2:
-                self.bns.append(nn.BatchNorm1d(hidden_channels * 2 * len(self.convs)))
-
-        self.dropout = dropout
-        self.activation = F.relu
-        self.use_bn = use_bn
-        self.conv_dropout = conv_dropout  # dropout neighborhood aggregation steps
-
-        self.jump = JumpingKnowledge('cat')
-        last_dim = hidden_channels * (2 ** (num_layers + 1) - 1)
-        self.final_project = nn.Linear(last_dim, out_channels)
-
-        self.num_nodes = num_nodes
-        self.init_adj(edge_index)
-
-    def reset_parameters(self):
-        self.feature_embed.reset_parameters()
-        self.final_project.reset_parameters()
-        for bn in self.bns:
-            bn.reset_parameters()
-
-    def init_adj(self, edge_index):
-        """ cache normalized adjacency and normalized strict two-hop adjacency,
-        neither has self loops
-        """
-        n = self.num_nodes
-
-        if isinstance(edge_index, SparseTensor):
-            dev = edge_index.device
-            adj_t = edge_index
-            adj_t = scipy.sparse.csr_matrix(adj_t.to_scipy())
-            adj_t[adj_t > 0] = 1
-            adj_t[adj_t < 0] = 0
-            adj_t = SparseTensor.from_scipy(adj_t).to(dev)
-        elif isinstance(edge_index, torch.Tensor):
-            row, col = edge_index
-            adj_t = SparseTensor(row=col, col=row, value=None, sparse_sizes=(n, n))
-
-        adj_t.remove_diag(0)
-        adj_t2 = matmul(adj_t, adj_t)
-        adj_t2.remove_diag(0)
-        adj_t = scipy.sparse.csr_matrix(adj_t.to_scipy())
-        adj_t2 = scipy.sparse.csr_matrix(adj_t2.to_scipy())
-        adj_t2 = adj_t2 - adj_t
-        adj_t2[adj_t2 > 0] = 1
-        adj_t2[adj_t2 < 0] = 0
-
-        adj_t = SparseTensor.from_scipy(adj_t)
-        adj_t2 = SparseTensor.from_scipy(adj_t2)
-
-        adj_t = gcn_norm(adj_t, None, n, add_self_loops=False)
-        adj_t2 = gcn_norm(adj_t2, None, n, add_self_loops=False)
-
-        self.adj_t = adj_t.to(edge_index.device)
-        self.adj_t2 = adj_t2.to(edge_index.device)
-
-    def forward(self, x, edge_index):
-
-        adj_t = self.adj_t
-        adj_t2 = self.adj_t2
-
-        x = self.feature_embed(x)
-        x = self.activation(x)
-        xs = [x]
-        if self.conv_dropout:
-            x = F.dropout(x, p=self.dropout, training=self.training)
-        for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, adj_t, adj_t2)
-            if self.use_bn:
-                x = self.bns[i](x)
-            xs.append(x)
-            if self.conv_dropout:
-                x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.convs[-1](x, adj_t, adj_t2)
-        if self.conv_dropout:
-            x = F.dropout(x, p=self.dropout, training=self.training)
-        xs.append(x)
-
-        x = self.jump(xs)
-        if not self.conv_dropout:
-            x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.final_project(x)
-        return x
 
 
 class APPNP_Net(nn.Module):
@@ -552,8 +451,9 @@ class APPNP_Net(nn.Module):
         x = F.relu(self.lin1(x))
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lin2(x)
+        penultimate = x
         x = self.prop1(x, edge_index)
-        return x
+        return x, penultimate
 
 
 class GPR_prop(MessagePassing):
