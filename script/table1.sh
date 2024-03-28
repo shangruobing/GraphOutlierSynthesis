@@ -2,10 +2,9 @@ cd ../GNNSafe || exit
 
 epochs=100
 device=3
-datasets=("coauthor-cs")
+datasets=("cora" "coauthor-cs" "actor" "amazon-photo" "github" "wiki-cs")
 ood_types=("structure")
 backbones=("gcn")
-#methods=("gnnsafe")
 methods=("msp" "gnnsafe" "OE" "ODIN" "Mahalanobis" "maxlogits" "energymodel" "energyprop")
 
 for dataset in "${datasets[@]}"; do

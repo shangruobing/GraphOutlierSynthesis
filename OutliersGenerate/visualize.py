@@ -110,6 +110,37 @@ def visualize_3D(dataset, all_boundary, boundary, outlier, title="visualize_3D")
     plt.show()
 
 
+from matplotlib import pyplot as plt
+from sklearn.manifold import TSNE
+
+
+def visualize_TSNE(emb, color, epoch):
+    fig = plt.figure(figsize=(6, 6), frameon=False)
+    fig.suptitle(f'Epoch = {epoch}')
+
+    # TSNE降为2维
+    z = TSNE(n_components=2).fit_transform(emb.detach().cpu().numpy())
+    plt.xticks([])
+    plt.yticks([])
+    plt.scatter(z[:, 0],
+                z[:, 1],
+                s=30,
+                c=color.detach().cpu().numpy(),
+                cmap="Set2")
+    plt.show()
+
+
+def visualize_classify(x, y):
+    plt.scatter(range(len(x)), x, color='tab:red', label='Predicted', marker='x', alpha=0.7)
+    plt.scatter(range(len(y)), y, color='tab:blue', label='True', marker='o', alpha=0.1)
+    plt.xlabel('Sample Index')
+    plt.ylabel('Label')
+    plt.title('Predicted vs True Labels')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 if __name__ == '__main__':
     import numpy as np
 
@@ -125,3 +156,9 @@ if __name__ == '__main__':
         outlier,
         title="visualize_2D"
     )
+
+    import torch
+
+    x = torch.randn(100)
+    y = torch.randn(100)
+    visualize_classify(x, y)

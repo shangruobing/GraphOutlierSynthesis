@@ -11,7 +11,6 @@ from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
 
 from OutliersGenerate.KNN import generate_outliers
-from OutliersGenerate.test import visualize, line
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
 
 
@@ -74,7 +73,7 @@ class OE(nn.Module):
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
@@ -113,7 +112,7 @@ class ODIN(nn.Module):
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
@@ -135,15 +134,15 @@ class ODIN(nn.Module):
         logits, penultimate = logits[node_idx], penultimate[node_idx]
         return self.classifier(penultimate).squeeze()
         """
-        odin_score = self.ODIN(dataset, node_idx, device, args.T, args.noise)
+        odin_score = self.ODIN(dataset, node_idx, device, 1.0, 0.)
         return torch.Tensor(-np.max(odin_score, 1))
 
     def ODIN(self, dataset, node_idx, device, temper, noiseMagnitude):
         # Calculating the perturbation we need to add, that is,
         # the sign of gradient of cross entropy loss w.r.t. input
-        data = dataset.x.to(device)
+        data = dataset.x
         data = Variable(data, requires_grad=True)
-        edge_index = dataset.edge_index.to(device)
+        edge_index = dataset.edge_index
         outputs, penultimate = self.encoder(data, edge_index)
         outputs, penultimate = outputs[node_idx], penultimate[node_idx]
         criterion = nn.CrossEntropyLoss()
@@ -153,20 +152,13 @@ class ODIN(nn.Module):
         # Using temperature scaling
         outputs = outputs / temper
 
-        labels = Variable(torch.LongTensor(maxIndexTemp).to(device))
+        labels = Variable(torch.LongTensor(maxIndexTemp, device=device))
         loss = criterion(outputs, labels)
 
         datagrad = autograd.grad(loss, data)[0]
         # Normalizing the gradient to binary in {0, 1}
         gradient = torch.ge(datagrad.data, 0)
         gradient = (gradient.float() - 0.5) * 2
-
-        '''gradient[:, 0] = (gradient[:, 0]) / (63.0 / 255.0)
-        gradient[:, 1] = (gradient[:, 1]) / (62.1 / 255.0)
-        gradient[:, 2] = (gradient[:, 2]) / (66.7 / 255.0)'''
-        # gradient.index_copy_(1, torch.LongTensor([0]).cuda(), gradient.index_select(1, torch.LongTensor([0]).cuda()) / (63.0/255.0))
-        # gradient.index_copy_(1, torch.LongTensor([1]).cuda(), gradient.index_select(1, torch.LongTensor([1]).cuda()) / (62.1/255.0))
-        # gradient.index_copy_(1, torch.LongTensor([2]).cuda(), gradient.index_select(1, torch.LongTensor([2]).cuda()) / (66.7/255.0))
 
         # Adding small perturbations to images
         tempInputs = torch.add(input=data.data, other=-noiseMagnitude, out=gradient)
@@ -237,7 +229,7 @@ class Mahalanobis(nn.Module):
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
@@ -263,7 +255,7 @@ class Mahalanobis(nn.Module):
         num_classes = len(torch.unique(train_set.y))
         sample_mean, precision = self.sample_estimator(num_classes, feature_list, train_set, train_idx, device)
         in_score = self.get_Mahalanobis_score(test_set, node_idx, device, num_classes, sample_mean, precision,
-                                              count - 1, args.noise)
+                                              count - 1, 0.)
         return torch.Tensor(in_score)
 
     def get_Mahalanobis_score(self, test_set, node_idx, device, num_classes, sample_mean, precision, layer_index,
@@ -368,7 +360,7 @@ class Mahalanobis(nn.Module):
         correct += equal_flag.sum()
 
         # construct the sample matrix
-        for i in range(target):
+        for i in range(len(target)):
             label = target[i]
             if num_sample_per_class[label] == 0:
                 out_count = 0
@@ -433,7 +425,7 @@ class MaxLogits(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         else:
             raise NotImplementedError
         self.classifier = Classifier(in_features=args.hidden_channels)
@@ -469,10 +461,10 @@ class EnergyModel(nn.Module):
                                out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'sgc':
-            self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=args.hops)
+            self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=2)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         else:
             raise NotImplementedError
         self.classifier = Classifier(in_features=args.hidden_channels)
@@ -508,10 +500,10 @@ class EnergyProp(nn.Module):
                                out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'sgc':
-            self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=args.hops)
+            self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=2)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=args.gat_heads, out_heads=args.out_heads)
+                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         else:
             raise NotImplementedError
         self.classifier = Classifier(in_features=args.hidden_channels)
@@ -544,9 +536,9 @@ class EnergyProp(nn.Module):
         logits, penultimate = self.encoder(x, edge_index)
         if args.dataset in ('proteins', 'ppi'):
             logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
-            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
+            neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1).sum(dim=1)
         else:
-            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
+            neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1)
         neg_energy_prop = self.propagation(neg_energy, edge_index)
         return neg_energy_prop[node_idx]
 
@@ -617,9 +609,9 @@ class GNNSafe(nn.Module):
         logits, penultimate = self.encoder(x, edge_index)
         if args.dataset in ('proteins', 'ppi'):  # for multi-label binary classification
             logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
-            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
+            neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1).sum(dim=1)
         else:  # for single-label multi-class classification
-            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
+            neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1)
         # if args.use_prop:  # use energy belief propagation
         #     neg_energy = self.propagation(neg_energy, edge_index, args.K, args.alpha)
         return neg_energy[node_idx]

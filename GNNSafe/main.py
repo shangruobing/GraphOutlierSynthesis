@@ -110,19 +110,14 @@ for epoch in range(args.epochs):
     if args.mode == 'classify':
         result = evaluate_classify(model, dataset_ind, eval_func, criterion, args, device)
         logger.add_result(result)
-
-        if epoch % args.display_step == 0:
-            info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Train: {100 * result[0]:.2f}%, Valid: {100 * result[1]:.2f}%, Test: {100 * result[2]:.2f}%'
-            epoch_info += info + '\n'
-            print(info)
+        info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Train: {100 * result[0]:.2f}%, Valid: {100 * result[1]:.2f}%, Test: {100 * result[2]:.2f}%'
     else:
         result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
         logger.add_result(result)
+        info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Test Score: {100 * result[-2]:.2f}%'
 
-        if epoch % args.display_step == 0:
-            info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Test Score: {100 * result[-2]:.2f}%'
-            epoch_info += info + '\n'
-            print(info)
+    epoch_info += info + '\n'
+    print(info)
 
 metrics = logger.get_statistics()
 insert_row(

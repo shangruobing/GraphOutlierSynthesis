@@ -1,4 +1,5 @@
 import torch
+from sklearn.preprocessing import MinMaxScaler
 
 
 class DetectLogger:
@@ -12,16 +13,27 @@ class DetectLogger:
     def add_result(self, result):
         self.results.append(result)
 
-    def get_statistics(self):
+    def get_statistics(self, sort="combine"):
         result = 100 * torch.tensor(self.results)
         ood_result, test_score, valid_loss = result[:, :-2], result[:, -2], result[:, -1]
-        min_index = valid_loss.argmin().item()
+
+        if sort == "combine":
+            import copy
+            metric = copy.deepcopy(result)
+            metric[:, 2] = 100 - metric[:, 2]
+            metric = metric[:, :-1]
+            scaler = MinMaxScaler()
+            metric = torch.tensor(scaler.fit_transform(metric))
+            min_index = metric.sum(dim=1).argmax().item()
+        else:
+            min_index = valid_loss.argmin().item()
+
         score_val = test_score[min_index].item()
         auroc_val = ood_result[min_index, 0].item()
         aupr_val = ood_result[min_index, 1].item()
         fpr_val = ood_result[min_index, 2].item()
         print(f'Choose Epoch: {min_index}')
-        print(f'OOD Test Detect AUROC ↑: {auroc_val:.2f}(↑)')
+        print(f'OOD Test Detect AUROC ↑: {auroc_val:.2f}')
         print(f'OOD Test Detect AUPR  ↑: {aupr_val:.2f}')
         print(f'OOD Test Detect FPR95 ↓: {fpr_val:.2f}')
         print(f'IND Test Accuracy     ↑: {score_val:.2f}')

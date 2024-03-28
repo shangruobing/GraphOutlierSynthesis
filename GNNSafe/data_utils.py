@@ -7,7 +7,6 @@ import numpy as np
 from torch_sparse import SparseTensor
 import torch.nn.functional as F
 
-from OutliersGenerate.test import line
 from baselines import ODIN, Mahalanobis
 from torch import BoolTensor
 

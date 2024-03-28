@@ -9,7 +9,6 @@ from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS
 from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
 
 from OutliersGenerate.KNN import generate_outliers
-from OutliersGenerate.test import visualize
 from data_utils import to_sparse_tensor
 
 
@@ -40,7 +39,7 @@ def load_dataset(args: Namespace) -> Tuple[Data, Data, Data]:
         'cora', "actor",
         'citeseer', 'pubmed',
         'amazon-photo', 'amazon-computer', 'coauthor-cs',
-        'coauthor-physics', "wiki-cs", "actor", "webkb",
+        'coauthor-physics', "wiki-cs", "webkb",
         "github"
     ]:
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
