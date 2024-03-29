@@ -3,14 +3,14 @@ from argparse import Namespace
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.autograd as autograd
+from icecream import ic
 from torch.autograd import Variable
 from torch_geometric.data import Data
 from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
 
-from OutliersGenerate.KNN import generate_outliers
+from OutliersGenerate.loss import compute_loss
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
 
 
@@ -47,10 +47,21 @@ class MSP(nn.Module):
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
-        return logits
+        return logits, self.classifier(penultimate)
 
     def detect(self, dataset, node_idx, device, args):
+        # for name, param in self.classifier.named_parameters():
+        #     print(name, param)
+        # print(self.encoder)
         logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        ic(penultimate.shape)
+        ic(node_idx)
+        ic(penultimate[node_idx].shape)
+        # print("detect id cla",id(self.classifier))
+
+        # print("detect", penultimate[node_idx].shape)
+        # print("detect tensor", penultimate[node_idx][0][:10])
+        # self.classifier.eval()
         return self.classifier(penultimate[node_idx]).squeeze()
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
@@ -152,7 +163,7 @@ class ODIN(nn.Module):
         # Using temperature scaling
         outputs = outputs / temper
 
-        labels = Variable(torch.LongTensor(maxIndexTemp, device=device))
+        labels = Variable(torch.LongTensor(maxIndexTemp)).to(device=device)
         loss = criterion(outputs, labels)
 
         datagrad = autograd.grad(loss, data)[0]
@@ -176,41 +187,7 @@ class ODIN(nn.Module):
         return nnOutputs
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        train_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
-        logits_in, penultimate = self.encoder(dataset_ind.x, dataset_ind.edge_index)
-        logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
-
-        sample_point, sample_edge, sample_label = generate_outliers(
-            dataset_ind.x,
-            device=device,
-            num_nodes=len(logits_in),
-            # num_nodes=dataset_ind.num_nodes,
-            num_features=dataset_ind.num_features,
-            num_edges=dataset_ind.num_edges,
-        )
-        ood = torch.cat([dataset_ood.x, sample_point])
-        sample_logits, sampling_penultimate = self.encoder(ood, dataset_ood.edge_index)
-        sample_logits, sampling_penultimate = sample_logits[train_ood_idx], sampling_penultimate[train_ood_idx]
-
-        min_length = min(len(logits_in), len(sample_logits))
-
-        input_for_lr = self.classifier(torch.cat(tensors=[penultimate[:min_length], sampling_penultimate[:min_length]],
-                                                 dim=0)).squeeze()
-        labels_for_lr = torch.cat([
-            torch.ones(min_length, device=device),
-            torch.zeros(min_length, device=device)
-        ])
-
-        criterion_BCE = nn.BCELoss()
-        sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-
-        pred_in = F.log_softmax(logits_in, dim=1)
-        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1))
-
-        loss += 0.5 * -(sample_logits.mean(1) - torch.logsumexp(sample_logits, dim=1)).mean()
-        if args.generate_ood:
-            loss += sample_sup_loss
-        return loss
+        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
 class Mahalanobis(nn.Module):
@@ -633,65 +610,13 @@ class Classifier(nn.Module):
         """
         super().__init__()
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
+            nn.Linear(in_features=in_features, out_features=in_features // 2, bias=False),
             nn.ReLU(inplace=True),
-            nn.Linear(in_features=in_features // 2, out_features=in_features // 4, bias=True),
+            nn.Linear(in_features=in_features // 2, out_features=in_features // 4, bias=False),
             nn.ReLU(inplace=True),
-            nn.Linear(in_features=in_features // 4, out_features=1, bias=True),
+            nn.Linear(in_features=in_features // 4, out_features=1, bias=False),
             nn.Sigmoid()
         )
 
     def forward(self, x):
         return self.classifier(x).squeeze()
-
-
-def compute_loss(dataset_ind: Data, dataset_ood: Data, encoder, classifier, criterion, device, args):
-    """
-    Compute the loss for in-distribution and out-of-distribution datasets.
-    Args:
-        dataset_ind:
-        dataset_ood:
-        encoder:
-        classifier:
-        criterion:
-        device:
-        args:
-
-    Returns:
-
-    """
-    train_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
-    logits_in, penultimate = encoder(dataset_ind.x, dataset_ind.edge_index)
-    logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
-
-    sample_point, sample_edge, sample_label = generate_outliers(
-        dataset_ind.x,
-        device=device,
-        num_nodes=len(logits_in),
-        # num_nodes=dataset_ind.num_nodes,
-        num_features=dataset_ind.num_features,
-        num_edges=dataset_ind.num_edges,
-    )
-    ood = torch.cat([dataset_ood.x, sample_point])
-    sample_logits, sampling_penultimate = encoder(ood, dataset_ood.edge_index)
-    sample_logits, sampling_penultimate = sample_logits[train_ood_idx], sampling_penultimate[train_ood_idx]
-
-    min_length = min(len(logits_in), len(sample_logits))
-
-    input_for_lr = classifier(torch.cat(tensors=[penultimate[:min_length], sampling_penultimate[:min_length]],
-                                        dim=0)).squeeze()
-    labels_for_lr = torch.cat([
-        torch.ones(min_length, device=device),
-        torch.zeros(min_length, device=device)
-    ])
-
-    criterion_BCE = nn.BCELoss()
-    sample_sup_loss = criterion_BCE(input_for_lr, labels_for_lr)
-
-    pred_in = F.log_softmax(logits_in, dim=1)
-    loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1))
-
-    loss += 0.5 * -(sample_logits.mean(1) - torch.logsumexp(sample_logits, dim=1)).mean()
-    if args.generate_ood:
-        loss += sample_sup_loss
-    return loss

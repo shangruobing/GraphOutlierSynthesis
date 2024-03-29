@@ -11,67 +11,35 @@ class DetectLogger:
         self.results = []
 
     def add_result(self, result):
-        self.results.append(result)
+        """
+        auroc, aupr, fpr, accuracy, test_score, valid_loss
+        Args:
+            result:
 
-    def get_statistics(self, sort="combine"):
-        result = 100 * torch.tensor(self.results)
-        ood_result, test_score, valid_loss = result[:, :-2], result[:, -2], result[:, -1]
+        Returns:
 
-        if sort == "combine":
-            import copy
-            metric = copy.deepcopy(result)
-            metric[:, 2] = 100 - metric[:, 2]
-            metric = metric[:, :-1]
-            scaler = MinMaxScaler()
-            metric = torch.tensor(scaler.fit_transform(metric))
-            min_index = metric.sum(dim=1).argmax().item()
-        else:
-            min_index = valid_loss.argmin().item()
-
-        score_val = test_score[min_index].item()
-        auroc_val = ood_result[min_index, 0].item()
-        aupr_val = ood_result[min_index, 1].item()
-        fpr_val = ood_result[min_index, 2].item()
-        print(f'Choose Epoch: {min_index}')
-        print(f'OOD Test Detect AUROC ↑: {auroc_val:.2f}')
-        print(f'OOD Test Detect AUPR  ↑: {aupr_val:.2f}')
-        print(f'OOD Test Detect FPR95 ↓: {fpr_val:.2f}')
-        print(f'IND Test Accuracy     ↑: {score_val:.2f}')
-        return {
-            "AUROC": round(score_val, 2),
-            "AUPR": round(auroc_val, 2),
-            "FPR": round(aupr_val, 2),
-            "SCORE": round(fpr_val, 2),
-        }
-
-
-class ClassifyLogger:
-    """
-    logger for node classification task, reporting train/valid/test accuracy or roc, auc for classification
-    """
-
-    def __init__(self):
-        self.results = []
-
-    def add_result(self, result):
+        """
         self.results.append(result)
 
     def get_statistics(self):
         result = 100 * torch.tensor(self.results)
-        train1 = result[:, 0].max().item()
-        test1 = result[:, 2].max().item()
-        valid = result[:, 1].max().item()
-        train2 = result[result[:, 1].argmax(), 0].item()
-        test2 = result[result[:, 1].argmax(), 2].item()
-        print(f'Highest Train: {train1:.2f}')
-        print(f'Highest Test: {test1:.2f}')
-        print(f'Highest Valid: {valid:.2f}')
-        print(f'  Final Train: {train2:.2f}')
-        print(f'   Final Test: {test2:.2f}')
+        auroc, aupr, fpr, accuracy, test_score, valid_loss = result.T
+        min_index = valid_loss.argmin().item()
+        auroc_val = auroc[min_index].item()
+        aupr_val = aupr[min_index].item()
+        fpr_val = fpr[min_index].item()
+        acc_val = accuracy[min_index].item()
+        score_val = test_score[min_index].item()
+        print(f'Choose Epoch: {min_index}')
+        print(f'OOD Test Detect AUROC ↑: {auroc_val:.2f}')
+        print(f'OOD Test Detect AUPR  ↑: {aupr_val:.2f}')
+        print(f'OOD Test Detect FPR95 ↓: {fpr_val:.2f}')
+        print(f'OOD Test Detect ACCU  ↑: {acc_val:.2f}')
+        print(f'IND Test Accuracy     ↑: {score_val:.2f}')
         return {
-            "Highest Train": round(train1, 2),
-            "Highest Test": round(test1, 2),
-            "Highest Valid": round(valid, 2),
-            "Final Train": round(train2, 2),
-            "Final Test": round(test2, 2),
+            "AUROC": round(auroc_val, 2),
+            "AUPR": round(aupr_val, 2),
+            "FPR": round(fpr_val, 2),
+            "ACCURACY": round(acc_val, 2),
+            "SCORE": round(score_val, 2),
         }

@@ -4,7 +4,7 @@ from pprint import pformat
 
 import pandas as pd
 
-from OutliersGenerate.config import FOLDER_PATH, RUNNING_RESULT_PATH
+from OutliersGenerate.config import FOLDER_PATH
 from OutliersGenerate.utils import get_now_datetime
 
 
@@ -12,10 +12,11 @@ def insert_row(
         args: Namespace,
         model: str,
         epoch_info: str,
-        AUROC: str,
-        AUPR: str,
-        FPR: str,
-        SCORE: str
+        auroc: str,
+        aupr: str,
+        fpr: str,
+        accuracy: str,
+        score: str
 ) -> None:
     """
     将LLM的回答等信息存入运行结果表格
@@ -23,10 +24,11 @@ def insert_row(
         args: argparse,
         model: Model,
         epoch_info: str,
-        AUROC: str,
-        AUPR: str,
-        FPR: str,
-        SCORE: str,
+        auroc: str,
+        aupr: str,
+        fpr: str,
+        accuracy: str,
+        score: str,
     """
     FILE_PATH = FOLDER_PATH / f"{args.dataset}.csv"
     if not os.path.exists(FOLDER_PATH):
@@ -50,6 +52,7 @@ def insert_row(
             'AUROC',
             'AUPR',
             'FPR',
+            "ACCURACY",
             'SCORE'
         ])
     new_row = {
@@ -64,10 +67,11 @@ def insert_row(
         "model": model,
         "epoch_info": epoch_info,
         "time": get_now_datetime(),
-        "AUROC": AUROC,
-        "AUPR": AUPR,
-        "FPR": FPR,
-        "SCORE": SCORE,
+        "AUROC": auroc,
+        "ACCURACY": accuracy,
+        "AUPR": aupr,
+        "FPR": fpr,
+        "SCORE": score,
     }
     df.loc[len(df)] = new_row
     df.to_csv(FILE_PATH, index=False, encoding="UTF-8-SIG")

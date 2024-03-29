@@ -160,7 +160,7 @@ class GCN(nn.Module):
 
 class GAT(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
-                 dropout=0.5, use_bn=False, heads=2, out_heads=1):
+                 dropout=0.5, use_bn=False, heads=1, out_heads=1):
         super(GAT, self).__init__()
 
         self.convs = nn.ModuleList()
@@ -224,7 +224,6 @@ class GAT(nn.Module):
 
 
 class MixHopLayer(nn.Module):
-    """ Our MixHop layer """
 
     def __init__(self, in_channels, out_channels, hops=2):
         super(MixHopLayer, self).__init__()
@@ -250,11 +249,6 @@ class MixHopLayer(nn.Module):
 
 
 class MixHop(nn.Module):
-    """ our implementation of MixHop
-    some assumptions: the powers of the adjacency are [0, 1, ..., hops],
-        with every power in between
-    each concatenated layer has the same dimension --- hidden_channels
-    """
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
                  dropout=0.5, hops=2):
@@ -369,7 +363,7 @@ class GCNJK(nn.Module):
 
 class GATJK(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
-                 dropout=0.5, heads=2, jk_type='max'):
+                 dropout=0.5, heads=1, jk_type='max'):
         super(GATJK, self).__init__()
 
         self.convs = nn.ModuleList()
@@ -456,14 +450,14 @@ class APPNP_Net(nn.Module):
         return x, penultimate
 
 
-class GPR_prop(MessagePassing):
+class GPRPROP(MessagePassing):
     """
     GPRGNN, from original repo https://github.com/jianhao2016/GPRGNN
     propagation class for GPR_GNN
     """
 
     def __init__(self, K, alpha, Init, Gamma=None, bias=True, **kwargs):
-        super(GPR_prop, self).__init__(aggr='add', **kwargs)
+        super(GPRPROP, self).__init__(aggr='add', **kwargs)
         self.K = K
         self.Init = Init
         self.alpha = alpha
@@ -534,7 +528,7 @@ class GPRGNN(nn.Module):
         if ppnp == 'PPNP':
             self.prop1 = APPNP(K, alpha)
         elif ppnp == 'GPR_prop':
-            self.prop1 = GPR_prop(K, alpha, Init, Gamma)
+            self.prop1 = GPRPROP(K, alpha, Init, Gamma)
 
         self.Init = Init
         self.dprate = dprate

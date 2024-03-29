@@ -2,15 +2,27 @@ cd ../GNNSafe || exit
 
 epochs=100
 device=3
-datasets=("cora" "coauthor-cs" "actor" "amazon-photo" "github" "wiki-cs")
+datasets=("cora" "amazon-photo" "github" "coauthor-cs")
 ood_types=("structure")
-backbones=("gcn")
 methods=("msp" "gnnsafe" "OE" "ODIN" "Mahalanobis" "maxlogits" "energymodel" "energyprop")
+backbones=("gcn")
+#backbones=("gcn" "mlp" "gat" "mixhop" "gcnjk" "gatjk")
+
+echo "Parameters:"
+echo epochs: $epochs
+echo device: $device
+echo datasets: "${datasets[@]}"
+echo ood_types: "${ood_types[@]}"
+echo methods: "${methods[@]}"
+echo backbones: "${backbones[@]}"
+echo -e "\nStart training...\n"
 
 for dataset in "${datasets[@]}"; do
   for ood_type in "${ood_types[@]}"; do
     for method in "${methods[@]}"; do
       for backbone in "${backbones[@]}"; do
+        echo "Generate OOD data"
+        date
         python main.py \
           --method "$method" \
           --backbone "$backbone" \
@@ -21,15 +33,9 @@ for dataset in "${datasets[@]}"; do
           --device $device \
           --epochs $epochs \
           --generate_ood
-      done
-    done
-  done
-done
 
-for dataset in "${datasets[@]}"; do
-  for ood_type in "${ood_types[@]}"; do
-    for method in "${methods[@]}"; do
-      for backbone in "${backbones[@]}"; do
+        echo "No Generate OOD data"
+        date
         python main.py \
           --method "$method" \
           --backbone "$backbone" \
@@ -43,3 +49,5 @@ for dataset in "${datasets[@]}"; do
     done
   done
 done
+
+echo -e "\nEnd training...\n"

@@ -18,9 +18,3 @@ ROOT_PATH = Path(os.path.dirname(os.path.abspath(__file__))).parent
 
 """运行结果所在目录"""
 FOLDER_PATH = ROOT_PATH / f"result/{get_now_date()}/"
-
-"""运行结果文件路径"""
-RUNNING_RESULT_PATH = FOLDER_PATH / "running_result.csv"
-
-"""模板文件路径"""
-TEMPLATE_PATH = ROOT_PATH / "template/"

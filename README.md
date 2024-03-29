@@ -42,6 +42,10 @@ cd GraphOOD-GNNSafe/script
 bash detect.sh
 ```
 
+```shell
+nohup bash detect.sh > output.log 2>&1 &
+```
+
 # Common Command
 
 ```shell
@@ -60,6 +64,8 @@ watch -n 2 -d nvidia-smi
 | GitHub       | 37000     | 128          | 2           | 578006    |      
 | Wiki-CS      | 11701     | 300          | 10          | 431726    |   
 | Coauthor-CS  | 18333     | 6805         | 15          | 163788    |
+
+> wiki-cs和actor的mask不一致
 
 # Methodology
 

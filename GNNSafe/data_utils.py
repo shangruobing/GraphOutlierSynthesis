@@ -157,11 +157,20 @@ def get_measures(_pos, _neg, recall_level=0.95):
     neg = np.array(_neg[:]).reshape((-1, 1))
     examples = np.squeeze(np.vstack((pos, neg)))
     labels = np.zeros(len(examples), dtype=np.int32)
-    labels[:len(pos)] += 1
+    labels[:len(pos)] = 1
     auroc = roc_auc_score(labels, examples)
+    # print(labels)
+    # print(examples)
+    accuracy = accuracy_score(labels, np.round(examples))
+    # print(labels[:30])
+    # print(np.round(examples)[:30])
+    #
+    # print(labels[-30:])
+    # print(np.round(examples)[-30:])
+    # print(accuracy)
     aupr = average_precision_score(labels, examples)
     fpr, threshould = fpr_and_fdr_at_recall(labels, examples, recall_level)
-    return auroc, aupr, fpr, threshould
+    return auroc, aupr, fpr, accuracy
 
 
 def eval_acc(y_true, y_pred):
@@ -214,30 +223,6 @@ def eval_rocauc(y_true, y_pred):
     return sum(rocauc_list) / len(rocauc_list)
 
 
-@torch.no_grad()
-def evaluate_classify(model, dataset, eval_func, criterion, args, device):
-    model.eval()
-
-    train_idx, valid_idx, test_idx = dataset.train_mask, dataset.val_mask, dataset.test_mask
-    y = dataset.y
-    out = model(dataset, device).cpu()
-
-    train_score = eval_func(y[train_idx], out[train_idx])
-    valid_score = eval_func(y[valid_idx], out[valid_idx])
-    test_score = eval_func(y[test_idx], out[test_idx])
-
-    if args.method != 'GPN':
-        if args.dataset in ('proteins', 'ppi'):
-            valid_loss = criterion(out[valid_idx], y[valid_idx].to(torch.float))
-        else:
-            valid_out = F.log_softmax(out[valid_idx], dim=1)
-            valid_loss = criterion(valid_out, y[valid_idx].squeeze(1))
-
-        return train_score, valid_score, test_score, valid_loss
-    else:
-        return train_score, valid_score, test_score
-
-
 def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args, device):
     """
     OOD detection performance
@@ -262,11 +247,13 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
     else:
         with torch.no_grad():
-            # print("ID")
+            print("开始预测")
+            print("ID")
             test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
             # print(test_ind_score.size())
-            # print(test_ind_score[:20])
+            print(test_ind_score[:20])
             # print(test_ind_score[-20:])
+
     if isinstance(model, Mahalanobis):
         test_ood_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ood, dataset_ood.node_idx,
                                       device, args).cpu()
@@ -274,37 +261,27 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
     else:
         with torch.no_grad():
-            # print("OOD")
+            print("OOD")
             test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
             # print(test_ood_score.size())
-            # print(test_ood_score[:50])
+            print(test_ood_score[:20])
+            # print(test_ood_score[-20:])
 
-    # print("result test")
-    # # line(x=test_ind_score, y=[1 for _ in range(len(test_ind_score))])
-    # # line(x=test_ood_score, y=[0 for _ in range(len(test_ood_score))])
-    # print("ID")
-    # # print(test_ind_score.size())
-    # print(test_ind_score[:50])
-    # print("OOD")
-    # # print(test_ood_score.size())
-    # print(test_ood_score[:50])
-    # test_ood_score = test_ood_score[:1000]
+    min_length = min(len(test_ind_score), len(test_ood_score))
 
-    auroc, aupr, fpr, _ = get_measures(test_ind_score, test_ood_score)
+    test_ind_score = test_ind_score[:min_length]
+    test_ood_score = test_ood_score[:min_length]
 
-    out = model(dataset_ind, device)
+    auroc, aupr, fpr, accuracy = get_measures(test_ind_score, test_ood_score)
+
+    out, _ = model(dataset_ind, device)
 
     test_idx = dataset_ind.test_mask
-    # ic("任务准确率")
-    # ic(dataset_ind.y[test_idx][:20])
-    # ic(out[test_idx][:20])
     test_score = eval_func(dataset_ind.y[test_idx], out[test_idx])
 
     valid_idx = dataset_ind.val_mask
-    if args.dataset in ('proteins', 'ppi'):
-        valid_loss = criterion(out[valid_idx], dataset_ind.y[valid_idx].to(torch.float))
-    else:
-        valid_out = F.log_softmax(out[valid_idx], dim=1)
-        valid_loss = criterion(valid_out, dataset_ind.y[valid_idx].squeeze(1))
 
-    return auroc, aupr, fpr, test_score, valid_loss
+    valid_out = F.log_softmax(out[valid_idx], dim=1)
+    valid_loss = criterion(valid_out, dataset_ind.y[valid_idx].squeeze(1))
+
+    return auroc, aupr, fpr, accuracy, test_score, valid_loss

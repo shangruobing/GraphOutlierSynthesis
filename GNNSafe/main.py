@@ -7,9 +7,9 @@ import torch.nn as nn
 sys.path.append('..')
 
 from baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
-from data_utils import evaluate_classify, evaluate_detect, eval_acc, eval_rocauc, rand_splits
+from data_utils import evaluate_detect, eval_acc, eval_rocauc, rand_splits
 from dataset import load_dataset
-from logger import ClassifyLogger, DetectLogger
+from logger import DetectLogger
 from parse import parser_add_main_args
 
 from OutliersGenerate.utils import get_device, fix_seed
@@ -81,13 +81,10 @@ if args.dataset in ('proteins', 'ppi', 'twitch'):  # binary classification
 else:
     eval_func = eval_acc
 
-if args.mode == 'classify':
-    logger = ClassifyLogger()
-else:
-    logger = DetectLogger()
+logger = DetectLogger()
 
 model.train()
-# print(model)
+print(model)
 
 epoch_info = ""
 model.reset_parameters()
@@ -95,7 +92,7 @@ model.to(device)
 optimizer = torch.optim.Adam(
     params=[
         {'params': model.encoder.parameters(), 'lr': args.lr},
-        {'params': model.classifier.parameters(), 'lr': args.lr * 10}
+        {'params': model.classifier.parameters(), 'lr': args.lr},
     ],
     lr=args.lr,
     weight_decay=args.weight_decay)
@@ -107,15 +104,9 @@ for epoch in range(args.epochs):
     loss.backward()
     optimizer.step()
 
-    if args.mode == 'classify':
-        result = evaluate_classify(model, dataset_ind, eval_func, criterion, args, device)
-        logger.add_result(result)
-        info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Train: {100 * result[0]:.2f}%, Valid: {100 * result[1]:.2f}%, Test: {100 * result[2]:.2f}%'
-    else:
-        result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
-        logger.add_result(result)
-        info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Test Score: {100 * result[-2]:.2f}%'
-
+    result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
+    logger.add_result(result)
+    info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Accuracy: {100 * result[3]:.2f}% Test Score: {100 * result[4]:.2f}%'
     epoch_info += info + '\n'
     print(info)
 
@@ -124,8 +115,9 @@ insert_row(
     args=args,
     model=str(model),
     epoch_info=epoch_info,
-    AUROC=metrics.get("AUROC"),
-    AUPR=metrics.get("AUPR"),
-    FPR=metrics.get("FPR"),
-    SCORE=metrics.get("SCORE")
+    auroc=metrics.get("AUROC"),
+    aupr=metrics.get("AUPR"),
+    fpr=metrics.get("FPR"),
+    accuracy=metrics.get("ACCURACY"),
+    score=metrics.get("SCORE")
 )
