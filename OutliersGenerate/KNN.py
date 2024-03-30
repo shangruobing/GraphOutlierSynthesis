@@ -85,14 +85,12 @@ def generate_outliers(
         covariance_matrix=torch.eye(num_features, device=device)
     )
 
-    # 从高斯分布采样1/2节点数目的数据作为噪声2708
-
     # 重复10次，每一次都补足为采样的length，把这10次结果拼起来,每个采样点贡献10个特征
     sampling_dataset = torch.cat([
         dataset[index].repeat(num_nodes // pic_nums, 1) for index in max_distance_index
     ])
 
-    # 从高斯分布采样1/2节点数目的数据作为噪声2708 // 2 = 1354
+    # 从高斯分布采样1/2节点数目的数据作为噪声
     noises = gaussian_distribution.rsample(sample_shape=(sampling_dataset.shape[0],))
 
     noise_cov = cov_mat * noises
@@ -125,7 +123,7 @@ def generate_outliers(
     #     size=(int(num_sample_points),),
     #     device=device
     # )
-    # 生成的都是0label
+    # 生成的都是0 label
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
     if debug:

@@ -95,7 +95,8 @@ optimizer = torch.optim.Adam(
         {'params': model.classifier.parameters(), 'lr': args.lr},
     ],
     lr=args.lr,
-    weight_decay=args.weight_decay)
+    weight_decay=args.weight_decay
+)
 
 for epoch in range(args.epochs):
     model.train()
@@ -106,7 +107,7 @@ for epoch in range(args.epochs):
 
     result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
     logger.add_result(result)
-    info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Accuracy: {100 * result[3]:.2f}% Test Score: {100 * result[4]:.2f}%'
+    info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Accuracy: {100 * result[3]:.2f}%, Test Score: {100 * result[4]:.2f}%'
     epoch_info += info + '\n'
     print(info)
 

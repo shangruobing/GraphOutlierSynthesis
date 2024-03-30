@@ -47,21 +47,11 @@ class MSP(nn.Module):
     def forward(self, dataset, device):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
-        return logits, self.classifier(penultimate)
+        return logits
 
     def detect(self, dataset, node_idx, device, args):
-        # for name, param in self.classifier.named_parameters():
-        #     print(name, param)
-        # print(self.encoder)
         logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        ic(penultimate.shape)
-        ic(node_idx)
-        ic(penultimate[node_idx].shape)
-        # print("detect id cla",id(self.classifier))
-
-        # print("detect", penultimate[node_idx].shape)
-        # print("detect tensor", penultimate[node_idx][0][:10])
-        # self.classifier.eval()
+        # print(penultimate[0])
         return self.classifier(penultimate[node_idx]).squeeze()
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
@@ -610,11 +600,14 @@ class Classifier(nn.Module):
         """
         super().__init__()
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=in_features, out_features=in_features // 2, bias=False),
+            nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
             nn.ReLU(inplace=True),
-            nn.Linear(in_features=in_features // 2, out_features=in_features // 4, bias=False),
+            nn.Dropout(p=0.2),
+            nn.Linear(in_features=in_features // 2, out_features=in_features // 4, bias=True),
             nn.ReLU(inplace=True),
-            nn.Linear(in_features=in_features // 4, out_features=1, bias=False),
+            nn.Dropout(p=0.2),
+            # nn.Linear(in_features=in_features // 4, out_features=2, bias=True),
+            nn.Linear(in_features=in_features // 4, out_features=1, bias=True),
             nn.Sigmoid()
         )
 

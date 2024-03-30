@@ -5,13 +5,13 @@ def parser_add_main_args(parser):
     parser.add_argument('--data_dir', type=str, default='../data/')
     parser.add_argument('--device', type=int, default=0, help='which gpu to use if any (default: 0)')
     parser.add_argument('--cpu', action='store_true')
-    parser.add_argument('--seed', type=int, default=123)
+    parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=10)
 
     # model network
     parser.add_argument('--method', type=str, default='msp')
     parser.add_argument('--backbone', type=str, default='gcn')
-    parser.add_argument('--hidden_channels', type=int, default=64)
+    parser.add_argument('--hidden_channels', type=int, default=128)
     parser.add_argument('--num_layers', type=int, default=2, help='number of layers for GNN classifiers')
 
     # training

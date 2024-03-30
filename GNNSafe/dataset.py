@@ -242,8 +242,8 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
     dataset_ind = dataset
 
     if ood_type == 'structure':
-        dataset_ood_tr = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
-        dataset_ood_te = create_sbm_dataset(dataset, p_ii=1.5, p_ij=0.5)
+        dataset_ood_tr = create_knn_dataset(dataset)
+        dataset_ood_te = create_knn_dataset(dataset)
     elif ood_type == 'feature':
         dataset_ood_tr = create_feat_noise_dataset(dataset)
         dataset_ood_te = create_feat_noise_dataset(dataset)
@@ -268,6 +268,19 @@ def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):
     edge_index = stochastic_blockmodel_graph(block_sizes, edge_probs)
     dataset = Data(x=data.x, edge_index=edge_index, y=data.y)
     dataset.node_idx = torch.arange(n)
+    return dataset
+
+
+def create_knn_dataset(data):
+    sample_point, sample_edge, sample_label = generate_outliers(
+        data.x,
+        num_nodes=data.num_nodes,
+        # num_nodes=dataset_ind.num_nodes,
+        num_features=data.num_features,
+        num_edges=data.num_edges,
+    )
+    dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)
+    dataset.node_idx = torch.arange(len(sample_point))
     return dataset
 
 
