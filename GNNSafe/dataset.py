@@ -242,14 +242,17 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
     dataset_ind = dataset
 
     if ood_type == 'structure':
-        dataset_ood_tr = create_knn_dataset(dataset)
-        dataset_ood_te = create_knn_dataset(dataset)
+        dataset_ood_tr = create_sbm_dataset(dataset)
+        dataset_ood_te = create_sbm_dataset(dataset)
     elif ood_type == 'feature':
         dataset_ood_tr = create_feat_noise_dataset(dataset)
         dataset_ood_te = create_feat_noise_dataset(dataset)
     elif ood_type == 'label':
         dataset_ood_tr = create_label_leave_out_dataset(dataset, dataset_ind, dataset_name)
         dataset_ood_te = create_label_leave_out_dataset(dataset, dataset_ind, dataset_name)
+    elif ood_type == 'knn':
+        dataset_ood_tr = create_knn_dataset(dataset)
+        dataset_ood_te = create_knn_dataset(dataset)
     else:
         raise NotImplementedError
     return dataset_ind, dataset_ood_tr, dataset_ood_te

@@ -171,12 +171,12 @@ def get_measures(_pos, _neg, recall_level=0.95):
     # print("ID")
     # print(labels[:40])
     # print(examples[:40])
-    # print((examples >= 0.6).astype(int)[:40])
-
+    # print((examples >= 0.5).astype(int)[:40])
+    #
     # print("OOD")
     # print(labels[-40:])
     # print(examples[-40:])
-    # print((examples >= 0.6).astype(int)[-40:])
+    # print((examples >= 0.5).astype(int)[-40:])
 
     # accuracy = accuracy_score(labels, examples)
     accuracy = accuracy_score(labels, (examples >= 0.5).astype(int))

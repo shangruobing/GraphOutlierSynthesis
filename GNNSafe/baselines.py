@@ -7,6 +7,7 @@ import torch.autograd as autograd
 from icecream import ic
 from torch.autograd import Variable
 from torch_geometric.data import Data
+from torch_geometric.nn.conv import GCNConv
 from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
 
@@ -39,7 +40,7 @@ class MSP(nn.Module):
             self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -51,8 +52,7 @@ class MSP(nn.Module):
 
     def detect(self, dataset, node_idx, device, args):
         logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        # print(penultimate[0])
-        return self.classifier(penultimate[node_idx]).squeeze()
+        return self.classifier(penultimate[node_idx], dataset.x, dataset.edge_index, node_idx).squeeze()
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
@@ -79,7 +79,7 @@ class OE(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -118,7 +118,7 @@ class ODIN(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -201,7 +201,7 @@ class Mahalanobis(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -395,7 +395,7 @@ class MaxLogits(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -434,7 +434,7 @@ class EnergyModel(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -473,7 +473,7 @@ class EnergyProp(nn.Module):
                                dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -544,7 +544,7 @@ class GNNSafe(nn.Module):
             self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
+        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -587,29 +587,62 @@ class GNNSafe(nn.Module):
         return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
 
 
+class GCNEncoder(nn.Module):
+    """
+    An encoder for feature extraction.
+    """
+
+    def __init__(self, in_features, in_channels):
+        """
+        Initialize a. encoder for feature extraction.
+        Args:
+            in_features: number of input features
+            in_channels: number of input channels
+        """
+        super().__init__()
+        self.convs = nn.ModuleList([
+            GCNConv(in_channels=in_channels, out_channels=in_channels // 2),
+            GCNConv(in_channels=in_channels // 2, out_channels=in_channels // 4),
+            GCNConv(in_channels=in_channels // 4, out_channels=in_features),
+        ])
+        self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout(p=0.2)
+        self.log_softmax = nn.LogSoftmax(dim=1)
+
+    def forward(self, x, edge_index):
+        for conv in self.convs:
+            x = conv(x, edge_index)
+            x = self.relu(x)
+            x = self.dropout(x)
+        return self.log_softmax(x)
+
+
 class Classifier(nn.Module):
     """
     A classifier for encoder penultimate output.
     """
 
-    def __init__(self, in_features):
+    def __init__(self, in_features, in_channels):
         """
         Initialize a classifier for encoder output.
         Args:
             in_features: number of input features
         """
         super().__init__()
+        self.encoder = GCNEncoder(in_features=in_features, in_channels=in_channels)
         self.classifier = nn.Sequential(
+            nn.Linear(in_features=in_features * 2, out_features=in_features, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.2),
             nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.2),
-            nn.Linear(in_features=in_features // 2, out_features=in_features // 4, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.2),
-            # nn.Linear(in_features=in_features // 4, out_features=2, bias=True),
-            nn.Linear(in_features=in_features // 4, out_features=1, bias=True),
+            nn.Linear(in_features=in_features // 2, out_features=1, bias=True),
             nn.Sigmoid()
         )
 
-    def forward(self, x):
-        return self.classifier(x).squeeze()
+    def forward(self, logit, x, edge_index, mask):
+        logits = self.encoder(x, edge_index)[mask]
+        if len(logit) != len(logits):
+            raise ValueError("logit and logits must have the same length.")
+        return self.classifier(torch.cat([logits, logit], dim=1)).squeeze()

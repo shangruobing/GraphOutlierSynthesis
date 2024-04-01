@@ -1,7 +1,7 @@
 def parser_add_main_args(parser):
     # setup and protocol
     parser.add_argument('--dataset', type=str, default='cora')
-    parser.add_argument('--ood_type', type=str, default='structure', choices=['structure', 'label', 'feature'])
+    parser.add_argument('--ood_type', type=str, default='structure', choices=['structure', 'label', 'feature', 'knn'])
     parser.add_argument('--data_dir', type=str, default='../data/')
     parser.add_argument('--device', type=int, default=0, help='which gpu to use if any (default: 0)')
     parser.add_argument('--cpu', action='store_true')
