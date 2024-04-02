@@ -8,10 +8,12 @@ import numpy as np
 def get_device(args: Namespace) -> torch.device:
     if args.cpu:
         device = torch.device("cpu")
+    elif torch.cuda.is_available():
+        device = torch.device(f"cuda:{args.device}")
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
     else:
-        device = torch.device("cuda:" + str(args.device)) if torch.cuda.is_available() else torch.device("cpu")
+        device = torch.device("cpu")
     return device
 
 

@@ -24,14 +24,14 @@ class MSP(nn.Module):
                                out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
                                out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mixhop':
             self.encoder = MixHop(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         elif args.backbone == 'gcnjk':
@@ -67,14 +67,14 @@ class OE(nn.Module):
                                out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
                                out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
+                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
@@ -106,14 +106,14 @@ class ODIN(nn.Module):
                                out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
                                out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
+                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
@@ -189,14 +189,14 @@ class Mahalanobis(nn.Module):
                                out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
                                out_channels=num_classes, num_layers=args.num_layers,
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
+                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
@@ -383,7 +383,7 @@ class MaxLogits(nn.Module):
                                out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
                                out_channels=num_classes, num_layers=args.num_layers,
@@ -392,7 +392,7 @@ class MaxLogits(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
+                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         else:
             raise NotImplementedError
         self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
@@ -422,7 +422,7 @@ class EnergyModel(nn.Module):
                                out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
                                out_channels=num_classes, num_layers=args.num_layers,
@@ -431,7 +431,7 @@ class EnergyModel(nn.Module):
             self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=2)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
+                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         else:
             raise NotImplementedError
         self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
@@ -461,7 +461,7 @@ class EnergyProp(nn.Module):
                                out_channels=num_classes,
                                num_layers=args.num_layers,
                                dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
                                out_channels=num_classes, num_layers=args.num_layers,
@@ -470,7 +470,7 @@ class EnergyProp(nn.Module):
             self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=2)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=args.use_bn, heads=8, out_heads=1)
+                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         else:
             raise NotImplementedError
         self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
@@ -527,7 +527,7 @@ class GNNSafe(nn.Module):
                 out_channels=num_classes,
                 num_layers=args.num_layers,
                 dropout=args.dropout,
-                use_bn=args.use_bn
+                use_bn=True
             )
         elif args.backbone == 'mlp':
             self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
@@ -535,7 +535,7 @@ class GNNSafe(nn.Module):
                                dropout=args.dropout)
         elif args.backbone == 'gat':
             self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout,
-                               use_bn=args.use_bn)
+                               use_bn=True)
         elif args.backbone == 'mixhop':
             self.encoder = MixHop(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         elif args.backbone == 'gcnjk':

@@ -92,7 +92,7 @@ model.to(device)
 optimizer = torch.optim.Adam(
     params=[
         {'params': model.encoder.parameters(), 'lr': args.lr},
-        {'params': model.classifier.parameters(), 'lr': args.lr // 10},
+        {'params': model.classifier.parameters(), 'lr': args.lr},
     ],
     lr=args.lr,
     weight_decay=args.weight_decay

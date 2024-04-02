@@ -18,10 +18,6 @@ def parser_add_main_args(parser):
     parser.add_argument('--weight_decay', type=float, default=0.001)
     parser.add_argument('--dropout', type=float, default=0.0)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--use_bn', action='store_true', help='use batch norm')
-
-    # display and utility
-    parser.add_argument('--mode', type=str, default='detect', choices=['classify', 'detect'])
 
     # generate outliers
     parser.add_argument('--generate_ood', action='store_true')

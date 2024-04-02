@@ -28,8 +28,6 @@ for dataset in "${datasets[@]}"; do
           --backbone "$backbone" \
           --dataset "$dataset" \
           --ood_type "$ood_type" \
-          --mode detect \
-          --use_bn \
           --device $device \
           --epochs $epochs \
           --generate_ood
@@ -41,8 +39,6 @@ for dataset in "${datasets[@]}"; do
           --backbone "$backbone" \
           --dataset "$dataset" \
           --ood_type "$ood_type" \
-          --mode detect \
-          --use_bn \
           --device $device \
           --epochs $epochs
       done

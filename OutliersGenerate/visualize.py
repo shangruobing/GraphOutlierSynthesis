@@ -2,6 +2,7 @@
 @author Ruobing Shang 2024-03-21 10:04
 """
 import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
 
 
 def visualize_2D(dataset, all_boundary, boundary, outlier, title="visualize_2D"):
@@ -108,10 +109,6 @@ def visualize_3D(dataset, all_boundary, boundary, outlier, title="visualize_3D")
     plt.title(title)
     ax.legend()
     plt.show()
-
-
-from matplotlib import pyplot as plt
-from sklearn.manifold import TSNE
 
 
 def visualize_TSNE(emb, color, epoch):
