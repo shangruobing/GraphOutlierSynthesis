@@ -29,17 +29,36 @@
 
 # Install
 
+We recommend to use `conda`.
+
+```shell
+conda env create -f environment.yml
+```
+
+Use `pip` may cause some problems when installing `torch_sparse` and `torch_scatter`.
+
 ```shell
 python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
+pip install torch_geometric==2.5.0
+pip install torch_sparse==0.6.18
+pip install torch_scatter==2.1.0
 ```
 
 # Run
 
 ```shell
-conda deactivate && cd RuobingShang && source venv/bin/activate
+# if you use conda
+conda activate GraphOutlierSynthesis
+# if you use venv
+source venv/bin/activate
+
+python main.py --method "msp" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 10
+
 cd GraphOOD-GNNSafe/script
 bash detect.sh
+
 ```
 
 ```shell

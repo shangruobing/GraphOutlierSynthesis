@@ -17,6 +17,8 @@ echo methods: "${methods[@]}"
 echo backbones: "${backbones[@]}"
 echo -e "\nStart training...\n"
 
+python main.py --method "msp" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 10
+
 for dataset in "${datasets[@]}"; do
   for ood_type in "${ood_types[@]}"; do
     for method in "${methods[@]}"; do

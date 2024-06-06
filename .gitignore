@@ -2,6 +2,9 @@ __pycache__/
 
 .idea/
 
-/data/
+data/*
+!data/README.md
 
 wheel
+
+result/*/*.csv

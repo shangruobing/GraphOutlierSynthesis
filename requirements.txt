@@ -5,12 +5,9 @@ scikit-learn==1.2.1
 torch==2.2.1
 torchvision==0.17.1
 faiss-gpu==1.7.2
-tensorboard==2.15.2
+tensorboard==2.14.0
 tensorboard-logger==0.1.0
 tensorflow==2.15.0
 umap==0.1.1
 pandas~=2.2.1
-torch_geometric==2.5.0
-torch_sparse==0.6.18
-torch_scatter==2.1.0
 icecream~=2.1.3

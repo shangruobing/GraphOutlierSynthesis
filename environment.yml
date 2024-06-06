@@ -1,4 +1,4 @@
-name: conda-env
+name: GraphOutlierSynthesis
 channels:
   - pytorch
   - pyg
@@ -97,6 +97,7 @@ dependencies:
       - google-pasta==0.2.0
       - grpcio==1.62.1
       - h5py==3.10.0
+      - icecream==2.1.3
       - importlib-metadata==7.0.2
       - keras==3.0.5
       - libclang==16.0.6
