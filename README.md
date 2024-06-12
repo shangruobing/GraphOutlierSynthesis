@@ -11,6 +11,14 @@
 为了解决这个问题，可以在生成数据之后增加一个数据质量判断方法，使用能量函数对生成的合成数据进行筛选。
 筛选条件是能量函数转换后的值大于或小于某个阈值，只有满足条件的数据才可以用于模型训练。
 
+## Steps
+
+- **Identify graph data samples near the boundary**
+- **Synthesize outliers based on boundary samples**
+- **Filter the outliers by energy function**
+- **Training Graph nerual network with Synthesize outliers**
+
+
 # Environment
 
 ## Dev
