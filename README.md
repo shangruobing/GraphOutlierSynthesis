@@ -2,6 +2,15 @@
 
 ***Out-of-Distribution Detection for Graph Neural Networks***
 
+# Methodology
+
+**通过KNN生成OOD数据集，然后使用GNN进行嵌入，嵌入结果使用`Energy`进行过滤，最后通过分类器进行分类。**
+
+如果生成的OOD数据足够准确，这种数据增强的方法可以提升原方法的准确度，最差情况下也能持平。
+但如果OOD数据存在错误，会导致模型误分类，从而降低原有方法的准确度。
+为了解决这个问题，可以在生成数据之后增加一个数据质量判断方法，使用能量函数对生成的合成数据进行筛选。
+筛选条件是能量函数转换后的值大于或小于某个阈值，只有满足条件的数据才可以用于模型训练。
+
 # Environment
 
 ## Dev
@@ -54,15 +63,15 @@ conda activate GraphOutlierSynthesis
 # if you use venv
 source venv/bin/activate
 
-python main.py --method "msp" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 10
+python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "knn" --device 0 --epochs 100 --use_classifier
 
+# if you want to run by script
 cd GraphOOD-GNNSafe/script
 bash detect.sh
 
-```
+# if you want to run in background
+nohup bash detect.sh >output.log 2>&1 &
 
-```shell
-nohup bash detect.sh > output.log 2>&1 &
 ```
 
 # Common Command
@@ -85,22 +94,3 @@ watch -n 2 -d nvidia-smi
 | Coauthor-CS  | 18333     | 6805         | 15          | 163788    |
 
 > wiki-cs和actor的mask不一致
-
-# Methodology
-
-## 原方法
-
-数据集分为3段，ID、训练用OOD、测试用OOD
-通过在训练时，加入OOD来计算loss。
-
-## 现有方法
-
-数据集分为2段，ID和测试用OOD
-
-训练时，ID输入KNN生成OOD数据集
-
-Encoder对ID数据集完成嵌入，ID结果标签为 1
-
-Encoder对OOD数据集完成嵌入，OOD结果标签为 0
-
-通过训练一个分类器完成识别，分类器贡献1个采样loss，加入GCN等预测的主loss函数中。

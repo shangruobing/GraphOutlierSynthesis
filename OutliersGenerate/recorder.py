@@ -40,7 +40,7 @@ def insert_row(
         df = pd.DataFrame(columns=[
             'args',
             "method",
-            'generate_ood',
+            'use_classifier',
             "backbone",
             "dataset",
             "ood_type",
@@ -61,7 +61,7 @@ def insert_row(
         "dataset": args.dataset,
         "ood_type": args.ood_type,
         "epochs": args.epochs,
-        "generate_ood": args.generate_ood,
+        "use_classifier": args.use_classifier,
         "model": model,
         "epoch_info": epoch_info,
         "time": get_now_datetime(),

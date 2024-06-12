@@ -1,13 +1,11 @@
 from typing import Tuple
 
-from icecream import ic
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
 import torch
 import numpy as np
 from torch_sparse import SparseTensor
 import torch.nn.functional as F
 
-from OutliersGenerate.KNN import generate_outliers
 from baselines import ODIN, Mahalanobis
 from torch import BoolTensor
 

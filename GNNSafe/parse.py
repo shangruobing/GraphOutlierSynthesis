@@ -20,4 +20,4 @@ def parser_add_main_args(parser):
     parser.add_argument('--lr', type=float, default=0.01)
 
     # generate outliers
-    parser.add_argument('--generate_ood', action='store_true')
+    parser.add_argument('--use_classifier', action='store_true')

@@ -13,6 +13,7 @@ from torch_geometric.utils import degree
 
 from OutliersGenerate.loss import compute_loss
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
+from OutliersGenerate.energy import energy_propagation
 
 
 class MSP(nn.Module):
@@ -51,8 +52,18 @@ class MSP(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        return self.classifier(penultimate[node_idx], dataset.x, dataset.edge_index, node_idx).squeeze()
+        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        # return self.classifier(penultimate[node_idx], dataset.x, dataset.edge_index, node_idx).squeeze()
+
+        logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
+        if args.dataset in ('proteins', 'ppi'):
+            pred = torch.sigmoid(logits).unsqueeze(-1)
+            pred = torch.cat([pred, 1 - pred], dim=-1)
+            max_sp = pred.max(dim=-1)[0]
+            return max_sp.sum(dim=1)
+        else:
+            sp = torch.softmax(logits, dim=-1)
+            return sp.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
@@ -90,8 +101,16 @@ class OE(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        return self.classifier(penultimate[node_idx]).squeeze()
+        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        # return self.classifier(penultimate[node_idx]).squeeze()
+        logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
+        if args.dataset in ('proteins', 'ppi'):
+            pred = torch.sigmoid(logits).unsqueeze(-1)
+            pred = torch.cat([pred, 1 - pred], dim=-1)
+            max_logits = pred.max(dim=-1)[0]
+            return max_logits.sum(dim=1)
+        else:
+            return logits.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
@@ -406,8 +425,17 @@ class MaxLogits(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        return self.classifier(penultimate[node_idx]).squeeze()
+        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        # return self.classifier(penultimate[node_idx]).squeeze()
+
+        logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
+        if args.dataset in ('proteins', 'ppi'):
+            pred = torch.sigmoid(logits).unsqueeze(-1)
+            pred = torch.cat([pred, 1 - pred], dim=-1)
+            max_logits = pred.max(dim=-1)[0]
+            return max_logits.sum(dim=1)
+        else:
+            return logits.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
@@ -445,8 +473,16 @@ class EnergyModel(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        return self.classifier(penultimate[node_idx]).squeeze()
+        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        # return self.classifier(penultimate[node_idx]).squeeze()
+
+        logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))[node_idx]
+        if args.dataset in ('proteins', 'ppi'):
+            logits = torch.stack([logits, torch.zeros_like(logits)], dim=2)
+            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1).sum(dim=1)
+        else:
+            neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
+        return neg_energy
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
         return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
@@ -483,21 +519,7 @@ class EnergyProp(nn.Module):
         logits, penultimate = self.encoder(x, edge_index)
         return logits
 
-    def propagation(self, e, edge_index, l=1, alpha=0.5):
-        e = e.unsqueeze(1)
-        N = e.shape[0]
-        row, col = edge_index
-        d = degree(col, N).float()
-        d_norm = 1. / d[col]
-        value = torch.ones_like(row) * d_norm
-        value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
-        adj = SparseTensor(row=col, col=row, value=value, sparse_sizes=(N, N))
-        for _ in range(l):
-            e = e * alpha + matmul(adj, e) * (1 - alpha)
-        return e.squeeze(1)
-
     def detect(self, dataset, node_idx, device, args):
-        # @issue
 
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
@@ -506,7 +528,7 @@ class EnergyProp(nn.Module):
             neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1).sum(dim=1)
         else:
             neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1)
-        neg_energy_prop = self.propagation(neg_energy, edge_index)
+        neg_energy_prop = energy_propagation(neg_energy, edge_index)
         return neg_energy_prop[node_idx]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
@@ -555,22 +577,7 @@ class GNNSafe(nn.Module):
         logits, penultimate = self.encoder(x, edge_index)
         return logits
 
-    def propagation(self, e, edge_index, prop_layers=1, alpha=0.5):
-        """energy belief propagation, return the energy after propagation"""
-        e = e.unsqueeze(1)
-        N = e.shape[0]
-        row, col = edge_index
-        d = degree(col, N).float()
-        d_norm = 1. / d[col]
-        value = torch.ones_like(row) * d_norm
-        value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
-        adj = SparseTensor(row=col, col=row, value=value, sparse_sizes=(N, N))
-        for _ in range(prop_layers):
-            e = e * alpha + matmul(adj, e) * (1 - alpha)
-        return e.squeeze(1)
-
     def detect(self, dataset, node_idx, device, args):
-        # issue
         """return negative energy, a vector for all input nodes"""
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
@@ -579,8 +586,11 @@ class GNNSafe(nn.Module):
             neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1).sum(dim=1)
         else:  # for single-label multi-class classification
             neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1)
-        # if args.use_prop:  # use energy belief propagation
-        #     neg_energy = self.propagation(neg_energy, edge_index, args.K, args.alpha)
+        # parser.add_argument('--K', type=int, default=2, help='number of layers for energy belief propagation')
+        K = 2
+        # parser.add_argument('--alpha', type=float, default=0.5, help='weight for residual connection in propagation')
+        alpha = 0.5
+        neg_energy = energy_propagation(neg_energy, edge_index, prop_layers=K, alpha=alpha)
         return neg_energy[node_idx]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):

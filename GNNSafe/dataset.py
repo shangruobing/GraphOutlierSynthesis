@@ -8,7 +8,7 @@ from torch_geometric.data import Data
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB, GitHub
 from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
 
-from OutliersGenerate.KNN import generate_outliers
+from OutliersGenerate.knn import generate_outliers
 from data_utils import to_sparse_tensor
 
 

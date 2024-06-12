@@ -32,7 +32,7 @@ for dataset in "${datasets[@]}"; do
           --ood_type "$ood_type" \
           --device $device \
           --epochs $epochs \
-          --generate_ood
+          --use_classifier
 
         echo "No Generate OOD data"
         date
