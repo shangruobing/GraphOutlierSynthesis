@@ -11,13 +11,74 @@
 为了解决这个问题，可以在生成数据之后增加一个数据质量判断方法，使用能量函数对生成的合成数据进行筛选。
 筛选条件是能量函数转换后的值大于或小于某个阈值，只有满足条件的数据才可以用于模型训练。
 
+<details>
+  <summary>Math Details</summary>
+  
+## Notations
+- Input Space
+```math
+\begin{equation}
+X=\mathbb{R}^d
+\end{equation}
+ ```
+- Label Space
+```math
+\begin{equation}
+Y_{\text {in }}=\{1, \ldots, C\}
+\end{equation}
+```
+- Decision boundary
+  ```math
+  \begin{equation}
+  \beta \text { level set }\left\{\mathbf{x}: \hat{\mathbb{P}}_{\mathrm{in}}(\mathbf{x})=\beta\right\}
+  \end{equation}
+  ```
+- Model training with ID
+```math
+\begin{equation}
+\mathcal{D}_{\text {in }}=\left\{\left(\mathbf{x}_i, y_i\right)\right\}_{i=1}^n
+\end{equation}
+```
+- Joint data distribution
+  ```math
+  \begin{equation}
+  \mathbb{P}_{X Y_{\text {in }}}
+  \end{equation}
+  ```
+- OOD conditional distribution
+  ```math
+    \begin{equation}
+       Q(\mathbf{x} \mid \text { OOD })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x})}{\mathcal{Z}_{\text {out }}}
+     \end{equation}
+  ```
+- OOD Marginal Probability
+  ```math
+  \begin{equation}
+  \mathcal{Z}_{\text {out }}=\int 1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) d \mathbf{x}
+  \end{equation}
+  ```
+- IND conditional Probability
+  ```math
+  \begin{equation}
+  Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x})>\beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x})}{1-\mathcal{Z}_{\text {out }}}
+  \end{equation}
+  ```
+
+- IND Marginal Probability
+  ```math
+  \begin{equation}
+  1-\mathcal{Z}_{\text {out }}=1 - \int 1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) d \mathbf{x}
+  \end{equation}
+  ```
+
 ## Steps
 
 - **Identify graph data samples near the boundary**
+
 - **Synthesize outliers based on boundary samples**
 - **Filter the outliers by energy function**
 - **Training Graph nerual network with Synthesize outliers**
-
+</details>
 
 # Environment
 
