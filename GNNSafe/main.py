@@ -7,7 +7,7 @@ import torch.nn as nn
 sys.path.append('..')
 
 from baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
-from data_utils import evaluate_detect, eval_acc, eval_rocauc, rand_splits
+from data_utils import evaluate_detect, eval_acc, rand_splits
 from dataset import load_dataset
 from logger import DetectLogger
 from parse import parser_add_main_args
@@ -71,15 +71,9 @@ elif args.method == 'energyprop':
 else:
     raise ValueError(f"Unknown method: {args.method}")
 
-if args.dataset in ('proteins', 'ppi'):  # multi-label binary classification
-    criterion = nn.BCEWithLogitsLoss()
-else:
-    criterion = nn.NLLLoss()
+criterion = nn.NLLLoss()
 
-if args.dataset in ('proteins', 'ppi', 'twitch'):  # binary classification
-    eval_func = eval_rocauc
-else:
-    eval_func = eval_acc
+eval_func = eval_acc
 
 logger = DetectLogger()
 

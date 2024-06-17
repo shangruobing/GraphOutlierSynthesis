@@ -8,8 +8,8 @@ from torch_geometric.data import Data
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB, GitHub
 from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
 
+from GNNSafe.data_utils import to_sparse_tensor
 from OutliersGenerate.knn import generate_outliers
-from data_utils import to_sparse_tensor
 
 
 def load_dataset(args: Namespace) -> Tuple[Data, Data, Data]:
@@ -28,18 +28,18 @@ def load_dataset(args: Namespace) -> Tuple[Data, Data, Data]:
     if args.dataset == 'twitch':
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_twitch_dataset(args.data_dir)
 
-    # single graph, use partial nodes as ind, others as ood according to domain info
-    elif args.dataset in 'arxiv':
-        dataset_ind, dataset_ood_tr, dataset_ood_te = load_arxiv_dataset(args.data_dir)
-    elif args.dataset in 'proteins':
-        dataset_ind, dataset_ood_tr, dataset_ood_te = load_proteins_dataset(args.data_dir)
-
     # single graph, use original as ind, modified graphs as ood
     elif args.dataset in [
-        'cora', "actor",
-        'citeseer', 'pubmed',
-        'amazon-photo', 'amazon-computer', 'coauthor-cs',
-        'coauthor-physics', "wiki-cs", "webkb",
+        'cora',
+        "actor",
+        'citeseer',
+        'pubmed',
+        'amazon-photo',
+        'amazon-computer',
+        'coauthor-cs',
+        'coauthor-physics',
+        "wiki-cs",
+        "webkb",
         "github"
     ]:
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
@@ -97,56 +97,6 @@ def load_twitch_dataset(data_dir):
             dataset_ood_tr = dataset
         else:
             dataset_ood_te.append(dataset)
-
-    return dataset_ind, dataset_ood_tr, dataset_ood_te
-
-
-def load_arxiv_dataset(data_dir, time_bound=[2015, 2017], inductive=True):
-    from ogb.nodeproppred import NodePropPredDataset
-
-    ogb_dataset = NodePropPredDataset(name='ogbn-arxiv', root=f'{data_dir}/ogb')
-    edge_index = torch.as_tensor(ogb_dataset.graph['edge_index'])
-    node_feat = torch.as_tensor(ogb_dataset.graph['node_feat'])
-    label = torch.as_tensor(ogb_dataset.labels).reshape(-1, 1)
-    year = ogb_dataset.graph['node_year']
-
-    year_min, year_max = time_bound[0], time_bound[1]
-    test_year_bound = [2017, 2018, 2019, 2020]
-
-    center_node_mask = (year <= year_min).squeeze(1)
-    if inductive:
-        ind_edge_index, _ = subgraph(center_node_mask, edge_index)
-    else:
-        ind_edge_index = edge_index
-
-    dataset_ind = Data(x=node_feat, edge_index=ind_edge_index, y=label)
-    idx = torch.arange(label.size(0))
-    dataset_ind.node_idx = idx[center_node_mask]
-
-    center_node_mask = (year <= year_max).squeeze(1) * (year > year_min).squeeze(1)
-    if inductive:
-        all_node_mask = (year <= year_max).squeeze(1)
-        ood_tr_edge_index, _ = subgraph(all_node_mask, edge_index)
-    else:
-        ood_tr_edge_index = edge_index
-
-    dataset_ood_tr = Data(x=node_feat, edge_index=ood_tr_edge_index, y=label)
-    idx = torch.arange(label.size(0))
-    dataset_ood_tr.node_idx = idx[center_node_mask]
-
-    dataset_ood_te = []
-    for i in range(len(test_year_bound) - 1):
-        center_node_mask = (year <= test_year_bound[i + 1]).squeeze(1) * (year > test_year_bound[i]).squeeze(1)
-        if inductive:
-            all_node_mask = (year <= test_year_bound[i + 1]).squeeze(1)
-            ood_te_edge_index, _ = subgraph(all_node_mask, edge_index)
-        else:
-            ood_te_edge_index = edge_index
-
-        dataset = Data(x=node_feat, edge_index=ood_te_edge_index, y=label)
-        idx = torch.arange(label.size(0))
-        dataset.node_idx = idx[center_node_mask]
-        dataset_ood_te.append(dataset)
 
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
@@ -274,19 +224,6 @@ def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):
     return dataset
 
 
-def create_knn_dataset(data):
-    sample_point, sample_edge, sample_label = generate_outliers(
-        data.x,
-        num_nodes=data.num_nodes,
-        # num_nodes=dataset_ind.num_nodes,
-        num_features=data.num_features,
-        num_edges=data.num_edges,
-    )
-    dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)
-    dataset.node_idx = torch.arange(len(sample_point))
-    return dataset
-
-
 def create_feat_noise_dataset(data):
     x = data.x
     n = data.num_nodes
@@ -322,3 +259,15 @@ def create_label_leave_out_dataset(dataset, dataset_ind, dataset_name):
     center_node_mask_ood_te = (label <= class_t)
     dataset_ood_te.node_idx = idx[center_node_mask_ood_te]
     return dataset_ood_te
+
+
+def create_knn_dataset(data):
+    sample_point, sample_edge, sample_label = generate_outliers(
+        data.x,
+        num_nodes=data.num_nodes,
+        num_features=data.num_features,
+        num_edges=data.num_edges,
+    )
+    dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)
+    dataset.node_idx = torch.arange(len(sample_point))
+    return dataset

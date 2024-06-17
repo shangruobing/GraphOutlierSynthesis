@@ -1,7 +1,6 @@
 import torch
 
 from torch_sparse import SparseTensor, matmul
-
 from torch_geometric.utils import degree
 
 

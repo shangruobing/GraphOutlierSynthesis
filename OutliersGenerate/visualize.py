@@ -1,6 +1,3 @@
-"""
-@author Ruobing Shang 2024-03-21 10:04
-"""
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 

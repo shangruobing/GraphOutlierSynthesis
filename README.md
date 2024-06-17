@@ -4,151 +4,104 @@
 
 # Methodology
 
-**通过KNN生成OOD数据集，然后使用GNN进行嵌入，嵌入结果使用`Energy`进行过滤，最后通过分类器进行分类。**
+**KNN is utilized to generate the OOD dataset, while GNN is used for embedding.
+The embedding results are filtered using an 'Energy' function, and finally classified by a classifier.**
 
-如果生成的OOD数据足够准确，这种数据增强的方法可以提升原方法的准确度，最差情况下也能持平。
-但如果OOD数据存在错误，会导致模型误分类，从而降低原有方法的准确度。
-为了解决这个问题，可以在生成数据之后增加一个数据质量判断方法，使用能量函数对生成的合成数据进行筛选。
-筛选条件是能量函数转换后的值大于或小于某个阈值，只有满足条件的数据才可以用于模型训练。
+When the generated OOD data is sufficiently accurate, this data augmentation method can enhance the accuracy of the original method.
+At worst, it maintains the same level of accuracy.
+However, if errors are present in the OOD data, it can lead to misclassification, thereby decreasing the accuracy of the original method.
 
-<details>
-  <summary>Math Details</summary>
-  
+To address this issue, a data quality assessment method can be introduced post-data generation.
+The energy function can be employed to filter the synthetic data.
+The screening criterion is based on the transformed energy function's value being above or below a certain threshold.
+Only data satisfying this condition are used for model training.
+
+If the generated OOD data is accurate enough, this data augmentation method can improve the accuracy of the original method, and in the worst case, it can also be equal.
+However, if there are errors in the OOD data, the model will be misclassified, which will reduce the accuracy of the original method.
+To solve this problem, a data quality judgment method can be added after the data generation, and the energy function can be used to filter the generated synthetic data.
+The screening condition is that the value of the transformed energy function is greater than or less than a certain threshold, and only the data satisfying the condition can be used for model training.
+
+## Steps
+
+- **Identify graph data samples near the boundary**
+- **Synthesize outliers based on boundary samples**
+- **Filter the outliers by energy function**
+- **Training Graph neural network with Synthesize outliers**
+
+# Math Details
+
 ## Notations
+
 - Input Space
+
 ```math
 \begin{equation}
 X=\mathbb{R}^d
 \end{equation}
- ```
+```
+
 - Label Space
+
 ```math
 \begin{equation}
 Y_{\text {in }}=\{1, \ldots, C\}
 \end{equation}
 ```
+
 - Decision boundary
-  ```math
-  \begin{equation}
-  \beta \text { level set }\left\{\mathbf{x}: \hat{\mathbb{P}}_{\mathrm{in}}(\mathbf{x})=\beta\right\}
-  \end{equation}
-  ```
+
+```math
+\begin{equation}
+\beta \text { level set }\left\{\mathbf{x}: \hat{\mathbb{P}}_{\mathrm{in}}(\mathbf{x})=\beta\right\}
+\end{equation}
+```
+
 - Model training with ID
+
 ```math
 \begin{equation}
 \mathcal{D}_{\text {in }}=\left\{\left(\mathbf{x}_i, y_i\right)\right\}_{i=1}^n
 \end{equation}
 ```
+
 - Joint data distribution
-  ```math
-  \begin{equation}
-  \mathbb{P}_{X Y_{\text {in }}}
-  \end{equation}
-  ```
+
+```math
+\begin{equation}
+\mathbb{P}_{X Y_{\text {in }}}
+\end{equation}
+```
+
 - OOD conditional distribution
-  ```math
-    \begin{equation}
-       Q(\mathbf{x} \mid \text { OOD })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x})}{\mathcal{Z}_{\text {out }}}
-     \end{equation}
-  ```
+
+```math
+\begin{equation}
+Q(\mathbf{x} \mid \text { OOD })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x})}{\mathcal{Z}_{\text {out }}}
+\end{equation}
+```
+
 - OOD Marginal Probability
-  ```math
-  \begin{equation}
-  \mathcal{Z}_{\text {out }}=\int 1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) d \mathbf{x}
-  \end{equation}
-  ```
+
+```math
+\begin{equation}
+\mathcal{Z}_{\text {out }}=\int 1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) d \mathbf{x}
+\end{equation}
+```
+
 - IND conditional Probability
-  ```math
-  \begin{equation}
-  Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x})>\beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x})}{1-\mathcal{Z}_{\text {out }}}
-  \end{equation}
-  ```
+
+```math
+\begin{equation}
+Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x})>\beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x})}{1-\mathcal{Z}_{\text {out }}}
+\end{equation}
+```
 
 - IND Marginal Probability
-  ```math
-  \begin{equation}
-  1-\mathcal{Z}_{\text {out }}=1 - \int 1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) d \mathbf{x}
-  \end{equation}
-  ```
 
-## Steps
-
-- **Identify graph data samples near the boundary**
-
-- **Synthesize outliers based on boundary samples**
-- **Filter the outliers by energy function**
-- **Training Graph nerual network with Synthesize outliers**
-</details>
-
-# Environment
-
-## Dev
-
-- Ubuntu 20.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
-- NVIDIA GeForce RTX 2060 6G
-- CUDA NVIDIA-SMI 525.116.03 Driver Version: 525.116.03 CUDA Version: 12.0
-- Python 3.10.9 (main, Mar 1 2023, 18:23:06) [GCC 11.2.0] on linux
-
-# Prod
-
-- CentOS Linux 7 (GNU/Linux 3.10.0-1160.el7.x86_64)
-- Tesla V100-SXM2-32GB
-- CUDA NVIDIA-SMI 460.106.00 Driver Version: 460.106.00 CUDA Version: 11.2
-- Python 3.9.2 (default, Mar 3 2021, 20:02:32) [GCC 7.3.0] :: Anaconda, Inc. on linux
-
-# Dependency
-
-- torch==2.2.1
-- torch_geometric==2.5.0
-- torch_sparse==0.6.18+pt22cu121
-- torch_scatter==2.1.2+pt22cu121
-
-> https://data.pyg.org/whl/
-
-# Install
-
-We recommend to use `conda`.
-
-```shell
-conda env create -f environment.yml
-```
-
-Use `pip` may cause some problems when installing `torch_sparse` and `torch_scatter`.
-
-```shell
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install torch_geometric==2.5.0
-pip install torch_sparse==0.6.18
-pip install torch_scatter==2.1.0
-```
-
-# Run
-
-```shell
-# if you use conda
-conda activate GraphOutlierSynthesis
-# if you use venv
-source venv/bin/activate
-
-python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "knn" --device 0 --epochs 100 --use_classifier
-
-# if you want to run by script
-cd GraphOOD-GNNSafe/script
-bash detect.sh
-
-# if you want to run in background
-nohup bash detect.sh >output.log 2>&1 &
-
-```
-
-# Common Command
-
-```shell
-nvidia-smi
-nvidia-smi --query-gpu=name --format=csv,noheader
-watch -n 2 -d nvidia-smi
+```math
+\begin{equation}
+1-\mathcal{Z}_{\text {out }}=1 - \int 1\left[\hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) \leq \beta\right] \hat{\mathbb{P}}_{\text {in }}(\mathbf{x}) d \mathbf{x}
+\end{equation}
 ```
 
 # Dataset
@@ -162,4 +115,79 @@ watch -n 2 -d nvidia-smi
 | Wiki-CS      | 11701     | 300          | 10          | 431726    |   
 | Coauthor-CS  | 18333     | 6805         | 15          | 163788    |
 
-> wiki-cs和actor的mask不一致
+> The mask of `Wiki-CS` and `Actor` are not correct.
+
+# Environment
+
+## Dev
+
+- Ubuntu 20.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
+- NVIDIA GeForce RTX 2060 6G
+- CUDA NVIDIA-SMI 525.116.03 Driver Version: 525.116.03 CUDA Version: 12.0
+- Python 3.10.9 (main, Mar 1 2023, 18:23:06) [GCC 11.2.0] on linux
+
+## Prod
+
+- CentOS Linux 7 (GNU/Linux 3.10.0-1160.el7.x86_64)
+- Tesla V100-SXM2-32GB
+- CUDA NVIDIA-SMI 460.106.00 Driver Version: 460.106.00 CUDA Version: 11.2
+- Python 3.9.2 (default, Mar 3 2021, 20:02:32) [GCC 7.3.0] :: Anaconda, Inc. on linux
+
+## Dependency
+
+- torch==2.2.1
+- torch_geometric==2.5.0
+- torch_sparse==0.6.18+pt22cu121
+- torch_scatter==2.1.2+pt22cu121
+
+> https://data.pyg.org/whl/
+
+## Install
+
+We recommend using `conda` to manage project dependencies.
+
+```shell
+conda env create -f environment.yml
+```
+
+Use `pip` may cause some problems when installing `torch_sparse` and `torch_scatter`.
+
+```shell
+python -m venv GraphOutlierSynthesis
+source GraphOutlierSynthesis/bin/activate
+pip install -r requirements.txt
+pip install torch_geometric==2.5.0
+pip install torch_sparse==0.6.18
+pip install torch_scatter==2.1.0
+```
+
+# Usage
+
+## Run
+
+```shell
+# if you use conda
+conda activate GraphOutlierSynthesis
+# if you use venv
+source GraphOutlierSynthesis/bin/activate
+
+python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "knn" --device 0 --epochs 100 --use_classifier
+
+# if you want to run by script
+cd GraphOOD-GNNSafe/script
+bash detect.sh
+
+# if you want to run in background
+nohup bash detect.sh >output.log 2>&1 &
+
+```
+
+## Common Command
+
+```shell
+nvidia-smi
+nvidia-smi --query-gpu=name --format=csv,noheader
+watch -n 2 -d nvidia-smi
+```
+
+# Reference

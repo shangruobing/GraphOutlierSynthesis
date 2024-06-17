@@ -1,12 +1,14 @@
 cd ../GNNSafe || exit
 
 epochs=100
-device=3
-datasets=("cora" "amazon-photo" "github" "coauthor-cs")
-ood_types=("structure")
-methods=("msp" "gnnsafe" "OE" "ODIN" "Mahalanobis" "maxlogits" "energymodel" "energyprop")
-backbones=("gcn")
-#backbones=("gcn" "mlp" "gat" "mixhop" "gcnjk" "gatjk")
+device=1
+#datasets=("cora" "amazon-photo" "github" "coauthor-cs")
+datasets=("cora")
+ood_types=("knn")
+#methods=("msp" "OE" "ODIN" "Mahalanobis" "maxlogits" "energymodel" "energyprop" "gnnsafe")
+methods=("msp")
+#backbones=("gcn")
+backbones=("mlp" "sgc" "gcn" "gat" "mixhop" "gcnjk" "gatjk" "H2GCNConv" "APPNP_Net" "GPRPROP" "GPRGNN")
 
 echo "Parameters:"
 echo epochs: $epochs
