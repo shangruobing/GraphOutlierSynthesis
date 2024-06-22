@@ -7,19 +7,14 @@
 **KNN is utilized to generate the OOD dataset, while GNN is used for embedding.
 The embedding results are filtered using an 'Energy' function, and finally classified by a classifier.**
 
-When the generated OOD data is sufficiently accurate, this data augmentation method can enhance the accuracy of the original method.
+When the generated OOD data is sufficiently accurate, this data augmentation method can improve the accuracy of the original method.
 At worst, it maintains the same level of accuracy.
 However, if errors are present in the OOD data, it can lead to misclassification, thereby decreasing the accuracy of the original method.
 
 To address this issue, a data quality assessment method can be introduced post-data generation.
 The energy function can be employed to filter the synthetic data.
-The screening criterion is based on the transformed energy function's value being above or below a certain threshold.
+The filtering criterion is based on the transformed energy function's value being above or below a certain threshold.
 Only data satisfying this condition are used for model training.
-
-If the generated OOD data is accurate enough, this data augmentation method can improve the accuracy of the original method, and in the worst case, it can also be equal.
-However, if there are errors in the OOD data, the model will be misclassified, which will reduce the accuracy of the original method.
-To solve this problem, a data quality judgment method can be added after the data generation, and the energy function can be used to filter the generated synthetic data.
-The screening condition is that the value of the transformed energy function is greater than or less than a certain threshold, and only the data satisfying the condition can be used for model training.
 
 ## Steps
 
@@ -27,6 +22,16 @@ The screening condition is that the value of the transformed energy function is 
 - **Synthesize outliers based on boundary samples**
 - **Filter the outliers by energy function**
 - **Training Graph neural network with Synthesize outliers**
+
+# Experiment
+
+***loss = supervised_learning_loss + energy_regularization_loss + classifier_loss***
+
+1. Obtain the output of the GNN for the ID data to compute the `supervised learning loss`.
+2. Calculate the `Energy ID` and `Energy OOD` using the ID outputs and OOD outputs.
+3. If energy propagation is used, further process the `Energy ID` and `Energy OOD`.
+4. Compute the `energy regularization loss`.
+5. Train the classifier using both ID and OOD data, optionally filtering the synthesized data using energy, to obtain the `classifier loss`.
 
 # Math Details
 
@@ -88,7 +93,7 @@ Q(\mathbf{x} \mid \text { OOD })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\ma
 \end{equation}
 ```
 
-- IND conditional Probability
+- ID conditional Probability
 
 ```math
 \begin{equation}
@@ -96,7 +101,7 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 \end{equation}
 ```
 
-- IND Marginal Probability
+- ID Marginal Probability
 
 ```math
 \begin{equation}

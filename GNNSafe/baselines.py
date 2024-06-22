@@ -559,7 +559,7 @@ class GNNSafe(nn.Module):
         K = 2
         # parser.add_argument('--alpha', type=float, default=0.5, help='weight for residual connection in propagation')
         alpha = 0.5
-        neg_energy = energy_propagation(neg_energy, edge_index, prop_layers=K, alpha=alpha)
+        neg_energy = energy_propagation(neg_energy, edge_index, num_prop_layers=K, alpha=alpha)
         return neg_energy[node_idx]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):

@@ -20,4 +20,7 @@ def parser_add_main_args(parser):
     parser.add_argument('--lr', type=float, default=0.01)
 
     # generate outliers
+    parser.add_argument('--use_energy', action='store_true')
+    parser.add_argument('--use_energy_propagation', action='store_true')
     parser.add_argument('--use_classifier', action='store_true')
+    parser.add_argument('--use_energy_filter', action='store_true')

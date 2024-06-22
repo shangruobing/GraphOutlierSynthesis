@@ -21,11 +21,11 @@ def generate_outliers(
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Generate outliers using the KNN algorithm.
-    我们利用每个训练批次的 ID 数据生成 OOD 数据。
+    我们利用 ID 数据生成 OOD 数据。
     首先，对输入数据进行归一化处理，然后根据设定的采样率参数，选取部分数据存入 Faiss 中等待检索。
     我们使用 KNN 找到每个元素的 K 个最近邻，然后选择其最远的邻居。这一过程有助于找到处于数据集边界的样本。
-    然后，我们使用均值为 0、协方差矩阵为单位矩阵的多元高斯分布生成噪音点。
-    将找到的边界点和噪音点合并，形成采样点集合。
+    然后，我们使用均值为 0、协方差矩阵为单位矩阵的多元高斯分布生成噪声点。
+    将找到的边界点和噪声点合并，形成采样点集合。
     我们再次利用 Faiss 进行检索，找到每个采样点的 K 个最近邻，然后选择其最远的邻居。这一过程有助于找到加入噪音点后的采样点。
     我们将利用这个采样点集合与原始数据集中边数目与节点数目的比例生成采样边。
     这个步骤生成的OOD数据集将被输入encoder，从而得到当前模型对于OOD数据预测的loss。
@@ -79,18 +79,18 @@ def generate_outliers(
     # 到此找到了最远的数据点，从最远的集合中随机选择
     max_distance_index = max_distance_index[np.random.choice(top, pic_nums, replace=False)]
 
+    # 重复10次，每一次都补足为采样的length，把这10次结果拼起来，每个采样点贡献10个特征
+    sampling_dataset = torch.cat([
+        dataset[index].repeat(num_nodes // pic_nums, 1) for index in max_distance_index
+    ])
+
     # 生成一个多元高斯分布，均值为0，协方差矩阵为单位矩阵
     gaussian_distribution = MultivariateNormal(
         loc=torch.zeros(num_features, device=device),
         covariance_matrix=torch.eye(num_features, device=device)
     )
 
-    # 重复10次，每一次都补足为采样的length，把这10次结果拼起来，每个采样点贡献10个特征
-    sampling_dataset = torch.cat([
-        dataset[index].repeat(num_nodes // pic_nums, 1) for index in max_distance_index
-    ])
-
-    # 从高斯分布采样1/2节点数目的数据作为噪声
+    # 从高斯分布采样作为噪声
     noises = gaussian_distribution.rsample(sample_shape=(sampling_dataset.shape[0],))
 
     noise_cov = cov_mat * noises
@@ -109,6 +109,7 @@ def generate_outliers(
 
     num_sample_points = sample_points.shape[0]
 
+    # 通过计算分布内数据中的边点比(边的数目//节点的数目)来生成对应数目的边
     edge_node_radio = num_edges // num_nodes
     sample_edges = torch.randint(
         low=0,
@@ -123,7 +124,8 @@ def generate_outliers(
     #     size=(int(num_sample_points),),
     #     device=device
     # )
-    # 生成的都是0 label
+
+    # 由于不将其带入监督训练过程，假设Label全为0，生成的都是0的label
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
     if debug:
@@ -200,18 +202,19 @@ def generate_negative_samples(
     nosies = torch.cat([torch.rand_like(outliers) * -0.05, torch.rand_like(outliers) * 0.05])
     shape = nosies.shape
     flattened_tensor = nosies.view(-1)
+    # 随机打乱噪声的顺序
     shuffled_indices = torch.randperm(flattened_tensor.size(0))
     shuffled_tensor = flattened_tensor[shuffled_indices]
     nosies = shuffled_tensor.view(shape)[:shape[0] // 2, :]
     return outliers + nosies
 
 
-def normalize(dataset: Tensor) -> Tensor:
-    min_value = dataset.min(dim=0)[0]
-    max_value = dataset.max(dim=0)[0]
-    normalized_dataset = (dataset - min_value) / (max_value - min_value)
-    normalized_dataset[torch.isnan(normalized_dataset)] = 0
-    return normalized_dataset
+# def normalize(dataset: Tensor) -> Tensor:
+#     min_value = dataset.min(dim=0)[0]
+#     max_value = dataset.max(dim=0)[0]
+#     normalized_dataset = (dataset - min_value) / (max_value - min_value)
+#     normalized_dataset[torch.isnan(normalized_dataset)] = 0
+#     return normalized_dataset
 
 
 if __name__ == '__main__':

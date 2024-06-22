@@ -4,14 +4,14 @@ from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
 
 
-def energy_propagation(embeddings, edge_index, valid_index=None, prop_layers=1, alpha=0.5):
+def energy_propagation(embeddings, edge_index, valid_index=None, num_prop_layers=1, alpha=0.5):
     """
     Energy belief propagation, return the energy after propagation
     Args:
         embeddings: The embeddings of the Encoder
         valid_index: Supervised Node index
         edge_index: Graph edge index
-        prop_layers: Number of propagation layers
+        num_prop_layers: Number of propagation layers
         alpha: The weight of the original embeddings
 
     Returns:
@@ -38,6 +38,6 @@ def energy_propagation(embeddings, edge_index, valid_index=None, prop_layers=1, 
     value = torch.ones_like(row) * d_norm
     value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
     adj = SparseTensor(row=col, col=row, value=value, sparse_sizes=(N, N))
-    for _ in range(prop_layers):
+    for _ in range(num_prop_layers):
         embeddings = embeddings * alpha + matmul(adj, embeddings) * (1 - alpha)
     return embeddings.squeeze(1)
