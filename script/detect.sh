@@ -1,7 +1,7 @@
 cd ../GNNSafe || exit
 
 epochs=100
-device=1
+device=0
 #datasets=("cora" "amazon-photo" "github" "coauthor-cs")
 datasets=("cora")
 ood_types=("knn")

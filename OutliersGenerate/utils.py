@@ -1,11 +1,12 @@
 import random
 from datetime import datetime
-from argparse import Namespace
 import torch
 import numpy as np
 
+from GNNSafe.parse import Arguments
 
-def get_device(args: Namespace) -> torch.device:
+
+def get_device(args: Arguments) -> torch.device:
     if args.cpu:
         device = torch.device("cpu")
     elif torch.cuda.is_available():

@@ -1,7 +1,11 @@
 import torch
+from icecream import ic
 
 from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
+# import os
+
+# os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 
 def energy_propagation(embeddings, edge_index, valid_index=None, num_prop_layers=1, alpha=0.5):
@@ -20,6 +24,20 @@ def energy_propagation(embeddings, edge_index, valid_index=None, num_prop_layers
     embeddings = embeddings.unsqueeze(1)
     N = embeddings.shape[0]
     row, col = edge_index
+
+    # ic(col.max())
+    # ic(row.max())
+    # ic(col.shape)
+    # ic(row.shape)
+
+    # filter the out-of-bound nodes
+    col = col[col < N]
+    row = row[row < N]
+
+    # ic(col.max())
+    # ic(row.max())
+    # ic(col.shape)
+    # ic(row.shape)
 
     if valid_index is not None:
         valid = torch.nonzero(valid_index).squeeze()

@@ -106,7 +106,7 @@ def compute_loss(dataset_id: Data, dataset_ood: Data, encoder, classifier, crite
     return loss
 
 
-def filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood, threshold=-5):
+def filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood, id_threshold=-5, ood_threshold=-2):
     """
     Filter the classifier output by energy scores.
     Args:
@@ -114,19 +114,22 @@ def filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood, thres
         classifier_ood:
         energy_id:
         energy_ood:
-        threshold:
+        id_threshold:
+        ood_threshold:
 
     Returns:
 
     """
-    filtered_classifier_id_index = torch.nonzero(energy_id < threshold).squeeze()
-    filtered_classifier_ood_index = torch.nonzero(energy_ood > threshold).squeeze()
+    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze()
+    filtered_classifier_ood_index = torch.nonzero(energy_ood < ood_threshold).squeeze()
     debug = False
     if debug:
-        ic(energy_id.shape[0])
-        ic(filtered_classifier_id_index.shape[0])
-        ic(energy_ood.shape[0])
-        ic(filtered_classifier_ood_index.shape[0])
+        ic(energy_id.mean())
+        ic(energy_ood.mean())
+        ic(energy_id.shape)
+        ic(filtered_classifier_id_index.shape)
+        ic(energy_ood.shape)
+        ic(filtered_classifier_ood_index.shape)
     return classifier_id[filtered_classifier_id_index], classifier_ood[filtered_classifier_ood_index]
 
 

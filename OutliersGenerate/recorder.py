@@ -1,15 +1,14 @@
 import os
-from argparse import Namespace
-from pprint import pformat
 
 import pandas as pd
 
+from GNNSafe.parse import Arguments
 from OutliersGenerate.config import FOLDER_PATH
 from OutliersGenerate.utils import get_now_datetime
 
 
 def insert_row(
-        args: Namespace,
+        args: Arguments,
         model: str,
         epoch_info: str,
         auroc: str,
@@ -40,7 +39,10 @@ def insert_row(
         df = pd.DataFrame(columns=[
             'args',
             "method",
+            'use_energy',
+            'use_energy_propagation',
             'use_classifier',
+            'use_energy_filter',
             "backbone",
             "dataset",
             "ood_type",
@@ -55,13 +57,16 @@ def insert_row(
             'SCORE'
         ])
     new_row = {
-        "args": pformat(vars(args)),
+        "args": args.string,
         "method": args.method,
         "backbone": args.backbone,
         "dataset": args.dataset,
         "ood_type": args.ood_type,
         "epochs": args.epochs,
+        'use_energy': args.use_energy,
+        'use_energy_propagation': args.use_energy_propagation,
         "use_classifier": args.use_classifier,
+        'use_energy_filter': args.use_energy_filter,
         "model": model,
         "epoch_info": epoch_info,
         "time": get_now_datetime(),

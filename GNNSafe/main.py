@@ -1,4 +1,3 @@
-import argparse
 import sys
 from pprint import pprint
 import torch
@@ -10,15 +9,14 @@ from baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, Energy
 from data_utils import evaluate_detect, eval_acc, rand_splits
 from dataset import load_dataset
 from logger import DetectLogger
-from parse import parser_add_main_args
+from parse import init_parser_args
 
 from OutliersGenerate.utils import get_device, fix_seed
 from OutliersGenerate.recorder import insert_row
 
-parser = argparse.ArgumentParser(description='General Training Pipeline')
-parser_add_main_args(parser)
-args = parser.parse_args()
-pprint(vars(args))
+args = init_parser_args()
+
+pprint(args.string)
 
 fix_seed(args.seed)
 device = get_device(args)

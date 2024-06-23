@@ -1,3 +1,7 @@
+import argparse
+from dataclasses import dataclass
+
+
 def parser_add_main_args(parser):
     # setup and protocol
     parser.add_argument('--dataset', type=str, default='cora')
@@ -24,3 +28,57 @@ def parser_add_main_args(parser):
     parser.add_argument('--use_energy_propagation', action='store_true')
     parser.add_argument('--use_classifier', action='store_true')
     parser.add_argument('--use_energy_filter', action='store_true')
+
+
+@dataclass
+class Arguments:
+    string: str
+    dataset: str
+    ood_type: str
+    data_dir: str
+    device: int
+    cpu: bool
+    seed: int
+    epochs: int
+    method: str
+    backbone: str
+    hidden_channels: int
+    num_layers: int
+    weight_decay: float
+    dropout: float
+    lr: float
+    use_energy: bool
+    use_energy_propagation: bool
+    use_classifier: bool
+    use_energy_filter: bool
+
+
+def parser_parse_args(parser) -> Arguments:
+    args = parser.parse_args()
+    return Arguments(
+        string=vars(args),
+        dataset=args.dataset,
+        ood_type=args.ood_type,
+        data_dir=args.data_dir,
+        device=args.device,
+        cpu=args.cpu,
+        seed=args.seed,
+        epochs=args.epochs,
+        method=args.method,
+        backbone=args.backbone,
+        hidden_channels=args.hidden_channels,
+        num_layers=args.num_layers,
+        weight_decay=args.weight_decay,
+        dropout=args.dropout,
+        lr=args.lr,
+        use_energy=args.use_energy,
+        use_energy_propagation=args.use_energy_propagation,
+        use_classifier=args.use_classifier,
+        use_energy_filter=args.use_energy_filter
+    )
+
+
+def init_parser_args() -> Arguments:
+    parser = argparse.ArgumentParser(description='General Training Pipeline')
+    parser_add_main_args(parser)
+    return parser_parse_args(parser)

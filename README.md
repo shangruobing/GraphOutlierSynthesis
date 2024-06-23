@@ -176,7 +176,7 @@ conda activate GraphOutlierSynthesis
 # if you use venv
 source GraphOutlierSynthesis/bin/activate
 
-python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "knn" --device 0 --epochs 100 --use_classifier
+python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "knn" --device 0 --epochs 100 --use_energy --use_energy_propagation --use_classifier --use_energy_filter
 
 # if you want to run by script
 cd GraphOOD-GNNSafe/script

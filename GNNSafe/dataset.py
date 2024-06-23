@@ -1,4 +1,3 @@
-from argparse import Namespace
 from typing import Tuple
 
 import numpy as np
@@ -9,10 +8,11 @@ from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS
 from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
 
 from GNNSafe.data_utils import to_sparse_tensor
+from GNNSafe.parse import Arguments
 from OutliersGenerate.knn import generate_outliers
 
 
-def load_dataset(args: Namespace) -> Tuple[Data, Data, Data]:
+def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
     """
     Load dataset according to the dataset name and ood type
     Args:

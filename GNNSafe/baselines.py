@@ -1,5 +1,3 @@
-from argparse import Namespace
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,13 +6,14 @@ from torch.autograd import Variable
 from torch_geometric.data import Data
 from torch_geometric.nn.conv import GCNConv
 
+from GNNSafe.parse import Arguments
 from OutliersGenerate.loss import compute_loss
 from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
 from OutliersGenerate.energy import energy_propagation
 
 
 class MSP(nn.Module):
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(MSP, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(in_channels=num_features,
@@ -62,7 +61,7 @@ class MSP(nn.Module):
 
 
 class OE(nn.Module):
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(OE, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(in_channels=num_features,
@@ -104,7 +103,7 @@ class OE(nn.Module):
 
 
 class ODIN(nn.Module):
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(ODIN, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(in_channels=num_features,
@@ -181,7 +180,7 @@ class ODIN(nn.Module):
 
 
 class Mahalanobis(nn.Module):
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(Mahalanobis, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(in_channels=num_features,
@@ -375,7 +374,7 @@ class Mahalanobis(nn.Module):
 
 
 class MaxLogits(nn.Module):
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(MaxLogits, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(in_channels=num_features,
@@ -418,7 +417,7 @@ class MaxLogits(nn.Module):
 
 
 class EnergyModel(nn.Module):
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(EnergyModel, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(in_channels=num_features,
@@ -463,7 +462,7 @@ class EnergyModel(nn.Module):
 
 
 class EnergyProp(nn.Module):
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(EnergyProp, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(in_channels=num_features,
@@ -512,7 +511,7 @@ class GNNSafe(nn.Module):
     The model class of energy-based models for out-of-distribution detection
     """
 
-    def __init__(self, num_features, num_classes, args: Namespace):
+    def __init__(self, num_features, num_classes, args: Arguments):
         super(GNNSafe, self).__init__()
         if args.backbone == 'gcn':
             self.encoder = GCN(
