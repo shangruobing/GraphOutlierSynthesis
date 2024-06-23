@@ -2,9 +2,9 @@ import os
 
 import pandas as pd
 
-from GNNSafe.parse import Arguments
-from OutliersGenerate.config import FOLDER_PATH
-from OutliersGenerate.utils import get_now_datetime
+from src.common.parse import Arguments
+from src.common.config import FOLDER_PATH
+from src.common.utils import get_now_datetime
 
 
 def insert_row(

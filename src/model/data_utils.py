@@ -1,13 +1,13 @@
 from typing import Tuple
 
-from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
-import torch
 import numpy as np
-from torch_sparse import SparseTensor
-import torch.nn.functional as F
-
-from baselines import ODIN, Mahalanobis
+import torch
 from torch import BoolTensor
+import torch.nn.functional as F
+from torch_sparse import SparseTensor
+from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
+
+from src.model.baselines import ODIN, Mahalanobis
 
 
 def rand_splits(num_nodes, train_ratio=0.5, test_ratio=0.25) -> Tuple[BoolTensor, BoolTensor, BoolTensor]:

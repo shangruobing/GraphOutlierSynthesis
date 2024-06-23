@@ -6,10 +6,10 @@ from torch.autograd import Variable
 from torch_geometric.data import Data
 from torch_geometric.nn.conv import GCNConv
 
-from GNNSafe.parse import Arguments
-from OutliersGenerate.loss import compute_loss
-from backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
-from OutliersGenerate.energy import energy_propagation
+from src.common.parse import Arguments
+from src.outlier.loss import compute_loss
+from src.outlier.energy import energy_propagation
+from src.model.backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
 
 
 class MSP(nn.Module):

@@ -7,9 +7,9 @@ from torch_geometric.data import Data
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB, GitHub
 from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
 
-from GNNSafe.data_utils import to_sparse_tensor
-from GNNSafe.parse import Arguments
-from OutliersGenerate.knn import generate_outliers
+from src.model.data_utils import to_sparse_tensor
+from src.common.parse import Arguments
+from src.outlier.knn import generate_outliers
 
 
 def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
@@ -87,7 +87,7 @@ def load_twitch_dataset(data_dir):
     train_idx, valid_idx = 0, 1
     dataset_ood_te = []
     for i in range(len(subgraph_names)):
-        torch_dataset = Twitch(root=f'{data_dir}Twitch',
+        torch_dataset = Twitch(root=f'{data_dir}/Twitch',
                                name=subgraph_names[i], transform=transform)
         dataset = torch_dataset[0]
         dataset.node_idx = torch.arange(dataset.num_nodes)
@@ -97,57 +97,6 @@ def load_twitch_dataset(data_dir):
             dataset_ood_tr = dataset
         else:
             dataset_ood_te.append(dataset)
-
-    return dataset_ind, dataset_ood_tr, dataset_ood_te
-
-
-def load_proteins_dataset(data_dir, inductive=True):
-    from ogb.nodeproppred import NodePropPredDataset
-
-    ogb_dataset = NodePropPredDataset(name='ogbn-proteins', root=f'{data_dir}/ogb')
-
-    edge_index = torch.as_tensor(ogb_dataset.graph['edge_index'])
-    edge_feat = torch.as_tensor(ogb_dataset.graph['edge_feat'])
-    label = torch.as_tensor(ogb_dataset.labels)
-
-    edge_index_ = to_sparse_tensor(edge_index, edge_feat, ogb_dataset.graph['num_nodes'])
-    node_feat = edge_index_.mean(dim=1)
-
-    node_species = torch.as_tensor(ogb_dataset.graph['node_species'])
-    species = [0] + node_species.unique().tolist()
-    ind_species_min, ind_species_max = species[0], species[3]
-    ood_tr_species_min, ood_tr_species_max = species[3], species[5]
-    ood_te_species = [species[i] for i in range(5, 8)]
-
-    center_node_mask = (node_species <= ind_species_max).squeeze(1) * (node_species > ind_species_min).squeeze(1)
-    if inductive:
-        all_node_mask = (node_species <= ind_species_max).squeeze(1)
-        ind_edge_index, _ = subgraph(all_node_mask, edge_index)
-    else:
-        ind_edge_index = edge_index
-
-    dataset_ind = Data(x=node_feat, edge_index=ind_edge_index, y=label)
-    idx = torch.arange(label.size(0))
-    dataset_ind.node_idx = idx[center_node_mask]
-
-    center_node_mask = (node_species <= ood_tr_species_max).squeeze(1) * (node_species > ood_tr_species_min).squeeze(1)
-    if inductive:
-        all_node_mask = (node_species <= ood_tr_species_max).squeeze(1)
-        ood_tr_edge_index, _ = subgraph(all_node_mask, edge_index)
-    else:
-        ood_tr_edge_index = edge_index
-
-    dataset_ood_tr = Data(x=node_feat, edge_index=ood_tr_edge_index, y=label)
-    idx = torch.arange(label.size(0))
-    dataset_ood_tr.node_idx = idx[center_node_mask]
-
-    dataset_ood_te = []
-    for i in ood_te_species:
-        center_node_mask = (node_species == i).squeeze(1)
-        dataset = Data(x=node_feat, edge_index=edge_index, y=label)
-        idx = torch.arange(label.size(0))
-        dataset.node_idx = idx[center_node_mask]
-        dataset_ood_te.append(dataset)
 
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
@@ -165,23 +114,23 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
     """
     transform = T.NormalizeFeatures()
     if dataset_name in ('cora', 'citeseer', 'pubmed'):
-        torch_dataset = Planetoid(root=f'{data_dir}Planetoid', split='public', name=dataset_name, transform=transform)
+        torch_dataset = Planetoid(root=f'{data_dir}/Planetoid', split='public', name=dataset_name, transform=transform)
     elif dataset_name == 'amazon-photo':
-        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Photo', transform=transform)
+        torch_dataset = Amazon(root=f'{data_dir}/Amazon', name='Photo', transform=transform)
     elif dataset_name == 'amazon-computer':
-        torch_dataset = Amazon(root=f'{data_dir}Amazon', name='Computers', transform=transform)
+        torch_dataset = Amazon(root=f'{data_dir}/Amazon', name='Computers', transform=transform)
     elif dataset_name == 'coauthor-cs':
-        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='CS', transform=transform)
+        torch_dataset = Coauthor(root=f'{data_dir}/Coauthor', name='CS', transform=transform)
     elif dataset_name == 'coauthor-physics':
-        torch_dataset = Coauthor(root=f'{data_dir}Coauthor', name='Physics', transform=transform)
+        torch_dataset = Coauthor(root=f'{data_dir}/Coauthor', name='Physics', transform=transform)
     elif dataset_name == 'wiki-cs':
-        torch_dataset = WikiCS(root=f'{data_dir}WikiCS', transform=transform, is_undirected=False)
+        torch_dataset = WikiCS(root=f'{data_dir}/WikiCS', transform=transform, is_undirected=False)
     elif dataset_name == 'actor':
-        torch_dataset = Actor(root=f'{data_dir}Actor', transform=transform)
+        torch_dataset = Actor(root=f'{data_dir}/Actor', transform=transform)
     elif dataset_name == 'webkb':
-        torch_dataset = WebKB(name="Cornell", root=f'{data_dir}WebKB', transform=transform)
+        torch_dataset = WebKB(name="Cornell", root=f'{data_dir}/WebKB', transform=transform)
     elif dataset_name == 'github':
-        torch_dataset = GitHub(root=f'{data_dir}GitHub', transform=transform)
+        torch_dataset = GitHub(root=f'{data_dir}/GitHub', transform=transform)
     else:
         raise NotImplementedError
 

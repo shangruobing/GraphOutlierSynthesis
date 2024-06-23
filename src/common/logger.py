@@ -1,5 +1,4 @@
 import torch
-from sklearn.preprocessing import MinMaxScaler
 
 
 class DetectLogger:

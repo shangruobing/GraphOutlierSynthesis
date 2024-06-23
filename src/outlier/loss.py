@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from icecream import ic
 from torch_geometric.data import Data
-from OutliersGenerate.energy import energy_propagation
+from icecream import ic
+
+from src.outlier.energy import energy_propagation
 
 
 def compute_loss(dataset_id: Data, dataset_ood: Data, encoder, classifier, criterion, device, args):
@@ -106,7 +107,7 @@ def compute_loss(dataset_id: Data, dataset_ood: Data, encoder, classifier, crite
     return loss
 
 
-def filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood, id_threshold=-5, ood_threshold=-2):
+def filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood, id_threshold=-5, ood_threshold=-5):
     """
     Filter the classifier output by energy scores.
     Args:
@@ -121,7 +122,7 @@ def filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood, id_th
 
     """
     filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze()
-    filtered_classifier_ood_index = torch.nonzero(energy_ood < ood_threshold).squeeze()
+    filtered_classifier_ood_index = torch.nonzero(energy_ood > ood_threshold).squeeze()
     debug = False
     if debug:
         ic(energy_id.mean())

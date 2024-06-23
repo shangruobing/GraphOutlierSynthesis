@@ -1,25 +1,23 @@
-import sys
 from pprint import pprint
+
 import torch
 import torch.nn as nn
 
-sys.path.append('..')
+from model.baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
+from model.data_utils import evaluate_detect, eval_acc, rand_splits
+from model.dataset import load_dataset
 
-from baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
-from data_utils import evaluate_detect, eval_acc, rand_splits
-from dataset import load_dataset
-from logger import DetectLogger
-from parse import init_parser_args
-
-from OutliersGenerate.utils import get_device, fix_seed
-from OutliersGenerate.recorder import insert_row
+from common.logger import DetectLogger
+from common.parse import init_parser_args
+from common.utils import get_device, fix_seed
+from common.recorder import insert_row
 
 args = init_parser_args()
 
 pprint(args.string)
 
 fix_seed(args.seed)
-device = get_device(args)
+device = get_device(device=args.device, cpu=args.cpu)
 
 dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
 

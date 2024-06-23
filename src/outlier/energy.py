@@ -1,11 +1,7 @@
 import torch
-from icecream import ic
 
 from torch_sparse import SparseTensor, matmul
 from torch_geometric.utils import degree
-# import os
-
-# os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 
 def energy_propagation(embeddings, edge_index, valid_index=None, num_prop_layers=1, alpha=0.5):

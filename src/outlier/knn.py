@@ -1,11 +1,11 @@
 from typing import Tuple
-import faiss
+
 import numpy as np
+import faiss
+from faiss import IndexFlat
 import torch
-from faiss import GpuIndexFlat, IndexFlat
 from torch import Tensor
 from torch.distributions import MultivariateNormal
-from icecream import ic
 
 
 def generate_outliers(
@@ -218,7 +218,7 @@ def generate_negative_samples(
 
 
 if __name__ == '__main__':
-    from visualize import visualize_2D, visualize_3D
+    from src.common.visualize import visualize_2D
 
     dataset = torch.rand(2000, 2)
 

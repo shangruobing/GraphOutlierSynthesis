@@ -2,8 +2,8 @@ __pycache__/
 
 .idea/
 
-data/*
-!data/README.md
+dataset/*
+!dataset/README.md
 
 wheel
 
