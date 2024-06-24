@@ -5,9 +5,18 @@ from torch_geometric.data import Data
 from icecream import ic
 
 from src.outlier.energy import energy_propagation
+from src.common.parse import Arguments
 
 
-def compute_loss(dataset_id: Data, dataset_ood: Data, encoder, classifier, criterion, device, args):
+def compute_loss(
+        dataset_id: Data,
+        dataset_ood: Data,
+        encoder: nn.Module,
+        classifier: nn.Module,
+        criterion: nn.NLLLoss,
+        device: torch.device,
+        args: Arguments
+):
     """
     Compute the loss for in-distribution and out-of-distribution datasets.
     loss = supervised_learning_loss + energy_regularization_loss + classifier_loss
@@ -59,18 +68,12 @@ def compute_loss(dataset_id: Data, dataset_ood: Data, encoder, classifier, crite
         energy_id, energy_ood = trim_to_same_length(energy_id, energy_ood)
 
         # 计算能量的正则化损失
-        # parser.add_argument('--upper_bound_id', type=float, default=-5, help='upper bound for in-distribution energy')
-        upper_bound_id = -5
-        # parser.add_argument('--lower_bound_ood', type=float, default=-1, help='lower bound for out-of-distribution energy')
-        lower_bound_ood = -1
-        # parser.add_argument('--lamda', type=float, default=1.0, help='weight for regularization')
-        lamda = 1
         energy_regularization_loss = torch.mean(
-            F.relu(energy_id - upper_bound_id) ** 2
+            F.relu(energy_id - args.upper_bound_id) ** 2
             +
-            F.relu(lower_bound_ood - energy_ood) ** 2
+            F.relu(args.lower_bound_ood - energy_ood) ** 2
         )
-        loss += lamda * energy_regularization_loss
+        loss += args.lamda * energy_regularization_loss
 
         if args.use_classifier:
             # 将ID数据输入分类器
@@ -91,7 +94,14 @@ def compute_loss(dataset_id: Data, dataset_ood: Data, encoder, classifier, crite
 
             if args.use_energy_filter:
                 # 使用能量分数过滤分类器输出
-                classifier_id, classifier_ood = filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood)
+                classifier_id, classifier_ood = filter_by_energy(
+                    classifier_id=classifier_id,
+                    classifier_ood=classifier_ood,
+                    energy_id=energy_id,
+                    energy_ood=energy_ood,
+                    id_threshold=args.upper_bound_id,
+                    ood_threshold=args.lower_bound_ood
+                )
 
             # 构造分类器输出和标签
             min_length = min(len(classifier_id), len(classifier_ood))
@@ -102,12 +112,19 @@ def compute_loss(dataset_id: Data, dataset_ood: Data, encoder, classifier, crite
             ])
 
             classifier_loss = nn.BCELoss()(classifier_output, classifier_label)
-            loss += classifier_loss
+            loss += args.delta * classifier_loss
 
     return loss
 
 
-def filter_by_energy(classifier_id, classifier_ood, energy_id, energy_ood, id_threshold=-5, ood_threshold=-5):
+def filter_by_energy(
+        classifier_id: torch.Tensor,
+        classifier_ood: torch.Tensor,
+        energy_id: torch.Tensor,
+        energy_ood: torch.Tensor,
+        id_threshold=-5,
+        ood_threshold=-5
+):
     """
     Filter the classifier output by energy scores.
     Args:

@@ -30,6 +30,12 @@ def parser_add_main_args(parser):
     parser.add_argument('--use_classifier', action='store_true')
     parser.add_argument('--use_energy_filter', action='store_true')
 
+    # hyper parameter
+    parser.add_argument('--upper_bound_id', type=float, default=-5, help='upper bound for in-distribution energy')
+    parser.add_argument('--lower_bound_ood', type=float, default=-1, help='lower bound for out-of-distribution energy')
+    parser.add_argument('--lamda', type=float, default=1.0, help='weight for regularization')
+    parser.add_argument('--delta', type=float, default=1.0, help='weight for classifier loss')
+
 
 @dataclass
 class Arguments:
@@ -52,6 +58,10 @@ class Arguments:
     use_energy_propagation: bool
     use_classifier: bool
     use_energy_filter: bool
+    upper_bound_id: float
+    lower_bound_ood: float
+    lamda: float
+    delta: float
 
 
 def parser_parse_args(parser) -> Arguments:
@@ -75,7 +85,11 @@ def parser_parse_args(parser) -> Arguments:
         use_energy=args.use_energy,
         use_energy_propagation=args.use_energy_propagation,
         use_classifier=args.use_classifier,
-        use_energy_filter=args.use_energy_filter
+        use_energy_filter=args.use_energy_filter,
+        upper_bound_id=args.upper_bound_id,
+        lower_bound_ood=args.lower_bound_ood,
+        lamda=args.lamda,
+        delta=args.delta,
     )
 
 

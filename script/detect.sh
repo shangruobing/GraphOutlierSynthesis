@@ -1,4 +1,4 @@
-cd ../GNNSafe || exit
+cd ../src || exit
 
 epochs=100
 device=0

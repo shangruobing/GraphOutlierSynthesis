@@ -1,7 +1,12 @@
+import sys
+from os.path import dirname, abspath
 from pprint import pprint
 
 import torch
 import torch.nn as nn
+
+BASE_DIR = dirname(dirname(abspath(__file__)))
+sys.path.append(BASE_DIR)
 
 from model.baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
 from model.data_utils import evaluate_detect, eval_acc, rand_splits
