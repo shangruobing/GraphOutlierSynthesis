@@ -5,9 +5,8 @@ import torch
 import torch_geometric.transforms as T
 from torch_geometric.data import Data
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB, GitHub
-from torch_geometric.utils import stochastic_blockmodel_graph, subgraph
+from torch_geometric.utils import stochastic_blockmodel_graph
 
-from src.model.data_utils import to_sparse_tensor
 from src.common.parse import Arguments
 from src.outlier.knn import generate_outliers
 
@@ -101,7 +100,7 @@ def load_twitch_dataset(data_dir):
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
-def load_graph_dataset(data_dir, dataset_name, ood_type):
+def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Data]:
     """
     single graph, use original as ind, modified graphs as ood
     Args:
@@ -157,7 +156,7 @@ def load_graph_dataset(data_dir, dataset_name, ood_type):
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
-def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):
+def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5) -> Data:
     n = data.num_nodes
 
     d = data.edge_index.size(1) / data.num_nodes / (data.num_nodes - 1)
@@ -173,7 +172,7 @@ def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5):
     return dataset
 
 
-def create_feat_noise_dataset(data):
+def create_feat_noise_dataset(data) -> Data:
     x = data.x
     n = data.num_nodes
     idx = torch.randint(0, n, (n, 2))
@@ -185,7 +184,7 @@ def create_feat_noise_dataset(data):
     return dataset
 
 
-def create_label_leave_out_dataset(dataset, dataset_ind, dataset_name):
+def create_label_leave_out_dataset(dataset, dataset_ind, dataset_name) -> Data:
     label = dataset.y
     unique_elements = torch.unique(label)
     class_t = int(np.median(unique_elements))
@@ -210,7 +209,7 @@ def create_label_leave_out_dataset(dataset, dataset_ind, dataset_name):
     return dataset_ood_te
 
 
-def create_knn_dataset(data):
+def create_knn_dataset(data) -> Data:
     sample_point, sample_edge, sample_label = generate_outliers(
         data.x,
         num_nodes=data.num_nodes,

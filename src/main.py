@@ -4,13 +4,14 @@ from pprint import pprint
 
 import torch
 import torch.nn as nn
+from torch_geometric.data import Data
 
 BASE_DIR = dirname(dirname(abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 from model.baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
 from model.data_utils import evaluate_detect, eval_acc, rand_splits
-from model.dataset import load_dataset
+from model.dataset import load_dataset, create_knn_dataset
 
 from common.logger import DetectLogger
 from common.parse import init_parser_args
@@ -45,9 +46,16 @@ else:
 num_classes = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
 num_features = dataset_ind.num_features
 
+if args.synthesis_ood:
+    synthesis_ood_dataset = create_knn_dataset(dataset_ind).to(device=device)
+else:
+    synthesis_ood_dataset = Data()
+    synthesis_ood_dataset.num_nodes = 0
+
 print(f"ind train dataset {args.dataset}: nodes {dataset_ind.num_nodes} | edges {dataset_ind.num_edges} | classes {num_classes} | features {num_features}")
 print(f"ood train dataset {args.dataset}: nodes {dataset_ood_tr.num_nodes} | edges {dataset_ood_tr.num_edges}")
 print(f"ood test  dataset {args.dataset}: nodes {dataset_ood_te.num_nodes} | edges {dataset_ood_te.num_edges}")
+print(f"synthesis dataset {args.dataset}: nodes {synthesis_ood_dataset.num_nodes} | edges {synthesis_ood_dataset.num_edges}")
 
 dataset_ind.to(device=device)
 dataset_ood_tr.to(device=device)
@@ -96,7 +104,7 @@ optimizer = torch.optim.Adam(
 for epoch in range(args.epochs):
     model.train()
     optimizer.zero_grad()
-    loss = model.loss_compute(dataset_ind, dataset_ood_tr, criterion, device, args)
+    loss = model.loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, criterion, device, args)
     loss.backward()
     optimizer.step()
 

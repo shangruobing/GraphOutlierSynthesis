@@ -29,6 +29,7 @@ def parser_add_main_args(parser):
     parser.add_argument('--use_energy_propagation', action='store_true')
     parser.add_argument('--use_classifier', action='store_true')
     parser.add_argument('--use_energy_filter', action='store_true')
+    parser.add_argument('--synthesis_ood', action='store_true')
 
     # hyper parameter
     parser.add_argument('--upper_bound_id', type=float, default=-5, help='upper bound for in-distribution energy')
@@ -62,6 +63,7 @@ class Arguments:
     lower_bound_ood: float
     lamda: float
     delta: float
+    synthesis_ood: bool
 
 
 def parser_parse_args(parser) -> Arguments:
@@ -90,6 +92,7 @@ def parser_parse_args(parser) -> Arguments:
         lower_bound_ood=args.lower_bound_ood,
         lamda=args.lamda,
         delta=args.delta,
+        synthesis_ood=args.synthesis_ood,
     )
 
 

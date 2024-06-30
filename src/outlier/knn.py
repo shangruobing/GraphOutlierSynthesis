@@ -45,6 +45,7 @@ def generate_outliers(
     Returns:
         the generated outliers, the edges of the generated outliers, the labels of the generated outliers
     """
+    dataset = dataset.clone().to(torch.device("cpu"))
 
     # How many ID samples to pick to define as points near the boundary of the sample space
     top = num_nodes // 10

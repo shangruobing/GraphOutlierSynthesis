@@ -56,8 +56,8 @@ class MSP(nn.Module):
         sp = torch.softmax(logits, dim=-1)
         return sp.max(dim=1)[0]
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class OE(nn.Module):
@@ -98,8 +98,8 @@ class OE(nn.Module):
         logits, penultimate = logits[node_idx], penultimate[node_idx]
         return logits.max(dim=1)[0]
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class ODIN(nn.Module):
@@ -175,8 +175,8 @@ class ODIN(nn.Module):
 
         return nnOutputs
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class Mahalanobis(nn.Module):
@@ -369,8 +369,8 @@ class Mahalanobis(nn.Module):
 
         return sample_class_mean, precision
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class MaxLogits(nn.Module):
@@ -412,8 +412,8 @@ class MaxLogits(nn.Module):
         logits, penultimate = logits[node_idx], penultimate[node_idx]
         return logits.max(dim=1)[0]
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class EnergyModel(nn.Module):
@@ -457,8 +457,8 @@ class EnergyModel(nn.Module):
         neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
         return neg_energy
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class EnergyProp(nn.Module):
@@ -502,8 +502,8 @@ class EnergyProp(nn.Module):
         neg_energy_prop = energy_propagation(neg_energy, edge_index)
         return neg_energy_prop[node_idx]
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class GNNSafe(nn.Module):
@@ -561,8 +561,8 @@ class GNNSafe(nn.Module):
         neg_energy = energy_propagation(neg_energy, edge_index, num_prop_layers=K, alpha=alpha)
         return neg_energy[node_idx]
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
 class GCNEncoder(nn.Module):
@@ -607,9 +607,10 @@ class Classifier(nn.Module):
             in_features: number of input features
         """
         super().__init__()
-        self.encoder = GCNEncoder(in_features=in_features, in_channels=in_channels)
+        # self.encoder = GCNEncoder(in_features=in_features, in_channels=in_channels)
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=in_features * 2, out_features=in_features, bias=True),
+            nn.Linear(in_features=in_features, out_features=in_features, bias=True),
+            # nn.Linear(in_features=in_features * 2, out_features=in_features, bias=True),
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.2),
             nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
@@ -619,8 +620,11 @@ class Classifier(nn.Module):
             nn.Sigmoid()
         )
 
+    # def forward(self, logit, x, edge_index, mask):
+    #     logits = self.encoder(x, edge_index)[mask]
+    #     if len(logit) != len(logits):
+    #         raise ValueError("logit and logits must have the same length.")
+    #     return self.classifier(torch.cat([logits, logit], dim=1)).squeeze()
+
     def forward(self, logit, x, edge_index, mask):
-        logits = self.encoder(x, edge_index)[mask]
-        if len(logit) != len(logits):
-            raise ValueError("logit and logits must have the same length.")
-        return self.classifier(torch.cat([logits, logit], dim=1)).squeeze()
+        return self.classifier(logit).squeeze()

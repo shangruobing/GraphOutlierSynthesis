@@ -29,33 +29,6 @@ def insert_row(
         accuracy: str,
         score: str,
     """
-    FILE_PATH = FOLDER_PATH / f"{args.dataset}.csv"
-    if not os.path.exists(FOLDER_PATH):
-        os.mkdir(FOLDER_PATH)
-    if os.path.exists(FILE_PATH):
-        df = pd.read_csv(FILE_PATH, encoding="UTF-8-SIG")
-    else:
-        print(f"The {FILE_PATH} does not exist, an {FILE_PATH} file has been created.")
-        df = pd.DataFrame(columns=[
-            'args',
-            "method",
-            'use_energy',
-            'use_energy_propagation',
-            'use_classifier',
-            'use_energy_filter',
-            "backbone",
-            "dataset",
-            "ood_type",
-            "epochs",
-            'model',
-            'epoch_info',
-            'time',
-            'AUROC',
-            'AUPR',
-            'FPR',
-            "ACCURACY",
-            'SCORE'
-        ])
     new_row = {
         "args": args.string,
         "method": args.method,
@@ -63,10 +36,11 @@ def insert_row(
         "dataset": args.dataset,
         "ood_type": args.ood_type,
         "epochs": args.epochs,
-        'use_energy': args.use_energy,
-        'use_energy_propagation': args.use_energy_propagation,
+        "use_energy": args.use_energy,
+        "use_energy_propagation": args.use_energy_propagation,
         "use_classifier": args.use_classifier,
-        'use_energy_filter': args.use_energy_filter,
+        "use_energy_filter": args.use_energy_filter,
+        "synthesis_ood": args.synthesis_ood,
         "model": model,
         "epoch_info": epoch_info,
         "time": get_now_datetime(),
@@ -76,5 +50,13 @@ def insert_row(
         "FPR": fpr,
         "SCORE": score,
     }
+    FILE_PATH = FOLDER_PATH / f"{args.dataset}.csv"
+    if not os.path.exists(FOLDER_PATH):
+        os.mkdir(FOLDER_PATH)
+    if os.path.exists(FILE_PATH):
+        df = pd.read_csv(FILE_PATH, encoding="UTF-8-SIG")
+    else:
+        print(f"The {FILE_PATH} does not exist, an {FILE_PATH} file has been created.")
+        df = pd.DataFrame(columns=list(new_row.keys()))
     df.loc[len(df)] = new_row
     df.to_csv(FILE_PATH, index=False, encoding="UTF-8-SIG")
