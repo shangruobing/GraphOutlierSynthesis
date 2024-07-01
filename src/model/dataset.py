@@ -140,25 +140,27 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
     dataset_ind = dataset
 
     if ood_type == 'structure':
-        dataset_ood_tr = create_sbm_dataset(dataset)
-        dataset_ood_te = create_sbm_dataset(dataset)
+        dataset_ood_tr = create_structure_manipulation_dataset(dataset)
+        dataset_ood_te = create_structure_manipulation_dataset(dataset)
     elif ood_type == 'feature':
-        dataset_ood_tr = create_feat_noise_dataset(dataset)
-        dataset_ood_te = create_feat_noise_dataset(dataset)
+        dataset_ood_tr = create_feature_interpolation_dataset(dataset)
+        dataset_ood_te = create_feature_interpolation_dataset(dataset)
     elif ood_type == 'label':
-        dataset_ood_tr = create_label_leave_out_dataset(dataset, dataset_ind, dataset_name)
-        dataset_ood_te = create_label_leave_out_dataset(dataset, dataset_ind, dataset_name)
-    elif ood_type == 'knn':
-        dataset_ood_tr = create_knn_dataset(dataset)
-        dataset_ood_te = create_knn_dataset(dataset)
+        dataset_ind, dataset_ood_tr, dataset_ood_te = create_label_leave_out_dataset(dataset, dataset_ind)
     else:
         raise NotImplementedError
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
-def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5) -> Data:
+def create_structure_manipulation_dataset(data, p_ii=1.5, p_ij=0.5) -> Data:
+    """
+    Structure manipulation: use the original graph as in-distribution data and adopt stochastic block model to randomly generate a graph for OOD data.
+    :param data:
+    :param p_ii:
+    :param p_ij:
+    :return:
+    """
     n = data.num_nodes
-
     d = data.edge_index.size(1) / data.num_nodes / (data.num_nodes - 1)
     num_blocks = int(data.y.max()) + 1
     p_ii, p_ij = p_ii * d, p_ij * d
@@ -172,19 +174,29 @@ def create_sbm_dataset(data, p_ii=1.5, p_ij=0.5) -> Data:
     return dataset
 
 
-def create_feat_noise_dataset(data) -> Data:
+def create_feature_interpolation_dataset(data) -> Data:
+    """
+    Feature interpolation: use random interpolation to create node features for OOD data and the original graph as in-distribution data.
+    :param data:
+    :return:
+    """
     x = data.x
     n = data.num_nodes
     idx = torch.randint(0, n, (n, 2))
     weight = torch.rand(n).unsqueeze(1)
     x_new = x[idx[:, 0]] * weight + x[idx[:, 1]] * (1 - weight)
-
     dataset = Data(x=x_new, edge_index=data.edge_index, y=data.y)
     dataset.node_idx = torch.arange(n)
     return dataset
 
 
-def create_label_leave_out_dataset(dataset, dataset_ind, dataset_name) -> Data:
+def create_label_leave_out_dataset(dataset, dataset_ind) -> Data:
+    """
+    Label leave-out: use nodes with partial classes as in-distribution and leave out others for OOD.
+    :param dataset:
+    :param dataset_ind:
+    :return:
+    """
     label = dataset.y
     unique_elements = torch.unique(label)
     class_t = int(np.median(unique_elements))
@@ -193,20 +205,19 @@ def create_label_leave_out_dataset(dataset, dataset_ind, dataset_name) -> Data:
     idx = torch.arange(label.size(0))
     dataset_ind.node_idx = idx[center_node_mask_ind]
 
-    if dataset_name in ('cora', 'citeseer', 'pubmed', 'arxiv', "actor"):
-        split_idx = ["train_mask", "val_mask", "test_mask"]
-        tensor_split_idx = {}
-        idx = torch.arange(label.size(0))
-        for key in split_idx:
-            mask = torch.zeros(label.size(0), dtype=torch.bool)
-            mask[torch.as_tensor(split_idx[key])] = True
-            tensor_split_idx[key] = idx[mask * center_node_mask_ind]
-        dataset_ind.splits = tensor_split_idx
+    for key in ["train_mask", "val_mask", "test_mask"]:
+        mask = torch.zeros(label.size(0), dtype=torch.bool)
+        mask[torch.as_tensor(dataset_ind[key])] = True
+        dataset_ind[key] = idx[mask * center_node_mask_ind]
 
+    dataset_ood_tr = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
     dataset_ood_te = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
-    center_node_mask_ood_te = (label <= class_t)
+
+    center_node_mask_ood_tr = (label == class_t)
+    center_node_mask_ood_te = (label < class_t)
+    dataset_ood_tr.node_idx = idx[center_node_mask_ood_tr]
     dataset_ood_te.node_idx = idx[center_node_mask_ood_te]
-    return dataset_ood_te
+    return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
 def create_knn_dataset(data) -> Data:

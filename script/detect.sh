@@ -4,11 +4,11 @@ epochs=100
 device=0
 #datasets=("cora" "amazon-photo" "github" "coauthor-cs")
 datasets=("cora")
-ood_types=("knn")
+ood_types=("structure" "feature""label")
 #methods=("msp" "OE" "ODIN" "Mahalanobis" "maxlogits" "energymodel" "energyprop" "gnnsafe")
-methods=("msp")
-#backbones=("gcn")
-backbones=("mlp" "sgc" "gcn" "gat" "mixhop" "gcnjk" "gatjk" "H2GCNConv" "APPNP_Net" "GPRPROP" "GPRGNN")
+methods=("gnnsafe")
+#backbones=("mlp" "sgc" "gcn" "gat" "mixhop" "gcnjk" "gatjk" "H2GCNConv" "APPNP_Net" "GPRPROP" "GPRGNN")
+backbones=("gcn")
 
 echo "Parameters:"
 echo epochs: $epochs
@@ -18,8 +18,6 @@ echo ood_types: "${ood_types[@]}"
 echo methods: "${methods[@]}"
 echo backbones: "${backbones[@]}"
 echo -e "\nStart training...\n"
-
-python main.py --method "msp" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 10
 
 for dataset in "${datasets[@]}"; do
   for ood_type in "${ood_types[@]}"; do
@@ -34,7 +32,11 @@ for dataset in "${datasets[@]}"; do
           --ood_type "$ood_type" \
           --device $device \
           --epochs $epochs \
-          --use_classifier
+          --use_energy \
+          --use_energy_propagation \
+          --use_classifier \
+          --use_energy_filter \
+          --synthesis_ood
 
         echo "No Generate OOD data"
         date
