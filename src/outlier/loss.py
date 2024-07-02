@@ -69,7 +69,7 @@ def compute_loss(
         if args.use_energy_propagation:
             # 完成能量的传播
             # parser.add_argument('--num_prop_layers', type=int, default=2, help='number of layers for energy belief propagation')
-            num_prop_layers = 2
+            num_prop_layers = 1
             # parser.add_argument('--alpha', type=float, default=0.5, help='weight for residual connection in propagation')
             alpha = 0.5
             energy_id = energy_propagation(energy_id, dataset_id.edge_index, train_idx, num_prop_layers=num_prop_layers, alpha=alpha)
@@ -78,12 +78,12 @@ def compute_loss(
         energy_id, energy_ood = trim_to_same_length(energy_id, energy_ood)
 
         # 计算能量的正则化损失
-        energy_regularization_loss = torch.mean(
-            F.relu(energy_id - args.upper_bound_id) ** 2
-            +
-            F.relu(args.lower_bound_ood - energy_ood) ** 2
-        )
-        loss += args.lamda * energy_regularization_loss
+        # energy_regularization_loss = torch.mean(
+        #     F.relu(energy_id - args.upper_bound_id) ** 2
+        #     +
+        #     F.relu(args.lower_bound_ood - energy_ood) ** 2
+        # )
+        # loss += args.lamda * energy_regularization_loss
 
         if args.use_classifier:
             # 将ID数据输入分类器
@@ -146,10 +146,10 @@ def filter_by_energy(
         ood_threshold:
 
     Returns:
-
     """
-    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze()
     filtered_classifier_ood_index = torch.nonzero(energy_ood > ood_threshold).squeeze()
+    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze()
+
     debug = False
     if debug:
         ic(energy_id.mean())
