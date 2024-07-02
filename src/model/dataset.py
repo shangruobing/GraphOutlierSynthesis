@@ -8,6 +8,7 @@ from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS
 from torch_geometric.utils import stochastic_blockmodel_graph
 
 from src.common.parse import Arguments
+from src.model.data_utils import rand_splits
 from src.outlier.knn import generate_outliers
 
 
@@ -133,11 +134,16 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
     else:
         raise NotImplementedError
 
-    # print("Have train_mask", len(dataset.train_mask) > 0)
-
     dataset = torch_dataset[0]
     dataset.node_idx = torch.arange(dataset.num_nodes)
-    dataset_ind = dataset
+    if hasattr(dataset, "train_mask") and hasattr(dataset, "val_mask") and hasattr(dataset, "test_mask"):
+        print("Use the train_mask provided with the dataset")
+    else:
+        print("The train_mask is not provided for the dataset. Use random splits.")
+        train_mask, val_mask, test_mask = rand_splits(dataset.num_nodes)
+        dataset.train_mask = train_mask
+        dataset.val_mask = val_mask
+        dataset.test_mask = test_mask
 
     if ood_type == 'structure':
         dataset_ood_tr = create_structure_manipulation_dataset(dataset)
@@ -146,10 +152,14 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
         dataset_ood_tr = create_feature_interpolation_dataset(dataset)
         dataset_ood_te = create_feature_interpolation_dataset(dataset)
     elif ood_type == 'label':
-        dataset_ind, dataset_ood_tr, dataset_ood_te = create_label_leave_out_dataset(dataset, dataset_ind)
+        dataset, dataset_ood_tr, dataset_ood_te = create_label_leave_out_dataset(dataset)
     else:
         raise NotImplementedError
-    return dataset_ind, dataset_ood_tr, dataset_ood_te
+
+    # print(id(dataset))
+    # print(id(dataset_ood_tr))
+    # print(id(dataset_ood_te))
+    return dataset, dataset_ood_tr, dataset_ood_te
 
 
 def create_structure_manipulation_dataset(data, p_ii=1.5, p_ij=0.5) -> Data:
@@ -190,11 +200,10 @@ def create_feature_interpolation_dataset(data) -> Data:
     return dataset
 
 
-def create_label_leave_out_dataset(dataset, dataset_ind) -> Data:
+def create_label_leave_out_dataset(dataset) -> Data:
     """
     Label leave-out: use nodes with partial classes as in-distribution and leave out others for OOD.
     :param dataset:
-    :param dataset_ind:
     :return:
     """
     label = dataset.y
@@ -203,12 +212,12 @@ def create_label_leave_out_dataset(dataset, dataset_ind) -> Data:
 
     center_node_mask_ind = (label > class_t)
     idx = torch.arange(label.size(0))
-    dataset_ind.node_idx = idx[center_node_mask_ind]
+    dataset.node_idx = idx[center_node_mask_ind]
 
     for key in ["train_mask", "val_mask", "test_mask"]:
         mask = torch.zeros(label.size(0), dtype=torch.bool)
-        mask[torch.as_tensor(dataset_ind[key])] = True
-        dataset_ind[key] = idx[mask * center_node_mask_ind]
+        mask[torch.as_tensor(dataset[key])] = True
+        dataset[key] = idx[mask * center_node_mask_ind]
 
     dataset_ood_tr = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
     dataset_ood_te = Data(x=dataset.x, edge_index=dataset.edge_index, y=dataset.y)
@@ -217,7 +226,7 @@ def create_label_leave_out_dataset(dataset, dataset_ind) -> Data:
     center_node_mask_ood_te = (label < class_t)
     dataset_ood_tr.node_idx = idx[center_node_mask_ood_tr]
     dataset_ood_te.node_idx = idx[center_node_mask_ood_te]
-    return dataset_ind, dataset_ood_tr, dataset_ood_te
+    return dataset, dataset_ood_tr, dataset_ood_te
 
 
 def create_knn_dataset(data) -> Data:

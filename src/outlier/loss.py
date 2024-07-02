@@ -148,16 +148,18 @@ def filter_by_energy(
     Returns:
 
     """
-    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze()
-    filtered_classifier_ood_index = torch.nonzero(energy_ood > ood_threshold).squeeze()
+    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze().view(-1)
+    filtered_classifier_ood_index = torch.nonzero(energy_ood > ood_threshold).squeeze().view(-1)
     debug = False
     if debug:
         ic(energy_id.mean())
         ic(energy_ood.mean())
         ic(energy_id.shape)
         ic(filtered_classifier_id_index.shape)
+        ic(filtered_classifier_id_index)
         ic(energy_ood.shape)
         ic(filtered_classifier_ood_index.shape)
+        ic(filtered_classifier_ood_index)
     return classifier_id[filtered_classifier_id_index], classifier_ood[filtered_classifier_ood_index]
 
 
