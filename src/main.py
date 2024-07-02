@@ -34,15 +34,6 @@ if len(dataset_ood_tr.y.shape) == 1:
 if len(dataset_ood_te.y.shape) == 1:
     dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
 
-if hasattr(dataset_ind, "train_mask"):
-    print("Using provided splits")
-else:
-    print("Using random splits")
-    train_mask, val_mask, test_mask = rand_splits(dataset_ind.num_nodes)
-    dataset_ind.train_mask = train_mask
-    dataset_ind.val_mask = val_mask
-    dataset_ind.test_mask = test_mask
-
 num_classes = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
 num_features = dataset_ind.num_features
 
