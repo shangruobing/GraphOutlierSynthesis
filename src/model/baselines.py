@@ -37,7 +37,7 @@ class MSP(nn.Module):
             self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -81,7 +81,7 @@ class OE(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -123,7 +123,7 @@ class ODIN(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -200,7 +200,7 @@ class Mahalanobis(nn.Module):
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -394,7 +394,7 @@ class MaxLogits(nn.Module):
                                dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -437,7 +437,7 @@ class EnergyModel(nn.Module):
                                dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -482,7 +482,7 @@ class EnergyProp(nn.Module):
                                dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -537,7 +537,7 @@ class GNNSafe(nn.Module):
             self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels, in_channels=num_features)
+        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -601,17 +601,15 @@ class Classifier(nn.Module):
     A classifier for encoder penultimate output.
     """
 
-    def __init__(self, in_features, in_channels):
+    def __init__(self, in_features):
         """
         Initialize a classifier for encoder output.
         Args:
             in_features: number of input features
         """
         super().__init__()
-        # self.encoder = GCNEncoder(in_features=in_features, in_channels=in_channels)
         self.classifier = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=in_features, bias=True),
-            # nn.Linear(in_features=in_features * 2, out_features=in_features, bias=True),
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.2),
             nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
@@ -621,11 +619,5 @@ class Classifier(nn.Module):
             nn.Sigmoid()
         )
 
-    # def forward(self, logit, x, edge_index, mask):
-    #     logits = self.encoder(x, edge_index)[mask]
-    #     if len(logit) != len(logits):
-    #         raise ValueError("logit and logits must have the same length.")
-    #     return self.classifier(torch.cat([logits, logit], dim=1)).squeeze()
-
     def forward(self, logit, x, edge_index, mask):
-        return self.classifier(logit).squeeze()
+        return self.classifier(logit).squeeze().view(-1)

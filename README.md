@@ -158,8 +158,8 @@ conda env create -f environment.yml
 Use `pip` may cause some problems when installing `torch_sparse` and `torch_scatter`.
 
 ```shell
-python -m venv GraphOutlierSynthesis
-source GraphOutlierSynthesis/bin/activate
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 pip install torch_geometric==2.5.0
 pip install torch_sparse==0.6.18

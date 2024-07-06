@@ -6,6 +6,7 @@ import torch_geometric.transforms as T
 from torch_geometric.data import Data
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB, GitHub
 from torch_geometric.utils import stochastic_blockmodel_graph
+from ogb.nodeproppred import NodePropPredDataset
 
 from src.common.parse import Arguments
 from src.model.data_utils import rand_splits
@@ -27,6 +28,10 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
     # multi-graph datasets, use one as ind, the other as ood
     if args.dataset == 'twitch':
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_twitch_dataset(args.data_dir)
+
+    # single graph, use partial nodes as ind, others as ood according to domain info
+    elif args.dataset == 'arxiv':
+        dataset_ind, dataset_ood_tr, dataset_ood_te = load_arxiv_dataset(args.data_dir)
 
     # single graph, use original as ind, modified graphs as ood
     elif args.dataset in [
@@ -81,24 +86,73 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 
 
-def load_twitch_dataset(data_dir):
+def load_twitch_dataset(data_dir) -> Tuple[Data, Data, Data]:
     transform = T.NormalizeFeatures()
     subgraph_names = ['DE', 'EN', 'ES', 'FR', 'RU']
-    train_idx, valid_idx = 0, 1
-    dataset_ood_te = []
-    for i in range(len(subgraph_names)):
-        torch_dataset = Twitch(root=f'{data_dir}/Twitch',
-                               name=subgraph_names[i], transform=transform)
-        dataset = torch_dataset[0]
-        dataset.node_idx = torch.arange(dataset.num_nodes)
-        if i == train_idx:
-            dataset_ind = dataset
-        elif i == valid_idx:
-            dataset_ood_tr = dataset
-        else:
-            dataset_ood_te.append(dataset)
+    train_idx, valid_idx, test_idx = 0, 1, 2
+
+    torch_dataset = Twitch(root=f'{data_dir}/Twitch', name=subgraph_names[train_idx], transform=transform)
+    dataset_ind = add_mask_property(torch_dataset[0])
+
+    torch_dataset = Twitch(root=f'{data_dir}/Twitch', name=subgraph_names[valid_idx], transform=transform)
+    dataset_ood_tr = add_mask_property(torch_dataset[0])
+
+    torch_dataset = Twitch(root=f'{data_dir}/Twitch', name=subgraph_names[test_idx], transform=transform)
+    dataset_ood_te = add_mask_property(torch_dataset[0])
 
     return dataset_ind, dataset_ood_tr, dataset_ood_te
+
+
+def load_arxiv_dataset(data_dir) -> Tuple[Data, Data, Data]:
+    """
+    This dataset contains Arxiv from 2013 to 2020.
+    We use the data before 2015 as in-distribution data, the data from 2016 to 2017 as OOD training data, and the data from 2018 to 2020 as OOD testing data.
+    :param data_dir:
+    :return:
+    """
+    ogb_dataset = NodePropPredDataset(root=f'{data_dir}/ogb', name='ogbn-arxiv')
+    edge_index = torch.as_tensor(ogb_dataset.graph['edge_index'])
+    node_feat = torch.as_tensor(ogb_dataset.graph['node_feat'])
+    label = torch.as_tensor(ogb_dataset.labels).reshape(-1, 1)
+    year = ogb_dataset.graph['node_year']
+
+    center_node_mask = (year <= 2015).squeeze(1)
+    dataset_ind = Data(x=node_feat, edge_index=edge_index, y=label)
+    idx = torch.arange(label.size(0))
+    dataset_ind.node_idx = idx[center_node_mask]
+    dataset_ind = add_mask_property(dataset_ind)
+
+    center_node_mask = (year > 2015).squeeze(1) * (year <= 2017).squeeze(1)
+    dataset_ood_tr = Data(x=node_feat, edge_index=edge_index, y=label)
+    idx = torch.arange(label.size(0))
+    dataset_ood_tr.node_idx = idx[center_node_mask]
+    dataset_ood_tr = add_mask_property(dataset_ood_tr)
+
+    center_node_mask = (year > 2017).squeeze(1) * (year <= 2020).squeeze(1)
+    dataset_ood_te = Data(x=node_feat, edge_index=edge_index, y=label)
+    idx = torch.arange(label.size(0))
+    dataset_ood_te.node_idx = idx[center_node_mask]
+    dataset_ood_te = add_mask_property(dataset_ood_te)
+
+    return dataset_ind, dataset_ood_tr, dataset_ood_te
+
+
+def add_mask_property(dataset: Data) -> Data:
+    if hasattr(dataset, "node_idx"):
+        print("Use the node_idx provided with the dataset")
+    else:
+        print("The node_idx is not provided for the dataset. Use dataset.num_nodes.")
+        dataset.node_idx = torch.arange(dataset.num_nodes)
+
+    if hasattr(dataset, "train_mask") and hasattr(dataset, "val_mask") and hasattr(dataset, "test_mask"):
+        print("Use the train_mask provided with the dataset")
+    else:
+        print("The train_mask is not provided for the dataset. Use random splits.")
+        train_mask, val_mask, test_mask = rand_splits(dataset.num_nodes)
+        dataset.train_mask = train_mask
+        dataset.val_mask = val_mask
+        dataset.test_mask = test_mask
+    return dataset
 
 
 def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Data]:
@@ -135,15 +189,7 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
         raise NotImplementedError
 
     dataset = torch_dataset[0]
-    dataset.node_idx = torch.arange(dataset.num_nodes)
-    if hasattr(dataset, "train_mask") and hasattr(dataset, "val_mask") and hasattr(dataset, "test_mask"):
-        print("Use the train_mask provided with the dataset")
-    else:
-        print("The train_mask is not provided for the dataset. Use random splits.")
-        train_mask, val_mask, test_mask = rand_splits(dataset.num_nodes)
-        dataset.train_mask = train_mask
-        dataset.val_mask = val_mask
-        dataset.test_mask = test_mask
+    dataset = add_mask_property(dataset)
 
     if ood_type == 'structure':
         dataset_ood_tr = create_structure_manipulation_dataset(dataset)
@@ -156,9 +202,6 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
     else:
         raise NotImplementedError
 
-    # print(id(dataset))
-    # print(id(dataset_ood_tr))
-    # print(id(dataset_ood_te))
     return dataset, dataset_ood_tr, dataset_ood_te
 
 

@@ -157,7 +157,10 @@ def search_max_distance(
 
     """
     # 找出每个元素最近的k个元素，返回距离列表和索引列表
-    distance, output_index = index.search(target.cpu().numpy(), k)
+    target = target.cpu().numpy()
+    if not target.flags.c_contiguous:
+        target = target.copy(order='C')
+    distance, output_index = index.search(target, k)
     # 取每个元素最后（最远）的一个元素
     k_th_distance = torch.tensor(distance[:, -1])
     # ic(k_th_distance)

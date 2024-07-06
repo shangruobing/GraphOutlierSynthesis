@@ -147,8 +147,8 @@ def filter_by_energy(
 
     Returns:
     """
-    filtered_classifier_ood_index = torch.nonzero(energy_ood > ood_threshold).squeeze()
-    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze()
+    filtered_classifier_ood_index = torch.nonzero(energy_ood > ood_threshold).squeeze().view(-1)
+    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze().view(-1)
 
     debug = False
     if debug:

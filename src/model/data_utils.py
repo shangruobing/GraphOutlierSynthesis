@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from torch import BoolTensor
+from torch import Tensor
 import torch.nn.functional as F
 from torch_sparse import SparseTensor
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
@@ -10,9 +10,13 @@ from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_sco
 from src.model.baselines import ODIN, Mahalanobis
 
 
-def rand_splits(num_nodes, train_ratio=0.5, test_ratio=0.25) -> Tuple[BoolTensor, BoolTensor, BoolTensor]:
+def rand_splits(num_nodes, train_ratio=0.5, test_ratio=0.25) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Randomly split the nodes into train, val, and test sets
+    such as:
+    tensor([   0,    2,    8,  ..., 9162, 9164, 9165])
+    tensor([ 9166,  9168,  9169,  ..., 13745, 13747, 13748])
+    tensor([13749, 13750, 13751,  ..., 18327, 18329, 18331])
     Args:
         num_nodes:
         train_ratio:
@@ -25,24 +29,9 @@ def rand_splits(num_nodes, train_ratio=0.5, test_ratio=0.25) -> Tuple[BoolTensor
     train_size = int(train_ratio * num_nodes)
     test_size = int(test_ratio * num_nodes)
 
-    # 创建索引
-    indices = torch.arange(num_nodes)
-
-    # 随机打乱索引
-    indices = indices[torch.randperm(num_nodes)]
-
-    # 划分数据集
-    train_indices = indices[:train_size]
-    test_indices = indices[train_size:train_size + test_size]
-    val_indices = indices[train_size + test_size:]
-
-    # 创建布尔索引
-    train_mask = torch.zeros(num_nodes, dtype=torch.bool)
-    test_mask = torch.zeros(num_nodes, dtype=torch.bool)
-    val_mask = torch.zeros(num_nodes, dtype=torch.bool)
-    train_mask[train_indices] = True
-    test_mask[test_indices] = True
-    val_mask[val_indices] = True
+    train_mask = torch.arange(train_size)
+    val_mask = torch.arange(train_size, train_size + test_size)
+    test_mask = torch.arange(train_size + test_size, num_nodes)
 
     return train_mask, val_mask, test_mask
 
