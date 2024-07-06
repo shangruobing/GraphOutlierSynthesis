@@ -36,32 +36,6 @@ def rand_splits(num_nodes, train_ratio=0.5, test_ratio=0.25) -> Tuple[Tensor, Te
     return train_mask, val_mask, test_mask
 
 
-def to_sparse_tensor(edge_index, edge_feat, num_nodes):
-    """
-    Convert the edge_index into SparseTensor
-    Args:
-        edge_index:
-        edge_feat:
-        num_nodes:
-
-    Returns:
-    """
-    num_edges = edge_index.size(1)
-
-    (row, col), N, E = edge_index, num_nodes, num_edges
-    perm = (col * N + row).argsort()
-    row, col = row[perm], col[perm]
-
-    value = edge_feat[perm]
-    adj_t = SparseTensor(row=col, col=row, value=value,
-                         sparse_sizes=(N, N), is_sorted=True)
-
-    adj_t.storage.rowptr()
-    adj_t.storage.csr2csc()
-
-    return adj_t
-
-
 def stable_cumsum(arr, rtol=1e-05, atol=1e-08):
     """
     Use high precision for cumsum and check that final value matches sum
@@ -246,8 +220,7 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
     model.eval()
 
     if isinstance(model, Mahalanobis):
-        test_ind_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ind, dataset_ind.test_mask,
-                                      device, args)
+        test_ind_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ind, dataset_ind.test_mask, device, args)
     elif isinstance(model, ODIN):
         test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
     else:
@@ -260,8 +233,7 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
             # print(test_ind_score[dataset_ind.train_mask][-10:])
 
     if isinstance(model, Mahalanobis):
-        test_ood_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ood, dataset_ood.node_idx,
-                                      device, args).cpu()
+        test_ood_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ood, dataset_ood.node_idx, device, args).cpu()
     elif isinstance(model, ODIN):
         test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
     else:

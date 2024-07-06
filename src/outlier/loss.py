@@ -115,6 +115,8 @@ def compute_loss(
 
             # 构造分类器输出和标签
             min_length = min(len(classifier_id), len(classifier_ood))
+            if min_length == 0:
+                raise ValueError("No data left after filtering by energy. Adjust the upper_bound_id or lower_bound_ood.")
             classifier_output = torch.cat([classifier_id[:min_length], classifier_ood[:min_length]])
             classifier_label = torch.cat([
                 torch.ones(min_length, device=device),

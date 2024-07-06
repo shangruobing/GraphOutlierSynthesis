@@ -50,7 +50,7 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
 
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"Unsupported dataset {args.dataset}")
 
     # visualize(torch.tensor(dataset_ind.x), color=torch.tensor(dataset_ind.y), epoch=1)
     # visualize(torch.tensor(dataset_ood_tr.x), color=torch.tensor(dataset_ood_tr.y), epoch=1)
@@ -84,6 +84,24 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
     #     , epoch=1)
 
     return dataset_ind, dataset_ood_tr, dataset_ood_te
+
+
+def add_mask_property(dataset: Data) -> Data:
+    if hasattr(dataset, "node_idx"):
+        print("Use the node_idx provided with the dataset")
+    else:
+        print("The node_idx is not provided for the dataset. Use dataset.num_nodes.")
+        dataset.node_idx = torch.arange(dataset.num_nodes)
+
+    if hasattr(dataset, "train_mask") and hasattr(dataset, "val_mask") and hasattr(dataset, "test_mask"):
+        print("Use the train_mask provided with the dataset")
+    else:
+        print("The train_mask is not provided for the dataset. Use random splits.")
+        train_mask, val_mask, test_mask = rand_splits(dataset.num_nodes)
+        dataset.train_mask = train_mask
+        dataset.val_mask = val_mask
+        dataset.test_mask = test_mask
+    return dataset
 
 
 def load_twitch_dataset(data_dir) -> Tuple[Data, Data, Data]:
@@ -135,24 +153,6 @@ def load_arxiv_dataset(data_dir) -> Tuple[Data, Data, Data]:
     dataset_ood_te = add_mask_property(dataset_ood_te)
 
     return dataset_ind, dataset_ood_tr, dataset_ood_te
-
-
-def add_mask_property(dataset: Data) -> Data:
-    if hasattr(dataset, "node_idx"):
-        print("Use the node_idx provided with the dataset")
-    else:
-        print("The node_idx is not provided for the dataset. Use dataset.num_nodes.")
-        dataset.node_idx = torch.arange(dataset.num_nodes)
-
-    if hasattr(dataset, "train_mask") and hasattr(dataset, "val_mask") and hasattr(dataset, "test_mask"):
-        print("Use the train_mask provided with the dataset")
-    else:
-        print("The train_mask is not provided for the dataset. Use random splits.")
-        train_mask, val_mask, test_mask = rand_splits(dataset.num_nodes)
-        dataset.train_mask = train_mask
-        dataset.val_mask = val_mask
-        dataset.test_mask = test_mask
-    return dataset
 
 
 def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Data]:
@@ -272,12 +272,13 @@ def create_label_leave_out_dataset(dataset) -> Data:
     return dataset, dataset_ood_tr, dataset_ood_te
 
 
-def create_knn_dataset(data) -> Data:
+def create_knn_dataset(data: Data, device=torch.device("cpu")) -> Data:
     sample_point, sample_edge, sample_label = generate_outliers(
         data.x,
         num_nodes=data.num_nodes,
         num_features=data.num_features,
         num_edges=data.num_edges,
+        device=device
     )
     dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)
     dataset.node_idx = torch.arange(len(sample_point))

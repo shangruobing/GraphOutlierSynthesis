@@ -1,3 +1,4 @@
+import time
 from typing import Tuple
 
 import numpy as np
@@ -45,7 +46,8 @@ def generate_outliers(
     Returns:
         the generated outliers, the edges of the generated outliers, the labels of the generated outliers
     """
-    dataset = dataset.clone().to(torch.device("cpu"))
+    begin_time = time.time()
+    dataset = dataset.clone().to(device)
 
     # How many ID samples to pick to define as points near the boundary of the sample space
     top = num_nodes // 10
@@ -129,6 +131,7 @@ def generate_outliers(
     # 由于不将其带入监督训练过程，假设Label全为0，生成的都是0的label
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
+    print(f"The generate outliers time is {round(time.time() - begin_time, 2)} s")
     if debug:
         return sample_points, sample_edges, sample_labels, all_max_distance_index, max_distance_index, f"top:{top} k:{k} pic_nums:{pic_nums} dataset:{dataset.size()} sample_points:{sample_points.size()}"
     else:
