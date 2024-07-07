@@ -79,12 +79,12 @@ def compute_loss(
         energy_id, energy_ood = trim_to_same_length(energy_id, energy_ood)
 
         # 计算能量的正则化损失
-        # energy_regularization_loss = torch.mean(
-        #     F.relu(energy_id - args.upper_bound_id) ** 2
-        #     +
-        #     F.relu(args.lower_bound_ood - energy_ood) ** 2
-        # )
-        # loss += args.lamda * energy_regularization_loss
+        energy_regularization_loss = torch.mean(
+            F.relu(energy_id - args.upper_bound_id) ** 2
+            +
+            F.relu(args.lower_bound_ood - energy_ood) ** 2
+        )
+        loss += args.lamda * energy_regularization_loss
 
         if args.use_classifier:
             # 将ID数据输入分类器
@@ -110,8 +110,8 @@ def compute_loss(
                     classifier_ood=classifier_ood,
                     energy_id=energy_id,
                     energy_ood=energy_ood,
-                    id_threshold=args.upper_bound_id,
-                    ood_threshold=args.lower_bound_ood
+                    upper_bound_id=args.upper_bound_id,
+                    lower_bound_ood=args.lower_bound_ood
                 )
 
             # 构造分类器输出和标签
@@ -135,8 +135,8 @@ def filter_by_energy(
         classifier_ood: torch.Tensor,
         energy_id: torch.Tensor,
         energy_ood: torch.Tensor,
-        id_threshold=-5,
-        ood_threshold=-5
+        upper_bound_id=-5,
+        lower_bound_ood=-1
 ):
     """
     Filter the classifier output by energy scores.
@@ -145,13 +145,13 @@ def filter_by_energy(
         classifier_ood:
         energy_id:
         energy_ood:
-        id_threshold:
-        ood_threshold:
+        upper_bound_id:
+        lower_bound_ood:
 
     Returns:
     """
-    filtered_classifier_ood_index = torch.nonzero(energy_ood > ood_threshold).squeeze().view(-1)
-    filtered_classifier_id_index = torch.nonzero(energy_id < id_threshold).squeeze().view(-1)
+    filtered_classifier_ood_index = torch.nonzero(energy_ood > lower_bound_ood).squeeze().view(-1)
+    filtered_classifier_id_index = torch.nonzero(energy_id < upper_bound_id).squeeze().view(-1)
 
     debug = False
     if debug:

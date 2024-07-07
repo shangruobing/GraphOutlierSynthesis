@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch_geometric.data import Data
 
 BASE_DIR = dirname(dirname(abspath(__file__)))
+print(f"BASE_DIR:{BASE_DIR}")
 sys.path.append(BASE_DIR)
 
 from model.baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
@@ -26,13 +27,6 @@ fix_seed(args.seed)
 device = get_device(device=args.device, cpu=args.cpu)
 
 dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
-
-if len(dataset_ind.y.shape) == 1:
-    dataset_ind.y = dataset_ind.y.unsqueeze(1)
-if len(dataset_ood_tr.y.shape) == 1:
-    dataset_ood_tr.y = dataset_ood_tr.y.unsqueeze(1)
-if len(dataset_ood_te.y.shape) == 1:
-    dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
 
 num_classes = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
 num_features = dataset_ind.num_features
@@ -98,7 +92,6 @@ for epoch in range(args.epochs):
     loss = model.loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, criterion, device, args)
     loss.backward()
     optimizer.step()
-
     result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
     logger.add_result(result)
     info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Accuracy: {100 * result[3]:.2f}%, Test Score: {100 * result[4]:.2f}%'

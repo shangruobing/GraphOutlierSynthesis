@@ -114,13 +114,10 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 | name         | num_nodes | num_features | num_classes | num_edges |
 |--------------|-----------|--------------|-------------|-----------|
 | Cora         | 1433      | 2708         | 7           | 10556     |
-| Amazon-Photo | 7650      | 745          | 8           | 238162    |
-| Actor        | 7600      | 932          | 5           | 30019     |
-| GitHub       | 37000     | 128          | 2           | 578006    |      
-| Wiki-CS      | 11701     | 300          | 10          | 431726    |   
 | Coauthor-CS  | 18333     | 6805         | 15          | 163788    |
-
-> The mask of `Wiki-CS` and `Actor` are not correct.
+| Amazon-Photo | 7650      | 745          | 8           | 238162    |
+| Arxiv        | 169343    | 128          | 40          | 1166243   |
+| Twitch       | 9498      | 128          | 2           | 315774    |      
 
 # Environment
 

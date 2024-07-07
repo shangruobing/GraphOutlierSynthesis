@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch_geometric.transforms as T
 from torch_geometric.data import Data
-from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch, WikiCS, Actor, WebKB, GitHub
+from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch
 from torch_geometric.utils import stochastic_blockmodel_graph
 from ogb.nodeproppred import NodePropPredDataset
 
@@ -36,21 +36,20 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
     # single graph, use original as ind, modified graphs as ood
     elif args.dataset in [
         'cora',
-        'citeseer',
-        'pubmed',
         'amazon-photo',
-        'amazon-computer',
         'coauthor-cs',
-        'coauthor-physics',
-        "wiki-cs",
-        "actor",
-        "webkb",
-        "github"
     ]:
         dataset_ind, dataset_ood_tr, dataset_ood_te = load_graph_dataset(args.data_dir, args.dataset, args.ood_type)
 
     else:
         raise NotImplementedError(f"Unsupported dataset {args.dataset}")
+
+    if len(dataset_ind.y.shape) == 1:
+        dataset_ind.y = dataset_ind.y.unsqueeze(1)
+    if len(dataset_ood_tr.y.shape) == 1:
+        dataset_ood_tr.y = dataset_ood_tr.y.unsqueeze(1)
+    if len(dataset_ood_te.y.shape) == 1:
+        dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
 
     # visualize(torch.tensor(dataset_ind.x), color=torch.tensor(dataset_ind.y), epoch=1)
     # visualize(torch.tensor(dataset_ood_tr.x), color=torch.tensor(dataset_ood_tr.y), epoch=1)
@@ -87,14 +86,26 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
 
 
 def add_mask_property(dataset: Data) -> Data:
+    """
+    For each dataset, we add the following properties:
+        node_idx: The index of nodes in the dataset
+        train_mask: The mask for training nodes
+        val_mask: The mask for validation nodes
+        test_mask: The mask for testing nodes
+    Args:
+        dataset:
+
+    Returns:
+
+    """
     if hasattr(dataset, "node_idx"):
-        print("Use the node_idx provided with the dataset")
+        print("Use the node_idx provided with the dataset.")
     else:
         print("The node_idx is not provided for the dataset. Use dataset.num_nodes.")
         dataset.node_idx = torch.arange(dataset.num_nodes)
 
     if hasattr(dataset, "train_mask") and hasattr(dataset, "val_mask") and hasattr(dataset, "test_mask"):
-        print("Use the train_mask provided with the dataset")
+        print("Use the train_mask, val_mask and test_mask provided with the dataset.")
     else:
         print("The train_mask is not provided for the dataset. Use random splits.")
         train_mask, val_mask, test_mask = rand_splits(dataset.num_nodes)
@@ -167,24 +178,12 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
 
     """
     transform = T.NormalizeFeatures()
-    if dataset_name in ['cora', 'citeseer', 'pubmed']:
+    if dataset_name == 'cora':
         torch_dataset = Planetoid(root=f'{data_dir}/Planetoid', split='public', name=dataset_name, transform=transform)
     elif dataset_name == 'amazon-photo':
         torch_dataset = Amazon(root=f'{data_dir}/Amazon', name='Photo', transform=transform)
-    elif dataset_name == 'amazon-computer':
-        torch_dataset = Amazon(root=f'{data_dir}/Amazon', name='Computers', transform=transform)
     elif dataset_name == 'coauthor-cs':
         torch_dataset = Coauthor(root=f'{data_dir}/Coauthor', name='CS', transform=transform)
-    elif dataset_name == 'coauthor-physics':
-        torch_dataset = Coauthor(root=f'{data_dir}/Coauthor', name='Physics', transform=transform)
-    elif dataset_name == 'wiki-cs':
-        torch_dataset = WikiCS(root=f'{data_dir}/WikiCS', transform=transform, is_undirected=False)
-    elif dataset_name == 'actor':
-        torch_dataset = Actor(root=f'{data_dir}/Actor', transform=transform)
-    elif dataset_name == 'webkb':
-        torch_dataset = WebKB(name="Cornell", root=f'{data_dir}/WebKB', transform=transform)
-    elif dataset_name == 'github':
-        torch_dataset = GitHub(root=f'{data_dir}/GitHub', transform=transform)
     else:
         raise NotImplementedError
 
@@ -282,4 +281,5 @@ def create_knn_dataset(data: Data, device=torch.device("cpu")) -> Data:
     )
     dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)
     dataset.node_idx = torch.arange(len(sample_point))
+    dataset = add_mask_property(dataset)
     return dataset
