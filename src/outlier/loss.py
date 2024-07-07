@@ -47,19 +47,20 @@ def compute_loss(
     supervised_learning_loss = criterion(predict_id, dataset_id.y[train_idx].squeeze(1))
     loss += supervised_learning_loss
 
-    # 获取GNN对OOD数据的输出
-    logits_ood, penultimate_ood = encoder(dataset_ood.x, dataset_ood.edge_index)
-    logits_ood, penultimate_ood = logits_ood[train_ood_idx], penultimate_ood[train_ood_idx]
-
-    if args.synthesis_ood:
-        train_idx = synthesis_ood_dataset.node_idx
-        # 获取GNN对合成的OOD数据的输出
-        logits_knn_ood, penultimate_knn_ood = encoder(synthesis_ood_dataset.x, synthesis_ood_dataset.edge_index)
-        logits_knn_ood, penultimate_knn_ood = logits_knn_ood[train_idx], penultimate_knn_ood[train_idx]
-        logits_ood = torch.cat([logits_ood, logits_knn_ood])
-        penultimate_ood = torch.cat([penultimate_ood, penultimate_knn_ood])
-
+    # 代表是否使用ood学习
     if args.use_energy:
+        # 获取GNN对OOD数据的输出
+        logits_ood, penultimate_ood = encoder(dataset_ood.x, dataset_ood.edge_index)
+        logits_ood, penultimate_ood = logits_ood[train_ood_idx], penultimate_ood[train_ood_idx]
+
+        if args.synthesis_ood:
+            train_idx = synthesis_ood_dataset.node_idx
+            # 获取GNN对合成的OOD数据的输出
+            logits_knn_ood, penultimate_knn_ood = encoder(synthesis_ood_dataset.x, synthesis_ood_dataset.edge_index)
+            logits_knn_ood, penultimate_knn_ood = logits_knn_ood[train_idx], penultimate_knn_ood[train_idx]
+            logits_ood = torch.cat([logits_ood, logits_knn_ood])
+            penultimate_ood = torch.cat([penultimate_ood, penultimate_knn_ood])
+
         # 计算GNN输出的ID和OOD的能量分数
         # parser.add_argument('--T', type=float, default=1.0, help='temperature for Softmax')
         T = 1.0

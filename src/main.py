@@ -10,7 +10,7 @@ BASE_DIR = dirname(dirname(abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 from model.baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
-from model.data_utils import evaluate_detect, eval_acc, rand_splits
+from model.data_utils import evaluate_detect, eval_acc
 from model.dataset import load_dataset, create_knn_dataset
 
 from common.logger import DetectLogger

@@ -36,7 +36,6 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
     # single graph, use original as ind, modified graphs as ood
     elif args.dataset in [
         'cora',
-        "actor",
         'citeseer',
         'pubmed',
         'amazon-photo',
@@ -44,6 +43,7 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
         'coauthor-cs',
         'coauthor-physics',
         "wiki-cs",
+        "actor",
         "webkb",
         "github"
     ]:
@@ -167,7 +167,7 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
 
     """
     transform = T.NormalizeFeatures()
-    if dataset_name in ('cora', 'citeseer', 'pubmed'):
+    if dataset_name in ['cora', 'citeseer', 'pubmed']:
         torch_dataset = Planetoid(root=f'{data_dir}/Planetoid', split='public', name=dataset_name, transform=transform)
     elif dataset_name == 'amazon-photo':
         torch_dataset = Amazon(root=f'{data_dir}/Amazon', name='Photo', transform=transform)
