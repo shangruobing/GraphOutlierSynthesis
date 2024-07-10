@@ -5,7 +5,7 @@ from src.common.config import DATASET_PATH
 
 def parser_add_main_args(parser):
     # setup and protocol
-    parser.add_argument('--dataset', type=str, default='cora')
+    parser.add_argument('--dataset', type=str, default='cora', choices=['twitch', 'arxiv', 'cora', 'amazon-photo', 'coauthor-cs'])
     parser.add_argument('--ood_type', type=str, default='structure', choices=['structure', 'feature', 'label'])
     parser.add_argument('--data_dir', type=str, default=str(DATASET_PATH))
     parser.add_argument('--device', type=int, default=0, help='which gpu to use if any (default: 0)')
@@ -33,7 +33,7 @@ def parser_add_main_args(parser):
 
     # hyper parameter
     parser.add_argument('--upper_bound_id', type=float, default=-5, help='upper bound for in-distribution energy')
-    parser.add_argument('--lower_bound_ood', type=float, default=-1, help='lower bound for out-of-distribution energy')
+    parser.add_argument('--lower_bound_id', type=float, default=-1, help='lower bound for in-distribution energy')
     parser.add_argument('--lamda', type=float, default=1.0, help='weight for regularization')
     parser.add_argument('--delta', type=float, default=1.0, help='weight for classifier loss')
 
@@ -60,7 +60,7 @@ class Arguments:
     use_classifier: bool
     use_energy_filter: bool
     upper_bound_id: float
-    lower_bound_ood: float
+    lower_bound_id: float
     lamda: float
     delta: float
     synthesis_ood: bool
@@ -89,7 +89,7 @@ def parser_parse_args(parser) -> Arguments:
         use_classifier=args.use_classifier,
         use_energy_filter=args.use_energy_filter,
         upper_bound_id=args.upper_bound_id,
-        lower_bound_ood=args.lower_bound_ood,
+        lower_bound_id=args.lower_bound_id,
         lamda=args.lamda,
         delta=args.delta,
         synthesis_ood=args.synthesis_ood,

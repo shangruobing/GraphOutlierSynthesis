@@ -80,9 +80,9 @@ def compute_loss(
 
         # 计算能量的正则化损失
         energy_regularization_loss = torch.mean(
-            F.relu(energy_id - args.upper_bound_id) ** 2
+            torch.pow(F.relu(energy_id - args.lower_bound_id), 2)
             +
-            F.relu(args.lower_bound_ood - energy_ood) ** 2
+            torch.pow(F.relu(args.upper_bound_id - energy_ood), 2)
         )
         loss += args.lamda * energy_regularization_loss
 
@@ -111,7 +111,7 @@ def compute_loss(
                     energy_id=energy_id,
                     energy_ood=energy_ood,
                     upper_bound_id=args.upper_bound_id,
-                    lower_bound_ood=args.lower_bound_ood
+                    lower_bound_id=args.lower_bound_id
                 )
 
             # 构造分类器输出和标签
@@ -136,7 +136,7 @@ def filter_by_energy(
         energy_id: torch.Tensor,
         energy_ood: torch.Tensor,
         upper_bound_id=-5,
-        lower_bound_ood=-1
+        lower_bound_id=-1
 ):
     """
     Filter the classifier output by energy scores.
@@ -146,14 +146,14 @@ def filter_by_energy(
         energy_id:
         energy_ood:
         upper_bound_id:
-        lower_bound_ood:
+        lower_bound_id:
 
     Returns:
     """
-    filtered_classifier_ood_index = torch.nonzero(energy_ood > lower_bound_ood).squeeze().view(-1)
-    filtered_classifier_id_index = torch.nonzero(energy_id < upper_bound_id).squeeze().view(-1)
+    filtered_classifier_ood_index = torch.nonzero(energy_ood > upper_bound_id).squeeze().view(-1)
+    filtered_classifier_id_index = torch.nonzero(energy_id > lower_bound_id).squeeze().view(-1)
 
-    debug = False
+    debug = True
     if debug:
         ic(energy_id.mean())
         ic(energy_ood.mean())
