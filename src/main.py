@@ -17,7 +17,7 @@ from model.dataset import load_dataset, create_knn_dataset
 from common.logger import DetectLogger
 from common.parse import init_parser_args
 from common.utils import get_device, fix_seed
-from common.recorder import insert_row
+from common.recorder import Recorder
 
 args = init_parser_args()
 
@@ -107,7 +107,7 @@ for epoch in range(args.epochs):
     print(info)
 
 metrics = logger.get_statistics()
-insert_row(
+Recorder.insert_row(
     args=args,
     model=str(model),
     epoch_info=epoch_info,
