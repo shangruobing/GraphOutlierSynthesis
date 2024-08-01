@@ -14,9 +14,11 @@ def generate_outliers(
         num_nodes: int,
         num_features: int,
         num_edges: int,
-        # num_classes: int = 2,
         cov_mat=0.1,
         sampling_ratio=1.0,
+        boundary_ratio=0.1,
+        boundary_sampling_ratio=0.5,
+        k=100,
         device=torch.device("cpu"),
         debug=False
 ) -> Tuple[Tensor, Tensor, Tensor]:
@@ -31,16 +33,15 @@ def generate_outliers(
     我们将利用这个采样点集合与原始数据集中边数目与节点数目的比例生成采样边。
     这个步骤生成的OOD数据集将被输入encoder，从而得到当前模型对于OOD数据预测的loss。
     Args:
-        # num_classes:
         dataset: the input dataset
         num_nodes: the number of nodes
         num_features: the number of features
         num_edges: the number of edges
-        # k: The number of nearest neighbors to return
-        # top: How many ID samples to pick to define as points near the boundary of the sample space
         cov_mat: The weight before the covariance matrix to determine the sampling range
-        sampling_ratio: Sampling ratio
-        # pic_nums: Number of ID samples used to generate outliers
+        sampling_ratio: How many OOD samples to generate
+        boundary_ratio: How many ID samples are defined as points near the boundary
+        boundary_sampling_ratio: How many boundary used to generate outliers
+        k: The number of nearest neighbors to return
         device: torch device
         debug:
     Returns:
@@ -49,15 +50,24 @@ def generate_outliers(
     begin_time = time.time()
     dataset = dataset.clone().to(device)
 
-    # How many ID samples to pick to define as points near the boundary of the sample space
-    top = num_nodes // 10
-    # The number of nearest neighbors to return
-    k = min(len(dataset), 100)
-
-    # Number of ID samples used to generate outliers
-    pic_nums = num_nodes // 20
-
+    # How many OOD samples to generate
     num_sample_points = int(num_nodes * sampling_ratio)
+
+    # How many ID samples are defined as points near the boundary
+    num_boundary = int(num_nodes * boundary_ratio)
+
+    # How many boundary used to generate outliers
+    num_pick = int(num_boundary * boundary_sampling_ratio)
+
+    # The number of nearest neighbors to return
+    k = min(len(dataset), k)
+
+    print("==================== Begin Generate Outliers ====================")
+    print(f"How many OOD samples to generate: {num_sample_points}")
+    print(f"How many ID samples are defined as points near the boundary: {num_boundary}")
+    print(f"How many boundary used to generate outliers: {num_pick}")
+    print(f"The number of nearest neighbors to return: {k}")
+    print(f"The generate outliers device is: {device.type}")
 
     # 将输入的数据集归一化，根据采样率选择数据集范围，然后存入向量库
     faiss_index = faiss.IndexFlatL2(num_features)
@@ -74,17 +84,17 @@ def generate_outliers(
         target=dataset,
         index=faiss_index,
         k=k,
-        top=top
+        top=num_boundary
     )
 
     all_max_distance_index = max_distance_index
 
     # 到此找到了最远的数据点，从最远的集合中随机选择
-    max_distance_index = max_distance_index[np.random.choice(top, pic_nums, replace=False)]
+    max_distance_index = max_distance_index[np.random.choice(num_boundary, num_pick, replace=False)]
 
-    # 重复10次，每一次都补足为采样的length，把这10次结果拼起来，每个采样点贡献10个特征
+    # 重复n次，每一次都补足为采样的length，把这n次结果拼起来，每个采样点贡献n个特征
     sampling_dataset = torch.cat([
-        dataset[index].repeat(num_nodes // pic_nums, 1) for index in max_distance_index
+        dataset[index].repeat(num_nodes // num_pick, 1) for index in max_distance_index
     ])
 
     # 生成一个多元高斯分布，均值为0，协方差矩阵为单位矩阵
@@ -104,7 +114,7 @@ def generate_outliers(
         target=sampling_dataset,
         index=faiss_index,
         k=k,
-        num_points=pic_nums,
+        num_points=num_pick,
         num_negative_samples=num_sample_points
     )
 
@@ -131,9 +141,10 @@ def generate_outliers(
     # 由于不将其带入监督训练过程，假设Label全为0，生成的都是0的label
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
-    print(f"The generate outliers time is {round(time.time() - begin_time, 2)} s")
+    print(f"The generate outliers time is {round(time.time() - begin_time, 2)}s")
+    print("==================== End Generate Outliers ====================")
     if debug:
-        return sample_points, sample_edges, sample_labels, all_max_distance_index, max_distance_index, f"top:{top} k:{k} pic_nums:{pic_nums} dataset:{dataset.size()} sample_points:{sample_points.size()}"
+        return sample_points, sample_edges, sample_labels, all_max_distance_index, max_distance_index, f"num_boundary:{num_boundary} k:{k} num_pick:{num_pick} dataset:{dataset.size()} sample_points:{sample_points.size()}"
     else:
         return sample_points, sample_edges, sample_labels
 
@@ -214,14 +225,6 @@ def generate_negative_samples(
     shuffled_tensor = flattened_tensor[shuffled_indices]
     nosies = shuffled_tensor.view(shape)[:shape[0] // 2, :]
     return outliers + nosies
-
-
-# def normalize(dataset: Tensor) -> Tensor:
-#     min_value = dataset.min(dim=0)[0]
-#     max_value = dataset.max(dim=0)[0]
-#     normalized_dataset = (dataset - min_value) / (max_value - min_value)
-#     normalized_dataset[torch.isnan(normalized_dataset)] = 0
-#     return normalized_dataset
 
 
 if __name__ == '__main__':

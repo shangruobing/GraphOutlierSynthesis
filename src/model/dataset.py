@@ -271,12 +271,39 @@ def create_label_leave_out_dataset(dataset) -> Data:
     return dataset, dataset_ood_tr, dataset_ood_te
 
 
-def create_knn_dataset(data: Data, device=torch.device("cpu")) -> Data:
+def create_knn_dataset(
+        data: Data,
+        cov_mat=0.1,
+        sampling_ratio=1.0,
+        boundary_ratio=0.1,
+        boundary_sampling_ratio=0.5,
+        k=100,
+        device=torch.device("cpu")
+) -> Data:
+    """
+
+    Args:
+        data: dataset
+        cov_mat: The weight before the covariance matrix to determine the sampling range
+        sampling_ratio: How many OOD samples to generate
+        boundary_ratio: How many ID samples are defined as points near the boundary
+        boundary_sampling_ratio: How many boundary used to generate outliers
+        k: The number of nearest neighbors to return
+        device: torch device
+
+    Returns:
+
+    """
     sample_point, sample_edge, sample_label = generate_outliers(
         data.x,
         num_nodes=data.num_nodes,
         num_features=data.num_features,
         num_edges=data.num_edges,
+        cov_mat=cov_mat,
+        sampling_ratio=sampling_ratio,
+        boundary_ratio=boundary_ratio,
+        boundary_sampling_ratio=boundary_sampling_ratio,
+        k=k,
         device=device
     )
     dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)

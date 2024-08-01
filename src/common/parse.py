@@ -37,6 +37,13 @@ def parser_add_main_args(parser):
     parser.add_argument('--lamda', type=float, default=1.0, help='weight for regularization')
     parser.add_argument('--delta', type=float, default=1.0, help='weight for classifier loss')
 
+    # samping strategy
+    parser.add_argument('--cov_mat', type=float, default=0.1, help='The weight before the covariance matrix to determine the sampling range')
+    parser.add_argument('--sampling_ratio', type=float, default=1.0, help='How many OOD samples to generate')
+    parser.add_argument('--boundary_ratio', type=float, default=0.1, help='How many ID samples to pick to define as points near the boundary')
+    parser.add_argument('--boundary_sampling_ratio', type=float, default=0.5, help='How many boundary used to generate outliers')
+    parser.add_argument('--k', type=int, default=100, help='The number of nearest neighbors to return')
+
 
 @dataclass
 class Arguments:
@@ -64,6 +71,11 @@ class Arguments:
     lamda: float
     delta: float
     synthesis_ood: bool
+    cov_mat: float
+    sampling_ratio: float
+    boundary_ratio: float
+    boundary_sampling_ratio: float
+    k: int
 
 
 def parser_parse_args(parser) -> Arguments:
@@ -93,6 +105,11 @@ def parser_parse_args(parser) -> Arguments:
         lamda=args.lamda,
         delta=args.delta,
         synthesis_ood=args.synthesis_ood,
+        cov_mat=args.cov_mat,
+        sampling_ratio=args.sampling_ratio,
+        boundary_ratio=args.boundary_ratio,
+        boundary_sampling_ratio=args.boundary_sampling_ratio,
+        k=args.k
     )
 
 

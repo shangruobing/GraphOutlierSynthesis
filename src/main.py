@@ -32,7 +32,15 @@ num_classes = max(dataset_ind.y.max().item() + 1, dataset_ind.y.shape[1])
 num_features = dataset_ind.num_features
 
 if args.synthesis_ood:
-    synthesis_ood_dataset = create_knn_dataset(dataset_ind, device=device).to(device=device)
+    synthesis_ood_dataset = create_knn_dataset(
+        data=dataset_ind,
+        cov_mat=args.cov_mat,
+        sampling_ratio=args.sampling_ratio,
+        boundary_ratio=args.boundary_ratio,
+        boundary_sampling_ratio=args.boundary_sampling_ratio,
+        k=args.k,
+        device=device
+    ).to(device=device)
 else:
     synthesis_ood_dataset = Data()
     synthesis_ood_dataset.num_nodes = 0
