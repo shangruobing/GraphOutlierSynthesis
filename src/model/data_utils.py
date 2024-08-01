@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from torch import Tensor
 import torch.nn.functional as F
-from torch_sparse import SparseTensor
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
 
 from src.model.baselines import ODIN, Mahalanobis
@@ -129,26 +128,9 @@ def get_measures(_pos, _neg, recall_level=0.95):
     labels = np.zeros(len(examples), dtype=np.int32)
     labels[:len(pos)] = 1
     auroc = roc_auc_score(labels, examples)
-    # print("ID")
-    # print(labels[:40])
-    # print(examples[:40])
-    # print((examples >= 0.5).astype(int)[:40])
-    #
-    # print("OOD")
-    # print(labels[-40:])
-    # print(examples[-40:])
-    # print((examples >= 0.5).astype(int)[-40:])
-
-    # accuracy = accuracy_score(labels, examples)
     accuracy = accuracy_score(labels, (examples >= 0.5).astype(int))
-    # print(labels[:30])
-    # print(np.round(examples)[:30])
-    #
-    # print(labels[-30:])
-    # print(np.round(examples)[-30:])
-    # print(accuracy)
     aupr = average_precision_score(labels, examples)
-    fpr, threshould = fpr_and_fdr_at_recall(labels, examples, recall_level)
+    fpr, threshold = fpr_and_fdr_at_recall(labels, examples, recall_level)
     return auroc, aupr, fpr, accuracy
 
 
@@ -164,8 +146,6 @@ def eval_acc(y_true, y_pred):
     """
     y_true = y_true.detach().cpu().numpy().reshape(-1)
     y_pred = y_pred.argmax(dim=-1, keepdim=True).detach().cpu().numpy().reshape(-1)
-    # print("y_true", y_true[:100])
-    # print("y_pred", y_pred[:100])
     return accuracy_score(y_true=y_true, y_pred=y_pred)
 
 
@@ -225,12 +205,7 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
     else:
         with torch.no_grad():
-            # print("开始预测")
-            # print("ID")
             test_ind_score = model.detect(dataset_ind, dataset_ind.test_mask, device, args).cpu()
-            # print(test_ind_score.size())
-            # print(test_ind_score[:10])
-            # print(test_ind_score[dataset_ind.train_mask][-10:])
 
     if isinstance(model, Mahalanobis):
         test_ood_score = model.detect(dataset_ind, dataset_ind.train_mask, dataset_ood, dataset_ood.node_idx, device, args).cpu()
@@ -238,26 +213,15 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
     else:
         with torch.no_grad():
-            # print("OOD")
-            # test_ood_score = model.detect(sample_point, torch.arange(300), device, args).cpu()
-            # print(dataset_ood)
-            # print(dataset_ood.node_idx)
             test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
-            # print(test_ood_score.size())
-            # print(test_ood_score[:10])
-            # print(test_ood_score[-20:])
-
     min_length = min(len(test_ind_score), len(test_ood_score))
-
-    # test_ind_score = torch.argmax(test_ind_score, dim=1)
-    # test_ood_score = torch.argmax(test_ood_score, dim=1)
 
     test_ind_score = test_ind_score[:min_length]
     test_ood_score = test_ood_score[:min_length]
 
     auroc, aupr, fpr, accuracy = get_measures(test_ind_score, test_ood_score)
-
-    out = model(dataset_ind, device)
+    with torch.no_grad():
+        out = model(dataset_ind, device)
 
     test_idx = dataset_ind.test_mask
     test_score = eval_func(dataset_ind.y[test_idx], out[test_idx])
