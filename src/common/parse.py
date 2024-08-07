@@ -11,11 +11,13 @@ def parser_add_main_args(parser):
     parser.add_argument('--device', type=int, default=0, help='which gpu to use if any (default: 0)')
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--epochs', type=int, default=100)
 
     # model network
-    parser.add_argument('--method', type=str, default='msp')
-    parser.add_argument('--backbone', type=str, default='gcn')
+    parser.add_argument('--method', type=str, default='gnnsafe', choices=[
+        'msp', 'gnnsafe', 'OE', 'ODIN', 'Mahalanobis', 'MaxLogits', 'EnergyModel', 'EnergyProp'
+    ])
+    parser.add_argument('--backbone', type=str, default='gcn', choices=['gcn', 'mlp', 'gat', 'mixhop', 'gcnjk', 'gatjk', 'appnp', 'sgc'])
     parser.add_argument('--hidden_channels', type=int, default=128)
     parser.add_argument('--num_layers', type=int, default=2, help='number of layers for GNN classifiers')
 

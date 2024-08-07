@@ -566,34 +566,34 @@ class GNNSafe(nn.Module):
         return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
 
 
-# class GCNEncoder(nn.Module):
-#     """
-#     An encoder for feature extraction.
-#     """
-#
-#     def __init__(self, in_features, in_channels):
-#         """
-#         Initialize a. encoder for feature extraction.
-#         Args:
-#             in_features: number of input features
-#             in_channels: number of input channels
-#         """
-#         super().__init__()
-#         self.convs = nn.ModuleList([
-#             GCNConv(in_channels=in_channels, out_channels=in_channels // 2),
-#             GCNConv(in_channels=in_channels // 2, out_channels=in_channels // 4),
-#             GCNConv(in_channels=in_channels // 4, out_channels=in_features),
-#         ])
-#         self.relu = nn.ReLU(inplace=True)
-#         self.dropout = nn.Dropout(p=0.2)
-#         self.log_softmax = nn.LogSoftmax(dim=1)
-#
-#     def forward(self, x, edge_index):
-#         for conv in self.convs:
-#             x = conv(x, edge_index)
-#             x = self.relu(x)
-#             x = self.dropout(x)
-#         return self.log_softmax(x)
+class GCNEncoder(nn.Module):
+    """
+    An encoder for feature extraction.
+    """
+
+    def __init__(self, in_features, in_channels):
+        """
+        Initialize a. encoder for feature extraction.
+        Args:
+            in_features: number of input features
+            in_channels: number of input channels
+        """
+        super().__init__()
+        self.convs = nn.ModuleList([
+            GCNConv(in_channels=in_channels, out_channels=in_channels // 2),
+            GCNConv(in_channels=in_channels // 2, out_channels=in_channels // 4),
+            GCNConv(in_channels=in_channels // 4, out_channels=in_features),
+        ])
+        self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout(p=0.2)
+        self.log_softmax = nn.LogSoftmax(dim=1)
+
+    def forward(self, x, edge_index):
+        for conv in self.convs:
+            x = conv(x, edge_index)
+            x = self.relu(x)
+            x = self.dropout(x)
+        return self.log_softmax(x)
 
 
 class Classifier(nn.Module):

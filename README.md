@@ -2,7 +2,7 @@
 
 ***Out-of-Distribution Detection for Graph Neural Networks***
 
-# Methodology
+## Methodology
 
 **KNN is utilized to generate the OOD dataset, while GNN is used for embedding.
 The embedding results are filtered using an 'Energy' function, and finally classified by a classifier.**
@@ -16,14 +16,14 @@ The energy function can be employed to filter the synthetic data.
 The filtering criterion is based on the transformed energy function's value being above or below a certain threshold.
 Only data satisfying this condition are used for model training.
 
-## Steps
+### Steps
 
 - **Identify graph data samples near the boundary**
 - **Synthesize outliers based on boundary samples**
 - **Filter the outliers by energy function**
 - **Training Graph neural network with Synthesize outliers**
 
-# Experiment
+## Experiment
 
 ***loss = supervised_learning_loss + energy_regularization_loss + classifier_loss***
 
@@ -33,9 +33,7 @@ Only data satisfying this condition are used for model training.
 4. Compute the `energy regularization loss`.
 5. Train the classifier using both ID and OOD data, optionally filtering the synthesized data using energy, to obtain the `classifier loss`.
 
-# Math Details
-
-## Notations
+## Math Details
 
 - Input Space
 
@@ -109,7 +107,7 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 \end{equation}
 ```
 
-# Dataset
+## Dataset
 
 | name         | num_nodes | num_features | num_classes | num_edges |
 |--------------|-----------|--------------|-------------|-----------|
@@ -119,23 +117,14 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 | Arxiv        | 169343    | 128          | 40          | 1166243   |
 | Twitch       | 9498      | 128          | 2           | 315774    |      
 
-# Environment
-
-## Dev
-
-- Ubuntu 20.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
-- NVIDIA GeForce RTX 2060 6G
-- CUDA NVIDIA-SMI 525.116.03 Driver Version: 525.116.03 CUDA Version: 12.0
-- Python 3.10.9 (main, Mar 1 2023, 18:23:06) [GCC 11.2.0] on linux
-
-## Prod
+## Environment
 
 - CentOS Linux 7 (GNU/Linux 3.10.0-1160.el7.x86_64)
 - Tesla V100-SXM2-32GB
 - CUDA NVIDIA-SMI 460.106.00 Driver Version: 460.106.00 CUDA Version: 11.2
 - Python 3.9.2 (default, Mar 3 2021, 20:02:32) [GCC 7.3.0] :: Anaconda, Inc. on linux
 
-## Dependency
+### Dependency
 
 - torch==2.2.1
 - torch_geometric==2.5.0
@@ -144,7 +133,7 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 
 > https://data.pyg.org/whl/
 
-## Install
+### Install
 
 We recommend using `conda` to manage project dependencies.
 
@@ -163,9 +152,7 @@ pip install torch_sparse==0.6.18
 pip install torch_scatter==2.1.0
 ```
 
-# Usage
-
-## Run
+## Usage
 
 ```shell
 # if you use conda
@@ -173,15 +160,16 @@ conda activate GraphOutlierSynthesis
 # if you use venv
 source GraphOutlierSynthesis/bin/activate
 
-python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 100 --use_energy --use_energy_propagation --use_classifier --use_energy_filter --synthesis_ood
+python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" \
+  --ood_type "structure" --device 0 --epochs 100 --synthesis_ood \
+  --use_energy --use_energy_propagation --use_classifier --use_energy_filter
 
 # if you want to run by script
 cd script
 bash detect.sh
 
 # if you want to run in background
-nohup bash detect.sh >output.log 2>&1 &
-
+nohup sh detect.sh >output.log 2>&1 &
 ```
 
 ## Common Command
@@ -191,5 +179,3 @@ nvidia-smi
 nvidia-smi --query-gpu=name --format=csv,noheader
 watch -n 2 -d nvidia-smi
 ```
-
-# Reference

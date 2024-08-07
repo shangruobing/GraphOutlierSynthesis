@@ -64,11 +64,11 @@ elif args.method == "ODIN":
     model = ODIN(num_features, num_classes, args)
 elif args.method == "Mahalanobis":
     model = Mahalanobis(num_features, num_classes, args)
-elif args.method == 'maxlogits':
+elif args.method == 'MaxLogits':
     model = MaxLogits(num_features, num_classes, args)
-elif args.method == 'energymodel':
+elif args.method == 'EnergyModel':
     model = EnergyModel(num_features, num_classes, args)
-elif args.method == 'energyprop':
+elif args.method == 'EnergyProp':
     model = EnergyProp(num_features, num_classes, args)
 else:
     raise ValueError(f"Unknown method: {args.method}")
