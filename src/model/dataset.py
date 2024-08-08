@@ -294,7 +294,7 @@ def create_knn_dataset(
     Returns:
 
     """
-    sample_point, sample_edge, sample_label = generate_outliers(
+    outlier = generate_outliers(
         data.x,
         num_nodes=data.num_nodes,
         num_features=data.num_features,
@@ -306,7 +306,7 @@ def create_knn_dataset(
         k=k,
         device=device
     )
-    dataset = Data(x=sample_point, edge_index=sample_edge, y=sample_label)
-    dataset.node_idx = torch.arange(len(sample_point))
+    dataset = Data(x=outlier.sample_points, edge_index=outlier.sample_edges, y=outlier.sample_labels)
+    dataset.node_idx = torch.arange(len(outlier.sample_points))
     dataset = add_mask_property(dataset)
     return dataset

@@ -1,5 +1,5 @@
 import time
-from typing import Tuple
+from dataclasses import dataclass
 
 import numpy as np
 import faiss
@@ -7,6 +7,15 @@ from faiss import IndexFlat
 import torch
 from torch import Tensor
 from torch.distributions import MultivariateNormal
+
+
+@dataclass
+class Outlier:
+    sample_points: Tensor
+    sample_edges: Tensor
+    sample_labels: Tensor
+    all_boundaries: Tensor
+    selected_boundaries: Tensor
 
 
 def generate_outliers(
@@ -20,8 +29,7 @@ def generate_outliers(
         boundary_sampling_ratio=0.5,
         k=100,
         device=torch.device("cpu"),
-        debug=False
-) -> Tuple[Tensor, Tensor, Tensor]:
+) -> Outlier:
     """
     Generate outliers using the KNN algorithm.
     我们利用 ID 数据生成 OOD 数据。
@@ -43,7 +51,6 @@ def generate_outliers(
         boundary_sampling_ratio: How many boundary used to generate outliers
         k: The number of nearest neighbors to return
         device: torch device
-        debug:
     Returns:
         the generated outliers, the edges of the generated outliers, the labels of the generated outliers
     """
@@ -87,14 +94,14 @@ def generate_outliers(
         top=num_boundary
     )
 
-    all_max_distance_index = max_distance_index
+    all_boundaries = max_distance_index
 
     # 到此找到了最远的数据点，从最远的集合中随机选择
-    max_distance_index = max_distance_index[np.random.choice(num_boundary, num_pick, replace=False)]
+    selected_boundaries = max_distance_index[np.random.choice(num_boundary, num_pick, replace=False)]
 
     # 重复n次，每一次都补足为采样的length，把这n次结果拼起来，每个采样点贡献n个特征
     sampling_dataset = torch.cat([
-        dataset[index].repeat(num_nodes // num_pick, 1) for index in max_distance_index
+        dataset[index].repeat(num_nodes // num_pick, 1) for index in selected_boundaries
     ])
 
     # 生成一个多元高斯分布，均值为0，协方差矩阵为单位矩阵
@@ -131,22 +138,18 @@ def generate_outliers(
         device=device
     )
 
-    # sample_labels = torch.randint(
-    #     low=0,
-    #     high=num_classes,
-    #     size=(int(num_sample_points),),
-    #     device=device
-    # )
-
     # 由于不将其带入监督训练过程，假设Label全为0，生成的都是0的label
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
     print(f"The generate outliers time is {round(time.time() - begin_time, 2)}s")
     print("==================== End Generate Outliers ====================")
-    if debug:
-        return sample_points, sample_edges, sample_labels, all_max_distance_index, max_distance_index, f"num_boundary:{num_boundary} k:{k} num_pick:{num_pick} dataset:{dataset.size()} sample_points:{sample_points.size()}"
-    else:
-        return sample_points, sample_edges, sample_labels
+    return Outlier(
+        sample_points=sample_points,
+        sample_edges=sample_edges,
+        sample_labels=sample_labels,
+        all_boundaries=all_boundaries,
+        selected_boundaries=selected_boundaries
+    )
 
 
 def search_max_distance(
@@ -154,7 +157,7 @@ def search_max_distance(
         index: IndexFlat,
         k: int,
         top: int
-) -> Tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor]:
     """
     从数据集中找到每个元素的k个邻居，再选择每个元素距离最远的（第k个）邻居，最终从邻居中选择最远的num_selects个邻居
     k = 2
@@ -177,10 +180,8 @@ def search_max_distance(
     distance, output_index = index.search(target, k)
     # 取每个元素最后（最远）的一个元素
     k_th_distance = torch.tensor(distance[:, -1])
-    # ic(k_th_distance)
     # 找出整个数据集最远的select个元素
     max_distance, max_distance_index = torch.topk(k_th_distance, top)
-    # ic(max_distance_index)
     return max_distance_index, max_distance
 
 
@@ -213,7 +214,6 @@ def generate_negative_samples(
     nums => nums_negative_samples,pic_nums
     [A,B,C,D,E,F]    =>    [[A,B],[C,D],[E,F]]
     """
-    # max_distance, max_distance_index = torch.topk(k_th_distance, k_th_distance.shape[0], dim=0)
     max_distance, max_distance_index = torch.topk(k_th_distance, num_points, dim=0)
 
     outliers = target[max_distance_index].repeat(repeats=(num_negative_samples // num_points, 1))
@@ -228,31 +228,35 @@ def generate_negative_samples(
 
 
 if __name__ == '__main__':
-    from src.common.visualize import visualize_2D
+    import sys
+    from os.path import abspath, dirname
+
+    BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
+    print(f"BASE_DIR:{BASE_DIR}")
+    sys.path.append(BASE_DIR)
+    from src.common.visualize import visualize_2D, visualize_3D
 
     dataset = torch.rand(2000, 2)
 
     num_nodes, num_features = dataset.shape[0], dataset.shape[1]
     num_edges = 10
-    sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
+    outliers = generate_outliers(
         dataset=dataset,
         num_nodes=num_nodes,
         num_features=num_features,
         num_edges=num_edges,
-        debug=True,
     )
 
-    visualize_2D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
+    visualize_2D(dataset=dataset.cpu(), all_boundary=outliers.all_boundaries, boundary=outliers.selected_boundaries, outlier=outliers.sample_points.cpu())
 
-    # dataset = torch.rand(500, 3)
-    # num_nodes, num_features = dataset.shape[0], dataset.shape[1]
-    # num_edges = 10
-    # sample_point, sample_edge, sample_label, all_max_distance_index, max_distance_index, title = generate_outliers(
-    #     dataset=dataset,
-    #     num_nodes=num_nodes,
-    #     num_features=num_features,
-    #     num_edges=num_edges,
-    #     debug=True,
-    # )
-    #
-    # visualize_3D(dataset=dataset.cpu(), all_boundary=all_max_distance_index, boundary=max_distance_index, outlier=sample_point.cpu(), title=title)
+    dataset = torch.rand(2000, 3)
+    num_nodes, num_features = dataset.shape[0], dataset.shape[1]
+    num_edges = 10
+    outliers = generate_outliers(
+        dataset=dataset,
+        num_nodes=num_nodes,
+        num_features=num_features,
+        num_edges=num_edges,
+    )
+
+    visualize_3D(dataset=dataset.cpu(), all_boundary=outliers.all_boundaries, boundary=outliers.selected_boundaries, outlier=outliers.sample_points.cpu())

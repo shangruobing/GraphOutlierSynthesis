@@ -63,7 +63,7 @@ class Recorder:
         if os.path.exists(FILE_PATH):
             df = pd.read_csv(FILE_PATH, encoding="UTF-8-SIG")
         else:
-            print(f"The {FILE_PATH} does not exist, an {FILE_PATH} file has been created.")
+            print(f"The {FILE_PATH} does not exist, a new file has been created.")
             df = pd.DataFrame(columns=list(new_row.keys()))
         df.loc[len(df)] = new_row
         df.to_csv(FILE_PATH, index=False, encoding="UTF-8-SIG")

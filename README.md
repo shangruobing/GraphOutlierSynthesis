@@ -160,9 +160,9 @@ conda activate GraphOutlierSynthesis
 # if you use venv
 source GraphOutlierSynthesis/bin/activate
 
-python main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" \
+python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" \
   --ood_type "structure" --device 0 --epochs 100 --synthesis_ood \
-  --use_energy --use_energy_propagation --use_classifier --use_energy_filter
+  --use_energy --use_energy_propagation --use_classifier
 
 # if you want to run by script
 cd script
@@ -170,6 +170,9 @@ bash detect.sh
 
 # if you want to run in background
 nohup sh detect.sh >output.log 2>&1 &
+
+# visualize the generated outliers
+python src/outlier/knn.py
 ```
 
 ## Common Command

@@ -21,19 +21,9 @@ def energy_propagation(embeddings, edge_index, valid_index=None, num_prop_layers
     N = embeddings.shape[0]
     row, col = edge_index
 
-    # ic(col.max())
-    # ic(row.max())
-    # ic(col.shape)
-    # ic(row.shape)
-
     # filter the out-of-bound nodes
     col = col[col < N]
     row = row[row < N]
-
-    # ic(col.max())
-    # ic(row.max())
-    # ic(col.shape)
-    # ic(row.shape)
 
     if valid_index is not None:
         valid = torch.nonzero(valid_index).squeeze()
