@@ -14,8 +14,8 @@ class Outlier:
     sample_points: Tensor
     sample_edges: Tensor
     sample_labels: Tensor
-    all_boundaries: Tensor
-    selected_boundaries: Tensor
+    all_boundary_point_indices: Tensor
+    selected_boundary_point_indices: Tensor
 
 
 def generate_outliers(
@@ -87,21 +87,19 @@ def generate_outliers(
     faiss_index.add(dataset[rand_index].cpu().numpy())
 
     # 找出数据集内每个元素最边界的k个元素，再从中挑取top个，做到挑选整个数据集最边界的元素
-    max_distance_index, max_distance = search_max_distance(
+    all_boundary_point_indices, max_distance = search_max_distance(
         target=dataset,
         index=faiss_index,
         k=k,
         top=num_boundary
     )
 
-    all_boundaries = max_distance_index
-
     # 到此找到了最远的数据点，从最远的集合中随机选择
-    selected_boundaries = max_distance_index[np.random.choice(num_boundary, num_pick, replace=False)]
+    selected_boundary_point_indices = all_boundary_point_indices[np.random.choice(num_boundary, num_pick, replace=False)]
 
     # 重复n次，每一次都补足为采样的length，把这n次结果拼起来，每个采样点贡献n个特征
     sampling_dataset = torch.cat([
-        dataset[index].repeat(num_nodes // num_pick, 1) for index in selected_boundaries
+        dataset[index].repeat(num_nodes // num_pick, 1) for index in selected_boundary_point_indices
     ])
 
     # 生成一个多元高斯分布，均值为0，协方差矩阵为单位矩阵
@@ -147,8 +145,8 @@ def generate_outliers(
         sample_points=sample_points,
         sample_edges=sample_edges,
         sample_labels=sample_labels,
-        all_boundaries=all_boundaries,
-        selected_boundaries=selected_boundaries
+        all_boundary_point_indices=all_boundary_point_indices,
+        selected_boundary_point_indices=selected_boundary_point_indices
     )
 
 
@@ -247,7 +245,7 @@ if __name__ == '__main__':
         num_edges=num_edges,
     )
 
-    visualize_2D(dataset=dataset.cpu(), all_boundary=outliers.all_boundaries, boundary=outliers.selected_boundaries, outlier=outliers.sample_points.cpu())
+    visualize_2D(dataset=dataset.cpu(), all_boundary=outliers.all_boundary_point_indices, boundary=outliers.selected_boundary_point_indices, outlier=outliers.sample_points.cpu())
 
     dataset = torch.rand(2000, 3)
     num_nodes, num_features = dataset.shape[0], dataset.shape[1]
@@ -259,4 +257,4 @@ if __name__ == '__main__':
         num_edges=num_edges,
     )
 
-    visualize_3D(dataset=dataset.cpu(), all_boundary=outliers.all_boundaries, boundary=outliers.selected_boundaries, outlier=outliers.sample_points.cpu())
+    visualize_3D(dataset=dataset.cpu(), all_boundary=outliers.all_boundary_point_indices, boundary=outliers.selected_boundary_point_indices, outlier=outliers.sample_points.cpu())

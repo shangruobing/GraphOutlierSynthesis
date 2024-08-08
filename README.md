@@ -119,10 +119,10 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 
 ## Environment
 
-- CentOS Linux 7 (GNU/Linux 3.10.0-1160.el7.x86_64)
+- CentOS Linux 7
 - Tesla V100-SXM2-32GB
-- CUDA NVIDIA-SMI 460.106.00 Driver Version: 460.106.00 CUDA Version: 11.2
-- Python 3.9.2 (default, Mar 3 2021, 20:02:32) [GCC 7.3.0] :: Anaconda, Inc. on linux
+- CUDA Version: 11.8
+- Python 3.9.2
 
 ### Dependency
 
