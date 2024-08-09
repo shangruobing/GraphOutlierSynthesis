@@ -122,63 +122,55 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 - CentOS Linux 7
 - Tesla V100-SXM2-32GB
 - CUDA Version: 11.8
-- Python 3.9.2
+- Python 3.12
 
 ### Dependency
 
-- torch==2.2.1
+- torch==2.3.0
 - torch_geometric==2.5.0
-- torch_sparse==0.6.18+pt22cu118
-- torch_scatter==2.1.2+pt22cu118
+- torch_sparse==0.6.18+pt23cu118
+- torch_scatter==2.1.2+pt23cu118
 
 > https://data.pyg.org/whl/
 
 ### Install
 
 We recommend using `conda` to manage project dependencies.
+You can choose to install step by step or copy our environment directly.
 
 ```shell
+# copy our environment directly
 conda env create -f environment.yml
 ```
 
-Use `pip` may cause some problems when installing `torch_sparse` and `torch_scatter`.
-
 ```shell
-python -m venv venv
-source venv/bin/activate
+# install step by step
+conda create -n GraphOutlierSynthesis python==3.12
+conda activate GraphOutlierSynthesis
 pip install -r requirements.txt
+conda install pytorch==2.3.0 pytorch-cuda=11.8 -c pytorch -c nvidia
+conda install faiss-gpu==1.8.0 -c pytorch
 pip install torch_geometric==2.5.0
-pip install torch_sparse==0.6.18
-pip install torch_scatter==2.1.2
+pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.3.0+cu118.html
+pip install torch_sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.3.0+cu118.html
 ```
+
+> When installing 'torch_sparse' and 'torch_scatter', we recommend downloading wheel from https://data.pyg.org/whl/
 
 ## Usage
 
 ```shell
-# if you use conda
 conda activate GraphOutlierSynthesis
-# if you use venv
-source GraphOutlierSynthesis/bin/activate
 
+# run the baseline
+python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" \ 
+  --ood_type "structure" --device 0 --epochs 100
+
+# run our method
 python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" \
   --ood_type "structure" --device 0 --epochs 100 --synthesis_ood \
   --use_energy --use_energy_propagation --use_classifier
 
-# if you want to run by script
-cd script
-bash detect.sh
-
-# if you want to run in background
-nohup sh detect.sh >output.log 2>&1 &
-
 # visualize the generated outliers
 python src/outlier/knn.py
-```
-
-## Common Command
-
-```shell
-nvidia-smi
-nvidia-smi --query-gpu=name --format=csv,noheader
-watch -n 2 -d nvidia-smi
 ```

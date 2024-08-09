@@ -40,47 +40,47 @@ def compute_loss(
 
     train_idx, train_ood_idx = dataset_id.train_mask, dataset_ood.node_idx
 
-    # 获取GNN对ID数据的输出
+    # Get the GNN output for the ID data
     logits_id, penultimate_id = encoder(dataset_id.x, dataset_id.edge_index)
     logits_id, penultimate_id = logits_id[train_idx], penultimate_id[train_idx]
 
-    # 使用GNN的ID输出计算loss
+    # The loss is calculated using the ID output of the GNN
     predict_id = F.log_softmax(logits_id, dim=1)
     supervised_learning_loss = criterion(predict_id, dataset_id.y[train_idx].squeeze(1))
     loss += supervised_learning_loss
 
-    # 代表是否使用ood学习
+    # Whether to use ood
     if args.use_energy:
-        # 获取GNN对OOD数据的输出
+        # Get the GNN output for the OOD data
         logits_ood, penultimate_ood = encoder(dataset_ood.x, dataset_ood.edge_index)
         logits_ood, penultimate_ood = logits_ood[train_ood_idx], penultimate_ood[train_ood_idx]
 
         if args.synthesis_ood:
             train_idx = synthesis_ood_dataset.node_idx
-            # 获取GNN对合成的OOD数据的输出
+            # Get the GNN output for the synthesised OOD data
             logits_knn_ood, penultimate_knn_ood = encoder(synthesis_ood_dataset.x, synthesis_ood_dataset.edge_index)
             logits_knn_ood, penultimate_knn_ood = logits_knn_ood[train_idx], penultimate_knn_ood[train_idx]
             logits_ood = torch.cat([logits_ood, logits_knn_ood])
             penultimate_ood = torch.cat([penultimate_ood, penultimate_knn_ood])
 
-        # 计算GNN输出的ID和OOD的能量分数
-        # parser.add_argument('--T', type=float, default=1.0, help='temperature for Softmax')
+        # Calculate the energy scores of ID and OOD output by GNN
+        # temperature for Softmax
         T = 1.0
         energy_id = - T * torch.logsumexp(logits_id / T, dim=-1)
         energy_ood = - T * torch.logsumexp(logits_ood / T, dim=-1)
 
+        # Complete the propagation of energy
         if args.use_energy_propagation:
-            # 完成能量的传播
-            # parser.add_argument('--num_prop_layers', type=int, default=2, help='number of layers for energy belief propagation')
+            # number of layers for energy belief propagation
             num_prop_layers = 1
-            # parser.add_argument('--alpha', type=float, default=0.5, help='weight for residual connection in propagation')
+            # weight for residual connection in propagation
             alpha = 0.5
             energy_id = energy_propagation(energy_id, dataset_id.edge_index, train_idx, num_prop_layers=num_prop_layers, alpha=alpha)
             energy_ood = energy_propagation(energy_ood, dataset_ood.edge_index, train_ood_idx, num_prop_layers=num_prop_layers, alpha=alpha)
 
         energy_id, energy_ood = trim_to_same_length(energy_id, energy_ood)
 
-        # 计算能量的正则化损失
+        # Calculate the energy regularization loss
         energy_regularization_loss = torch.mean(
             torch.pow(F.relu(energy_id - args.lower_bound_id), 2)
             +
@@ -89,7 +89,7 @@ def compute_loss(
         loss += args.lamda * energy_regularization_loss
 
         if args.use_classifier:
-            # 将ID数据输入分类器
+            # The ID data is fed into the classifier
             classifier_id = classifier(
                 penultimate_id,
                 dataset_id.x,
@@ -97,7 +97,7 @@ def compute_loss(
                 train_idx
             )
 
-            # 将OOD数据输入分类器
+            # The OOD data is fed into the classifier
             classifier_ood = classifier(
                 penultimate_ood,
                 dataset_ood.x,
@@ -106,7 +106,7 @@ def compute_loss(
             )
 
             if args.use_energy_filter:
-                # 使用能量分数过滤分类器输出
+                # The classifier output is filtered using the energy score
                 classifier_id, classifier_ood = filter_by_energy(
                     classifier_id=classifier_id,
                     classifier_ood=classifier_ood,
@@ -116,7 +116,7 @@ def compute_loss(
                     lower_bound_id=args.lower_bound_id
                 )
 
-            # 构造分类器输出和标签
+            # Construct the classifier outputs and labels
             min_length = min(len(classifier_id), len(classifier_ood))
             if min_length == 0:
                 raise ValueError("No data left after filtering by energy. Adjust the upper_bound_id or lower_bound_ood.")
