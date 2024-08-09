@@ -1,4 +1,17 @@
+from dataclasses import dataclass
+
 import torch
+
+__all__ = ["DetectLogger"]
+
+
+@dataclass
+class Metrics:
+    auroc: float
+    aupr: float
+    fpr: float
+    accuracy: float
+    score: float
 
 
 class DetectLogger:
@@ -8,6 +21,7 @@ class DetectLogger:
 
     def __init__(self):
         self.results = []
+        self.epoch_info = ""
 
     def add_result(self, result):
         """
@@ -20,7 +34,10 @@ class DetectLogger:
         """
         self.results.append(result)
 
-    def get_statistics(self):
+    def add_epoch_info(self, info):
+        self.epoch_info += info + '\n'
+
+    def get_statistics(self) -> Metrics:
         result = 100 * torch.tensor(self.results)
         auroc, aupr, fpr, accuracy, test_score, valid_loss = result.T
         min_index = valid_loss.argmin().item()
@@ -35,10 +52,10 @@ class DetectLogger:
         print(f'OOD Test Detect FPR95 ↓: {fpr_val:.2f}')
         print(f'OOD Test Detect ACCU  ↑: {acc_val:.2f}')
         print(f'IND Test Accuracy     ↑: {score_val:.2f}')
-        return {
-            "AUROC": round(auroc_val, 2),
-            "AUPR": round(aupr_val, 2),
-            "FPR": round(fpr_val, 2),
-            "ACCURACY": round(acc_val, 2),
-            "SCORE": round(score_val, 2),
-        }
+        return Metrics(
+            auroc=round(auroc_val, 2),
+            aupr=round(aupr_val, 2),
+            fpr=round(fpr_val, 2),
+            accuracy=round(acc_val, 2),
+            score=round(score_val, 2),
+        )

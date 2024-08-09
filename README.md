@@ -128,8 +128,8 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 
 - torch==2.2.1
 - torch_geometric==2.5.0
-- torch_sparse==0.6.18+pt22cu121
-- torch_scatter==2.1.2+pt22cu121
+- torch_sparse==0.6.18+pt22cu118
+- torch_scatter==2.1.2+pt22cu118
 
 > https://data.pyg.org/whl/
 
@@ -149,7 +149,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 pip install torch_geometric==2.5.0
 pip install torch_sparse==0.6.18
-pip install torch_scatter==2.1.0
+pip install torch_scatter==2.1.2
 ```
 
 ## Usage

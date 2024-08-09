@@ -1,7 +1,6 @@
 # Dataset Directory
 
 ```text
-tree
 .
 ├── Amazon
 │   └── Photo

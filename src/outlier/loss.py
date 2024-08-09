@@ -7,6 +7,8 @@ from icecream import ic
 from src.outlier.energy import energy_propagation
 from src.common.parse import Arguments
 
+__all__ = ["compute_loss"]
+
 
 def compute_loss(
         dataset_id: Data,
@@ -153,7 +155,7 @@ def filter_by_energy(
     filtered_classifier_ood_index = torch.nonzero(energy_ood > upper_bound_id).squeeze().view(-1)
     filtered_classifier_id_index = torch.nonzero(energy_id > lower_bound_id).squeeze().view(-1)
 
-    debug = True
+    debug = False
     if debug:
         ic(energy_id.mean())
         ic(energy_ood.mean())

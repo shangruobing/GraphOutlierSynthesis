@@ -6,6 +6,8 @@ from src.common.parse import Arguments
 from src.common.config import FOLDER_PATH
 from src.common.utils import get_now_datetime
 
+__all__ = ["Recorder"]
+
 
 class Recorder:
     @staticmethod
@@ -20,7 +22,7 @@ class Recorder:
             score: str
     ) -> None:
         """
-        将LLM的回答等信息存入运行结果表格
+        Save the results to the csv file
         Args:
             args: argparse,
             model: Model,
@@ -61,9 +63,9 @@ class Recorder:
         if not os.path.exists(FOLDER_PATH):
             os.mkdir(FOLDER_PATH)
         if os.path.exists(FILE_PATH):
-            df = pd.read_csv(FILE_PATH, encoding="UTF-8-SIG")
+            df = pd.read_csv(FILE_PATH, encoding="UTF-8")
         else:
             print(f"The {FILE_PATH} does not exist, a new file has been created.")
             df = pd.DataFrame(columns=list(new_row.keys()))
         df.loc[len(df)] = new_row
-        df.to_csv(FILE_PATH, index=False, encoding="UTF-8-SIG")
+        df.to_csv(FILE_PATH, index=False, encoding="UTF-8")

@@ -20,10 +20,10 @@ from common.utils import get_device, fix_seed
 from common.recorder import Recorder
 
 args = init_parser_args()
-
 pprint(args.string)
 
 fix_seed(args.seed)
+
 device = get_device(device=args.device, cpu=args.cpu)
 
 dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
@@ -72,19 +72,16 @@ elif args.method == 'EnergyProp':
     model = EnergyProp(num_features, num_classes, args)
 else:
     raise ValueError(f"Unknown method: {args.method}")
+print(model)
 
 criterion = nn.NLLLoss()
-
-eval_func = eval_acc
 
 logger = DetectLogger()
 
 model.train()
-print(model)
-
-epoch_info = ""
 model.reset_parameters()
 model.to(device)
+
 optimizer = torch.optim.Adam(
     params=[
         {'params': model.encoder.parameters(), 'lr': args.lr},
@@ -100,20 +97,21 @@ for epoch in range(args.epochs):
     loss = model.loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, criterion, device, args)
     loss.backward()
     optimizer.step()
-    result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_func, args, device)
+    result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_acc, args, device)
     logger.add_result(result)
     info = f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, FPR95: {100 * result[2]:.2f}%, Accuracy: {100 * result[3]:.2f}%, Test Score: {100 * result[4]:.2f}%'
-    epoch_info += info + '\n'
+    logger.add_epoch_info(info)
     print(info)
 
 metrics = logger.get_statistics()
+
 Recorder.insert_row(
     args=args,
     model=str(model),
-    epoch_info=epoch_info,
-    auroc=metrics.get("AUROC"),
-    aupr=metrics.get("AUPR"),
-    fpr=metrics.get("FPR"),
-    accuracy=metrics.get("ACCURACY"),
-    score=metrics.get("SCORE")
+    epoch_info=logger.epoch_info,
+    auroc=metrics.auroc,
+    aupr=metrics.aupr,
+    fpr=metrics.fpr,
+    accuracy=metrics.accuracy,
+    score=metrics.score
 )

@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 
+__all__ = ['visualize_2D', 'visualize_3D']
+
 
 def visualize_2D(dataset, all_boundary, boundary, outlier):
     plt.figure(figsize=(10, 10))
@@ -48,7 +50,6 @@ def visualize_2D(dataset, all_boundary, boundary, outlier):
     )
     plt.xlabel('X Axis', fontsize=12, labelpad=4)
     plt.ylabel('Y Axis', fontsize=12, labelpad=4)
-
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.legend(loc='upper right', fontsize=14, borderaxespad=1.0, borderpad=1.0, labelspacing=1.0)
     plt.tight_layout()

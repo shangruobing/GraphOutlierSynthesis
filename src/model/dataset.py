@@ -12,6 +12,8 @@ from src.common.parse import Arguments
 from src.model.data_utils import rand_splits
 from src.outlier.knn import generate_outliers
 
+__all__ = ["load_dataset", "create_knn_dataset"]
+
 
 def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
     """
@@ -50,37 +52,6 @@ def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
         dataset_ood_tr.y = dataset_ood_tr.y.unsqueeze(1)
     if len(dataset_ood_te.y.shape) == 1:
         dataset_ood_te.y = dataset_ood_te.y.unsqueeze(1)
-
-    # visualize(torch.tensor(dataset_ind.x), color=torch.tensor(dataset_ind.y), epoch=1)
-    # visualize(torch.tensor(dataset_ood_tr.x), color=torch.tensor(dataset_ood_tr.y), epoch=1)
-    # visualize(torch.tensor(dataset_ood_te.x), color=torch.tensor(dataset_ood_te.y), epoch=1)
-
-    # print(len(dataset_ind.x))
-    # print(len(dataset_ood_te.x))
-
-    # visualize(
-    #     torch.cat([
-    #         torch.tensor(dataset_ind.x),
-    #         torch.tensor(dataset_ood_te.x),
-    #     ]),
-    #     color=
-    #     torch.cat([
-    #         torch.ones(len(dataset_ind.x)),
-    #         torch.zeros(len(dataset_ood_te.x))
-    #     ])
-    #     , epoch=1)
-
-    # visualize(
-    #     torch.cat([
-    #         torch.tensor(dataset_ind.x),
-    #         torch.tensor(dataset_ood_te.x),
-    #     ]),
-    #     color=
-    #     torch.cat([
-    #         torch.ones(len(dataset_ind.x)),
-    #         torch.zeros(len(dataset_ood_te.x))
-    #     ])
-    #     , epoch=1)
 
     return dataset_ind, dataset_ood_tr, dataset_ood_te
 

@@ -8,6 +8,8 @@ import torch
 from torch import Tensor
 from torch.distributions import MultivariateNormal
 
+__all__ = ["Outlier", "generate_outliers"]
+
 
 @dataclass
 class Outlier:
@@ -140,7 +142,7 @@ def generate_outliers(
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
     print(f"The generate outliers time is {round(time.time() - begin_time, 2)}s")
-    print("==================== End Generate Outliers ====================")
+    print("===================== End Generate Outliers =====================")
     return Outlier(
         sample_points=sample_points,
         sample_edges=sample_edges,
