@@ -2,6 +2,8 @@
 
 ***Out-of-Distribution Detection for Graph Neural Networks***
 
+![](doc/workflow.png)
+
 ## Methodology
 
 **KNN is utilized to generate the OOD dataset, while GNN is used for embedding.
