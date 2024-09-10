@@ -2,7 +2,7 @@
 
 ***Out-of-Distribution Detection for Graph Neural Networks***
 
-![](doc/workflow.png)
+![](doc/framework.png)
 
 ## Methodology
 
@@ -17,6 +17,8 @@ To address this issue, a data quality assessment method can be introduced post-d
 The energy function can be employed to filter the synthetic data.
 The filtering criterion is based on the transformed energy function's value being above or below a certain threshold.
 Only data satisfying this condition are used for model training.
+
+![](doc/workflow.png)
 
 ### Steps
 
@@ -33,7 +35,8 @@ Only data satisfying this condition are used for model training.
 2. Calculate the `Energy ID` and `Energy OOD` using the ID outputs and OOD outputs.
 3. If energy propagation is used, further process the `Energy ID` and `Energy OOD`.
 4. Compute the `energy regularization loss`.
-5. Train the classifier using both ID and OOD data, optionally filtering the synthesized data using energy, to obtain the `classifier loss`.
+5. Train the classifier using both ID and OOD data, optionally filtering the synthesized data using energy, to obtain the
+   `classifier loss`.
 
 ## Math Details
 
