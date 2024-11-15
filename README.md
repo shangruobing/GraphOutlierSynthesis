@@ -125,7 +125,7 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 ## Environment
 
 - CentOS Linux 7
-- Tesla V100-SXM2-32GB
+- NVIDIA A100-PCIE-40GB
 - CUDA Version: 11.8
 - Python 3.12
 
@@ -144,20 +144,24 @@ We recommend using `conda` to manage project dependencies.
 You can choose to install step by step or copy our environment directly.
 
 ```shell
-# copy our environment directly
-conda env create -f environment.yml
-```
-
-```shell
-# install step by step
+# Install step by step
 conda create -n GraphOutlierSynthesis python==3.12
 conda activate GraphOutlierSynthesis
 pip install -r requirements.txt
+
+# If use GPU
 conda install pytorch==2.3.0 pytorch-cuda=11.8 -c pytorch -c nvidia
 conda install faiss-gpu==1.8.0 -c pytorch
 pip install torch_geometric==2.5.0
 pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.3.0+cu118.html
 pip install torch_sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.3.0+cu118.html
+
+# If use CPU (optional)
+pip install torch==2.3.0
+pip install faiss-cpu==1.9.0
+pip install torch_geometric==2.5.0
+pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
+pip install torch-sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
 ```
 
 > When installing 'torch_sparse' and 'torch_scatter', we recommend downloading wheel from https://data.pyg.org/whl/
@@ -168,14 +172,11 @@ pip install torch_sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.3.0+cu118.h
 conda activate GraphOutlierSynthesis
 
 # run the baseline
-python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" \ 
-  --ood_type "structure" --device 0 --epochs 100
+python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 100
 
 # run our method
-python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" \
-  --ood_type "structure" --device 0 --epochs 100 --synthesis_ood \
-  --use_energy --use_energy_propagation --use_classifier
+python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 100 --synthesis_ood --use_energy --use_energy_propagation --use_classifier
 
 # visualize the generated outliers
-python src/outlier/knn.py
+python src/visualization.py
 ```

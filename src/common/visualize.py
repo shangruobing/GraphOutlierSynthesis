@@ -134,6 +134,5 @@ if __name__ == '__main__':
         dataset,
         all_boundary,
         boundary,
-        outlier,
-        title="visualize_2D"
+        outlier
     )

@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.data import Data
 from icecream import ic
+from torch_geometric.data import Data
 
-from src.outlier.energy import energy_propagation
 from src.common.parse import Arguments
+from src.outlier.energy import energy_propagation
 
 __all__ = ["compute_loss"]
 

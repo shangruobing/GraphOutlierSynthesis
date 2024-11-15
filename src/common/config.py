@@ -4,8 +4,8 @@ Global configuration file
 
 import os
 import sys
-from pathlib import Path
 from os.path import dirname, abspath
+from pathlib import Path
 
 from src.common.utils import get_now_date
 

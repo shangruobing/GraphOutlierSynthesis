@@ -1,8 +1,9 @@
 import random
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import torch
 import numpy as np
+import torch
 
 __all__ = ["get_device", "fix_seed", "get_now_datetime", "get_now_date"]
 
@@ -29,19 +30,19 @@ def fix_seed(seed: int) -> None:
     torch.backends.cudnn.deterministic = True
 
 
-def get_now_datetime() -> str:
+def get_now_datetime(timezone: str = "Asia/Shanghai") -> str:
     """
     get now datetime
     Returns:
         2023-10-01 12:30:30
     """
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.now(ZoneInfo(timezone)).strftime("%Y-%m-%d %H:%M:%S")
 
 
-def get_now_date() -> str:
+def get_now_date(timezone: str = "Asia/Shanghai") -> str:
     """
     get now date
     Returns:
         20231001
     """
-    return datetime.now().strftime("%Y%m%d")
+    return datetime.now(ZoneInfo(timezone)).strftime("%Y%m%d")

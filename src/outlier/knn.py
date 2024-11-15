@@ -1,10 +1,11 @@
+import logging
 import time
 from dataclasses import dataclass
 
-import numpy as np
 import faiss
-from faiss import IndexFlat
+import numpy as np
 import torch
+from faiss import IndexFlat
 from torch import Tensor
 from torch.distributions import MultivariateNormal
 
@@ -72,16 +73,22 @@ def generate_outliers(
     k = min(len(dataset), k)
 
     print("==================== Begin Generate Outliers ====================")
-    print(f"How many OOD samples to generate: {num_sample_points}")
-    print(f"How many ID samples are defined as points near the boundary: {num_boundary}")
-    print(f"How many boundary used to generate outliers: {num_pick}")
-    print(f"The number of nearest neighbors to return: {k}")
-    print(f"The generate outliers device is: {device.type}")
+    print(f"Number of OOD samples to generate: {num_sample_points}")
+    print(f"Number of ID samples defined as points near the boundary: {num_boundary}")
+    print(f"Number of boundaries used to generate outliers: {num_pick}")
+    print(f"Number of nearest neighbors to return: {k}")
+    print(f"Device for generating outliers: {device.type}")
 
     faiss_index = faiss.IndexFlatL2(num_features)
     if "cuda" in device.type:
         resource = faiss.StandardGpuResources()
-        faiss_index = faiss.index_cpu_to_gpu(provider=resource, device=device.index, index=faiss_index)
+        if device.index:
+            # Possible C/C++ prototypes are:
+            # faiss::gpu::index_cpu_to_gpu(faiss::gpu::GpuResourcesProvider *,int,faiss::Index const *,faiss::gpu::GpuClonerOptions const *)
+            # faiss::gpu::index_cpu_to_gpu(faiss::gpu::GpuResourcesProvider *,int,faiss::Index const *)
+            faiss_index = faiss.index_cpu_to_gpu(provider=resource, device=device.index, index=faiss_index)
+        else:
+            faiss_index = faiss.index_cpu_to_gpu(provider=resource, device=0, index=faiss_index)
 
     # Randomly generate a list of indices of the dataset
     rand_index = np.random.choice(num_nodes, num_sample_points, replace=False)
@@ -106,10 +113,18 @@ def generate_outliers(
     ])
 
     # A multivariate Gaussian distribution with mean 0 and covariance matrix as identity matrix is generated.
-    gaussian_distribution = MultivariateNormal(
-        loc=torch.zeros(num_features, device=device),
-        covariance_matrix=torch.eye(num_features, device=device)
-    )
+    try:
+        gaussian_distribution = MultivariateNormal(
+            loc=torch.zeros(num_features, device=device),
+            covariance_matrix=torch.eye(num_features, device=device)
+        )
+    except NotImplementedError as e:
+        logging.error(e, exc_info=True)
+        candidate_device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        gaussian_distribution = MultivariateNormal(
+            loc=torch.zeros(num_features, device=candidate_device),
+            covariance_matrix=torch.eye(num_features, device=candidate_device),
+        )
 
     # Sampling from a Gaussian distribution as noise
     noises = gaussian_distribution.rsample(sample_shape=(sampling_dataset.shape[0],))
@@ -142,7 +157,7 @@ def generate_outliers(
     # Since it is not brought into the supervised training process, it is assumed that the labels are all 0, and the generated labels are all 0.
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
-    print(f"The generate outliers time is {round(time.time() - begin_time, 2)}s")
+    print(f"Time taken to generate outliers {round(time.time() - begin_time, 2)}s")
     print("===================== End Generate Outliers =====================")
     return Outlier(
         sample_points=sample_points,
@@ -234,35 +249,15 @@ def generate_negative_samples(
 
 
 if __name__ == '__main__':
-    import sys
-    from os.path import abspath, dirname
-
-    BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
-    print(f"BASE_DIR:{BASE_DIR}")
-    sys.path.append(BASE_DIR)
-    from src.common.visualize import visualize_2D, visualize_3D
-
     dataset = torch.rand(2000, 2)
 
     num_nodes, num_features = dataset.shape[0], dataset.shape[1]
     num_edges = 10
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     outliers = generate_outliers(
         dataset=dataset,
         num_nodes=num_nodes,
         num_features=num_features,
         num_edges=num_edges,
+        device=device
     )
-
-    visualize_2D(dataset=dataset.cpu(), all_boundary=outliers.all_boundary_point_indices, boundary=outliers.selected_boundary_point_indices, outlier=outliers.sample_points.cpu())
-
-    dataset = torch.rand(2000, 3)
-    num_nodes, num_features = dataset.shape[0], dataset.shape[1]
-    num_edges = 10
-    outliers = generate_outliers(
-        dataset=dataset,
-        num_nodes=num_nodes,
-        num_features=num_features,
-        num_edges=num_edges,
-    )
-
-    visualize_3D(dataset=dataset.cpu(), all_boundary=outliers.all_boundary_point_indices, boundary=outliers.selected_boundary_point_indices, outlier=outliers.sample_points.cpu())

@@ -2,9 +2,9 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from torch import Tensor
 import torch.nn.functional as F
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
+from torch import Tensor
 
 from src.model.baselines import ODIN, Mahalanobis
 

@@ -3,10 +3,10 @@ from typing import Tuple
 import numpy as np
 import torch
 import torch_geometric.transforms as T
+from ogb.nodeproppred import NodePropPredDataset
 from torch_geometric.data import Data
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor, Twitch
 from torch_geometric.utils import stochastic_blockmodel_graph
-from ogb.nodeproppred import NodePropPredDataset
 
 from src.common.parse import Arguments
 from src.model.data_utils import rand_splits
