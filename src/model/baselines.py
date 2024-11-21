@@ -561,6 +561,8 @@ class GNNSafe(nn.Module):
         if args.use_energy_propagation:
             neg_energy = energy_propagation(neg_energy, edge_index, num_prop_layers=K, alpha=alpha)
         return neg_energy[node_idx]
+        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
+        # return self.classifier(penultimate[node_idx], dataset.x, dataset.edge_index, node_idx).squeeze()
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
         return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)

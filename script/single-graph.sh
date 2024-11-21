@@ -1,18 +1,18 @@
 ## cora
 
-# Epoch: 99, Loss: 0.0047, AUROC: 88.48%, AUPR: 88.77%, FPR95: 53.00%, Accuracy: 51.85%, Test Score: 74.30%
+# Epoch: 99, Loss(↓): 1.2208, AUROC(↑): 89.09%, AUPR(↑): 89.54%, FPR95(↓): 51.50%, Accuracy(↑): 81.65%, Test Score(↑): 75.90%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5
 
-# Epoch: 99, Loss: 0.0040, AUROC: 89.69%, AUPR: 90.97%, FPR95: 60.40%, Accuracy: 50.00%, Test Score: 80.70%
+# Epoch: 99, Loss(↓): 1.1480, AUROC(↑): 90.79%, AUPR(↑): 91.91%, FPR95(↓): 51.40%, Accuracy(↑): 50.35%, Test Score(↑): 80.70%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "feature" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5
 
-# Epoch: 99, Loss: 0.0020, AUROC: 91.28%, AUPR: 91.65%, FPR95: 41.77%, Accuracy: 50.00%, Test Score: 89.24%
+# Epoch: 40, Loss(↓): 0.5399, AUROC(↑): 91.84%, AUPR(↑): 91.90%, FPR95(↓): 32.59%, Accuracy(↑): 54.59%, Test Score(↑): 89.56%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "label" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
@@ -20,19 +20,19 @@ python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
 
 ## amazon-photo
 
-# Epoch: 99, Loss: 0.1826, AUROC: 97.97%, AUPR: 98.92%, FPR95: 0.00%, Accuracy: 49.92%, Test Score: 89.81%
+# Epoch: 59, Loss(↓): 0.5716, AUROC(↑): 98.17%, AUPR(↑): 99.08%, FPR95(↓): 0.00%, Accuracy(↑): 76.27%, Test Score(↑): 89.91%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "amazon-photo" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5
 
-# Epoch: 99, Loss: 0.1610, AUROC: 97.98%, AUPR: 98.52%, FPR95: 0.84%, Accuracy: 50.00%, Test Score: 88.24%
+# Epoch: 87, Loss(↓): 0.4802, AUROC(↑): 98.43%, AUPR(↑): 98.88%, FPR95(↓): 0.68%, Accuracy(↑): 63.90%, Test Score(↑): 91.11%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "amazon-photo" --ood_type "feature" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5
 
-# Epoch: 99, Loss: 0.0855, AUROC: 96.11%, AUPR: 96.53%, FPR95: 10.34%, Accuracy: 50.41%, Test Score: 96.07%
+# Epoch: 74, Loss(↓): 0.2711, AUROC(↑): 97.02%, AUPR(↑): 97.57%, FPR95(↓): 7.86%, Accuracy(↑): 85.57%, Test Score(↑): 96.28%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "amazon-photo" --ood_type "label" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
@@ -40,19 +40,19 @@ python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
 
 ## coauthor-cs
 
-# Epoch: 99, Loss: 0.4108, AUROC: 85.05%, AUPR: 90.36%, FPR95: 97.36%, Accuracy: 50.01%, Test Score: 89.97%
+# Epoch: 60, Loss(↓): 0.6946, AUROC(↑): 82.79%, AUPR(↑): 88.82%, FPR95(↓): 97.14%, Accuracy(↑): 60.01%, Test Score(↑): 89.75%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "coauthor-cs" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5
 
-# Epoch: 47, Loss: 0.0938, AUROC: 87.86%, AUPR: 92.57%, FPR95: 97.75%, Accuracy: 50.00%, Test Score: 91.64%
+# Epoch: 95, Loss(↓): 0.7188, AUROC(↑): 83.80%, AUPR(↑): 89.02%, FPR95(↓): 93.80%, Accuracy(↑): 55.81%, Test Score(↑): 90.79%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "coauthor-cs" --ood_type "feature" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5
 
-# Epoch: 27, Loss: 0.0606, AUROC: 90.02%, AUPR: 90.64%, FPR95: 44.86%, Accuracy: 50.00%, Test Score: 98.26%
+# Epoch: 85, Loss(↓): 0.4568, AUROC(↑): 85.01%, AUPR(↑): 87.33%, FPR95(↓): 61.48%, Accuracy(↑): 59.39%, Test Score(↑): 96.97%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "coauthor-cs" --ood_type "label" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \

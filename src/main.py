@@ -28,7 +28,7 @@ def setup_args() -> tuple[Arguments, torch.device]:
 
 
 def setup_dataset(args: Arguments, device: torch.device):
-    print("\n==================== Begin Prepare Dataset ====================")
+    print(f"\n{'Begin Prepare Dataset':=^80}")
 
     dataset_ind, dataset_ood_tr, dataset_ood_te = load_dataset(args)
 
@@ -58,7 +58,8 @@ def setup_dataset(args: Arguments, device: torch.device):
     dataset_ood_tr.to(device=device)
     dataset_ood_te.to(device=device)
 
-    print("==================== End Prepare Dataset ====================")
+    print(f"{'End Prepare Dataset':=^80}")
+
     return dataset_ind, dataset_ood_tr, dataset_ood_te, synthesis_ood_dataset, num_classes, num_features
 
 
@@ -104,7 +105,7 @@ def setup_model(args: Arguments, num_features: int, num_classes: int, device: to
 
 
 def train():
-    print(f"\n====================Begin Time: {get_now_datetime()}====================")
+    print(f"\n{'Begin Time: ' + get_now_datetime():=^80}")
     args, device = setup_args()
     dataset_ind, dataset_ood_tr, dataset_ood_te, synthesis_ood_dataset, num_classes, num_features = setup_dataset(args=args, device=device)
     model, criterion, optimizer, logger = setup_model(args=args, num_features=num_features, num_classes=num_classes, device=device)
@@ -115,15 +116,10 @@ def train():
         loss = model.loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, criterion, device, args)
         loss.backward()
         optimizer.step()
-        result = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_acc, args, device)
-        logger.add_result(result)
-        info = (
-            f'Epoch: {epoch:02d}, Loss: {loss:.4f}, AUROC: {100 * result[0]:.2f}%, AUPR: {100 * result[1]:.2f}%, '
-            f'FPR95: {100 * result[2]:.2f}%, Accuracy: {100 * result[3]:.2f}%, Test Score: {100 * result[4]:.2f}%'
-        )
-        logger.add_epoch_info(info)
-        print(info)
+        metric = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_acc, args, device)
+        logger.log(epoch, loss, *metric)
 
+    print(f"\n{'Final Statistics':=^80}")
     metrics = logger.get_statistics()
 
     Recorder.insert_row(
@@ -136,7 +132,7 @@ def train():
         accuracy=metrics.accuracy,
         score=metrics.score
     )
-    print(f"\n====================End Time: {get_now_datetime()}====================")
+    print(f"\n{'End Time: ' + get_now_datetime():=^80}")
 
 
 if __name__ == '__main__':

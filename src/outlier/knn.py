@@ -72,7 +72,7 @@ def generate_outliers(
     # The number of nearest neighbors to return
     k = min(len(dataset), k)
 
-    print("==================== Begin Generate Outliers ====================")
+    print(f"\n{'Begin Generate Outliers':=^80}")
     print(f"Number of OOD samples to generate: {num_sample_points}")
     print(f"Number of ID samples defined as points near the boundary: {num_boundary}")
     print(f"Number of boundaries used to generate outliers: {num_pick}")
@@ -158,7 +158,8 @@ def generate_outliers(
     sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
 
     print(f"Time taken to generate outliers {round(time.time() - begin_time, 2)}s")
-    print("===================== End Generate Outliers =====================")
+    print(f"{'End Generate Outliers':=^80}")
+
     return Outlier(
         sample_points=sample_points,
         sample_edges=sample_edges,

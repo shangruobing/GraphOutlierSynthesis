@@ -1,12 +1,12 @@
-# ==================== Begin Generate Outliers ====================
-# How many OOD samples to generate: 2708
-# How many ID samples are defined as points near the boundary: 270
-# How many boundary used to generate outliers: 135
-# The number of nearest neighbors to return: 100
-# The generate outliers device is: cuda
-# The generate outliers time is 1.65s
-# ===================== End Generate Outliers =====================
-# Epoch: 99, Loss: 0.0043, AUROC: 88.50%, AUPR: 89.01%, FPR95: 55.80%, Accuracy: 51.95%, Test Score: 74.80%
+#  ============================Begin Generate Outliers=============================
+#  Number of OOD samples to generate: 2708
+#  Number of ID samples defined as points near the boundary: 270
+#  Number of boundaries used to generate outliers: 135
+#  Number of nearest neighbors to return: 100
+#  Device for generating outliers: cuda
+#  Time taken to generate outliers 1.94s
+#  =============================End Generate Outliers==============================
+# Epoch: 99, Loss(↓): 1.2128, AUROC(↑): 88.96%, AUPR(↑): 89.45%, FPR95(↓): 54.10%, Accuracy(↑): 80.55%, Test Score(↑): 76.60%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
@@ -14,15 +14,15 @@ python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --cov_mat 0.1 --sampling_ratio 1.0 --boundary_ratio 0.1 --boundary_sampling_ratio 0.5 --k 100
 
 
-# ==================== Begin Generate Outliers ====================
-# How many OOD samples to generate: 2708
-# How many ID samples are defined as points near the boundary: 270
-# How many boundary used to generate outliers: 135
-# The number of nearest neighbors to return: 10
-# The generate outliers device is: cuda
-# The generate outliers time is 1.45s
-# ===================== End Generate Outliers =====================
-# Epoch: 99, Loss: 0.0042, AUROC: 90.23%, AUPR: 91.15%, FPR95: 50.20%, Accuracy: 52.15%, Test Score: 76.90%
+#  ============================Begin Generate Outliers=============================
+#  Number of OOD samples to generate: 2708
+#  Number of ID samples defined as points near the boundary: 270
+#  Number of boundaries used to generate outliers: 135
+#  Number of nearest neighbors to return: 10
+#  Device for generating outliers: cuda
+#  Time taken to generate outliers 1.54s
+#  =============================End Generate Outliers==============================
+# Epoch: 35, Loss(↓): 1.1887, AUROC(↑): 88.97%, AUPR(↑): 90.22%, FPR95(↓): 59.40%, Accuracy(↑): 73.95%, Test Score(↑): 79.50%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
@@ -30,15 +30,15 @@ python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --cov_mat 0.1 --sampling_ratio 1.0 --boundary_ratio 0.1 --boundary_sampling_ratio 0.5 --k 10
 
 
-# ==================== Begin Generate Outliers ====================
-# How many OOD samples to generate: 1624
-# How many ID samples are defined as points near the boundary: 270
-# How many boundary used to generate outliers: 135
-# The number of nearest neighbors to return: 10
-# The generate outliers device is: cuda
-# The generate outliers time is 1.2s
-# ===================== End Generate Outliers =====================
-# Epoch: 31, Loss: 0.0355, AUROC: 88.31%, AUPR: 89.62%, FPR95: 61.50%, Accuracy: 51.95%, Test Score: 80.80%
+#  ============================Begin Generate Outliers=============================
+#  Number of OOD samples to generate: 1624
+#  Number of ID samples defined as points near the boundary: 270
+#  Number of boundaries used to generate outliers: 135
+#  Number of nearest neighbors to return: 10
+#  Device for generating outliers: cuda
+#  Time taken to generate outliers 1.42s
+#  =============================End Generate Outliers==============================
+# Epoch: 31, Loss(↓): 1.1330, AUROC(↑): 88.14%, AUPR(↑): 89.48%, FPR95(↓): 62.40%, Accuracy(↑): 60.70%, Test Score(↑): 80.50%
 python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
