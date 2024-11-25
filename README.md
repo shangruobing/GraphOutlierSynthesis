@@ -162,6 +162,9 @@ pip install faiss-cpu==1.9.0
 pip install torch_geometric==2.5.0
 pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
 pip install torch-sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
+
+# If need additional dataset (optional)
+pip install ogb==1.3.6
 ```
 
 > When installing 'torch_sparse' and 'torch_scatter', we recommend downloading wheel from https://data.pyg.org/whl/
