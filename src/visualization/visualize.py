@@ -53,8 +53,8 @@ def visualize_2D(dataset, all_boundary, boundary, outlier):
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.legend(loc='upper right', fontsize=14, borderaxespad=1.0, borderpad=1.0, labelspacing=1.0)
     plt.tight_layout()
-    plt.savefig("visualize_2D.png", dpi=300)
-    plt.show()
+    plt.savefig("visualization/visualize_2D.png", dpi=300)
+    # plt.show()
 
 
 def visualize_3D(dataset, all_boundary, boundary, outlier):
@@ -118,8 +118,8 @@ def visualize_3D(dataset, all_boundary, boundary, outlier):
     ax.grid(True, linestyle='--', alpha=0.5)
     ax.legend(loc='upper right', fontsize=14, borderaxespad=1.0, borderpad=1.0, labelspacing=1.0)
     plt.tight_layout()
-    fig.savefig("visualize_3D.png", dpi=300)
-    plt.show()
+    fig.savefig("visualization/visualize_3D.png", dpi=300)
+    # plt.show()
 
 
 if __name__ == '__main__':

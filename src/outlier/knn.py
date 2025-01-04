@@ -26,6 +26,7 @@ def generate_outliers(
         num_nodes: int,
         num_features: int,
         num_edges: int,
+        num_classes: int = 1,
         cov_mat=0.1,
         sampling_ratio=1.0,
         boundary_ratio=0.1,
@@ -48,6 +49,7 @@ def generate_outliers(
         num_nodes: the number of nodes
         num_features: the number of features
         num_edges: the number of edges
+        num_classes: the number of classes
         cov_mat: The weight before the covariance matrix to determine the sampling range
         sampling_ratio: How many OOD samples to generate
         boundary_ratio: How many ID samples are defined as points near the boundary
@@ -154,8 +156,12 @@ def generate_outliers(
         device=device
     )
 
-    # Since it is not brought into the supervised training process, it is assumed that the labels are all 0, and the generated labels are all 0.
-    sample_labels = torch.zeros(num_sample_points, dtype=torch.long, device=device)
+    sample_labels = torch.randint(
+        low=0,
+        high=num_classes,
+        size=(num_sample_points,),
+        device=device
+    )
 
     print(f"Time taken to generate outliers {round(time.time() - begin_time, 2)}s")
     print(f"{'End Generate Outliers':=^80}")
@@ -239,7 +245,8 @@ def generate_negative_samples(
     max_distance, max_distance_index = torch.topk(k_th_distance, num_points, dim=0)
 
     outliers = target[max_distance_index].repeat(repeats=(num_negative_samples // num_points, 1))
-    nosies = torch.cat([torch.rand_like(outliers) * -0.05, torch.rand_like(outliers) * 0.05])
+    beta = 0.05
+    nosies = torch.cat([torch.rand_like(outliers) * -beta, torch.rand_like(outliers) * beta])
     shape = nosies.shape
     flattened_tensor = nosies.view(-1)
     # Shuffle the order of the noise randomly

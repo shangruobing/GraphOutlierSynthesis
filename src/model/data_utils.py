@@ -232,7 +232,6 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
     test_score = eval_func(dataset_ind.y[test_idx], out[test_idx])
 
     valid_idx = dataset_ind.val_mask
-
     valid_out = F.log_softmax(out[valid_idx], dim=1)
     valid_loss = criterion(valid_out, dataset_ind.y[valid_idx].squeeze(1))
 

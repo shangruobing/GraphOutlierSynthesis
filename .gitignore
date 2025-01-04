@@ -1,13 +1,17 @@
 __pycache__
 
 .idea
+.vscode
+
+wheel
+
+venv
 
 dataset/*
 !dataset/README.md
 
-wheel
-
 result/*
 !result/README.md
 
-venv
+visualization/*
+!visualization/README.md

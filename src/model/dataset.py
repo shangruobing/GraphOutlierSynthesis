@@ -12,7 +12,13 @@ from src.common.parse import Arguments
 from src.model.data_utils import rand_splits
 from src.outlier.knn import generate_outliers
 
-__all__ = ["load_dataset", "create_knn_dataset"]
+__all__ = [
+    "load_dataset",
+    "create_knn_dataset",
+    "create_structure_manipulation_dataset",
+    "create_feature_interpolation_dataset",
+    "create_label_leave_out_dataset",
+]
 
 
 def load_dataset(args: Arguments) -> Tuple[Data, Data, Data]:
@@ -265,11 +271,15 @@ def create_knn_dataset(
     Returns:
 
     """
+    if len(data.y.shape) == 1:
+        data.y = data.y.unsqueeze(1)
+    num_classes = max(data.y.max().item() + 1, data.y.shape[1])
     outlier = generate_outliers(
         data.x,
         num_nodes=data.num_nodes,
         num_features=data.num_features,
         num_edges=data.num_edges,
+        num_classes=num_classes,
         cov_mat=cov_mat,
         sampling_ratio=sampling_ratio,
         boundary_ratio=boundary_ratio,

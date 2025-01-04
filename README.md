@@ -180,6 +180,7 @@ python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_ty
 # run our method
 python src/main.py --method "gnnsafe" --backbone "gcn" --dataset "cora" --ood_type "structure" --device 0 --epochs 100 --synthesis_ood --use_energy --use_energy_propagation --use_classifier
 
-# visualize the generated outliers
-python src/visualization.py
+# visualize the method
+python src/visualization/visualize_graph.py
+python src/visualization/visualize_outlier.py
 ```
