@@ -20,7 +20,9 @@ def parser_add_main_args(parser):
     parser.add_argument('--method', type=str, default='gnnsafe', choices=[
         'msp', 'gnnsafe', 'OE', 'ODIN', 'Mahalanobis', 'MaxLogits', 'EnergyModel', 'EnergyProp'
     ])
-    parser.add_argument('--backbone', type=str, default='gcn', choices=['gcn', 'mlp', 'gat', 'mixhop', 'gcnjk', 'gatjk', 'appnp', 'sgc'])
+    parser.add_argument('--backbone', type=str, default='gcn', choices=[
+        'gcn', 'mlp', 'gat', 'mixhop', 'gcnjk', 'gatjk', 'appnp', 'sgc'
+    ])
     parser.add_argument('--hidden_channels', type=int, default=128)
     parser.add_argument('--num_layers', type=int, default=2, help='number of layers for GNN classifiers')
 
@@ -44,10 +46,10 @@ def parser_add_main_args(parser):
 
     # samping strategy
     parser.add_argument('--cov_mat', type=float, default=0.1, help='The weight before the covariance matrix to determine the sampling range')
-    parser.add_argument('--sampling_ratio', type=float, default=1.0, help='How many OOD samples to generate')
-    parser.add_argument('--boundary_ratio', type=float, default=0.1, help='How many ID samples to pick to define as points near the boundary')
-    parser.add_argument('--boundary_sampling_ratio', type=float, default=0.5, help='How many boundary used to generate outliers')
-    parser.add_argument('--k', type=int, default=100, help='The number of nearest neighbors to return')
+    parser.add_argument('--sampling_ratio', type=float, default=1.0, help='Number of OOD samples to generate')
+    parser.add_argument('--boundary_ratio', type=float, default=0.1, help='Number of ID samples to pick to define as points near the boundary')
+    parser.add_argument('--boundary_sampling_ratio', type=float, default=0.5, help='Number of boundary used to generate outliers')
+    parser.add_argument('--k', type=int, default=100, help='Number of nearest neighbors to return')
 
 
 @dataclass

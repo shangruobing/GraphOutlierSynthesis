@@ -26,6 +26,14 @@ def energy_propagation(embeddings, edge_index, num_prop_layers=1, alpha=0.5):
     value = torch.ones_like(row) * d_norm
     value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
     adj = SparseTensor(row=col, col=row, value=value, sparse_sizes=(N, N))
+
+    origin_device = embeddings.device
+    if str(embeddings.device).startswith("mps"):
+        embeddings = embeddings.cpu()
+        adj = adj.cpu()
+
     for _ in range(num_prop_layers):
         embeddings = embeddings * alpha + matmul(adj, embeddings) * (1 - alpha)
+
+    embeddings = embeddings.to(origin_device)
     return embeddings.squeeze(1)

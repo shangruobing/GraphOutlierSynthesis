@@ -66,7 +66,7 @@ def setup_dataset(args: Arguments, device: torch.device):
 def setup_model(args: Arguments, num_features: int, num_classes: int, device: torch.device):
     if args.method == 'msp':
         model = MSP(num_features, num_classes, args)
-    elif args.method in 'gnnsafe':
+    elif args.method == 'gnnsafe':
         model = GNNSafe(num_features, num_classes, args)
     elif args.method == 'OE':
         model = OE(num_features, num_classes, args)

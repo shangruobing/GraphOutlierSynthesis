@@ -53,7 +53,7 @@ def visualize_3d():
 
 def main():
     visualize_2d()
-    # visualize_3d()
+    visualize_3d()
 
 
 if __name__ == '__main__':

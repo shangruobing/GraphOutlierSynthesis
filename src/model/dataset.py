@@ -165,7 +165,6 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
         raise NotImplementedError
 
     dataset = torch_dataset[0]
-    dataset = add_mask_property(dataset)
 
     if ood_type == 'structure':
         dataset_ood_tr = create_structure_manipulation_dataset(dataset)
@@ -178,52 +177,65 @@ def load_graph_dataset(data_dir, dataset_name, ood_type) -> Tuple[Data, Data, Da
     else:
         raise NotImplementedError
 
+    dataset = add_mask_property(dataset)
+
     return dataset, dataset_ood_tr, dataset_ood_te
 
 
-def create_structure_manipulation_dataset(data, p_ii=1.5, p_ij=0.5) -> Data:
+def create_structure_manipulation_dataset(dataset: Data, p_ii=1.5, p_ij=0.5) -> Data:
     """
-    Structure manipulation: use the original graph as in-distribution data and adopt stochastic block model to randomly generate a graph for OOD data.
-    :param data:
-    :param p_ii:
-    :param p_ij:
-    :return:
+    Structure manipulation: Adopt stochastic block model to randomly generate a graph.
+    Args:
+        dataset:
+        p_ii:
+        p_ij:
+
+    Returns:
+
     """
-    n = data.num_nodes
-    d = data.edge_index.size(1) / data.num_nodes / (data.num_nodes - 1)
-    num_blocks = int(data.y.max()) + 1
+    n = dataset.num_nodes
+    d = dataset.edge_index.size(1) / dataset.num_nodes / (dataset.num_nodes - 1)
+    num_blocks = int(dataset.y.max()) + 1
     p_ii, p_ij = p_ii * d, p_ij * d
     block_size = n // num_blocks
     block_sizes = [block_size for _ in range(num_blocks - 1)] + [block_size + n % block_size]
     edge_probs = torch.ones((num_blocks, num_blocks)) * p_ij
     edge_probs[torch.arange(num_blocks), torch.arange(num_blocks)] = p_ii
     edge_index = stochastic_blockmodel_graph(block_sizes, edge_probs)
-    dataset = Data(x=data.x, edge_index=edge_index, y=data.y)
+    dataset = Data(x=dataset.x, edge_index=edge_index, y=dataset.y)
     dataset.node_idx = torch.arange(n)
     return dataset
 
 
-def create_feature_interpolation_dataset(data) -> Data:
+def create_feature_interpolation_dataset(dataset: Data) -> Data:
     """
-    Feature interpolation: use random interpolation to create node features for OOD data and the original graph as in-distribution data.
-    :param data:
-    :return:
+    Feature interpolation: Random interpolation the node features.
+
+    Args:
+        dataset:
+
+    Returns:
+
     """
-    x = data.x
-    n = data.num_nodes
+    x = dataset.x
+    n = dataset.num_nodes
     idx = torch.randint(0, n, (n, 2))
     weight = torch.rand(n).unsqueeze(1)
     x_new = x[idx[:, 0]] * weight + x[idx[:, 1]] * (1 - weight)
-    dataset = Data(x=x_new, edge_index=data.edge_index, y=data.y)
+    dataset = Data(x=x_new, edge_index=dataset.edge_index, y=dataset.y)
     dataset.node_idx = torch.arange(n)
     return dataset
 
 
-def create_label_leave_out_dataset(dataset) -> Data:
+def create_label_leave_out_dataset(dataset: Data) -> Data:
     """
     Label leave-out: use nodes with partial classes as in-distribution and leave out others for OOD.
-    :param dataset:
-    :return:
+
+    Args:
+        dataset:
+
+    Returns:
+
     """
     label = dataset.y
     unique_elements = torch.unique(label)

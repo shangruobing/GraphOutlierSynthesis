@@ -365,8 +365,6 @@ class Mahalanobis(nn.Module):
             temp_precision = torch.from_numpy(temp_precision).float().to(device)
             precision.append(temp_precision)
 
-        # print('\n Training Accuracy:({:.2f}%)\n'.format(100. * correct / total))
-
         return sample_class_mean, precision
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):

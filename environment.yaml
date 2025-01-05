@@ -51,7 +51,7 @@ dependencies:
   - packaging=24.1=py312h06a4308_0
   - pip=24.0=py312h06a4308_0
   - python=3.12.0=h996f2a0_0
-  - pytorch=2.3.0=py3.12_cuda11.8_cudnn8.7.0_0
+  - pytorch=2.4.0=py3.12_cuda11.8_cudnn8.7.0_0
   - pytorch-cuda=11.8=h7e8668a_5
   - pytorch-mutex=1.0=cuda
   - pyyaml=6.0.1=py312h5eee18b_0
@@ -101,7 +101,7 @@ dependencies:
       - scipy==1.14.0
       - six==1.16.0
       - threadpoolctl==3.5.0
-      - torch-geometric==2.5.0
+      - torch-geometric==2.6.0
       - torch-scatter==2.1.2+pt23cu118
       - torch-sparse==0.6.18+pt23cu118
       - tqdm==4.66.5

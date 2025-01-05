@@ -120,7 +120,7 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 | Coauthor-CS  | 18333     | 6805         | 15          | 163788    |
 | Amazon-Photo | 7650      | 745          | 8           | 238162    |
 | Arxiv        | 169343    | 128          | 40          | 1166243   |
-| Twitch       | 9498      | 128          | 2           | 315774    |      
+| Twitch       | 9498      | 128          | 2           | 315774    |
 
 ## Environment
 
@@ -131,8 +131,8 @@ Q(\mathbf{x} \mid \text { ID })=\frac{1\left[\hat{\mathbb{P}}_{\text {in }}(\mat
 
 ### Dependency
 
-- torch==2.3.0
-- torch_geometric==2.5.0
+- torch==2.4.0
+- torch_geometric==2.6.0
 - torch_sparse==0.6.18+pt23cu118
 - torch_scatter==2.1.2+pt23cu118
 
@@ -150,18 +150,18 @@ conda activate GraphOutlierSynthesis
 pip install -r requirements.txt
 
 # If use GPU
-conda install pytorch==2.3.0 pytorch-cuda=11.8 -c pytorch -c nvidia
 conda install faiss-gpu==1.8.0 -c pytorch
-pip install torch_geometric==2.5.0
-pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.3.0+cu118.html
-pip install torch_sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.3.0+cu118.html
+conda install pytorch==2.4.0 pytorch-cuda=11.8 -c pytorch -c nvidia
+pip install torch_geometric==2.6.0
+pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.4.0+cu118.html
+pip install torch_sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.4.0+cu118.html
 
 # If use CPU (optional)
-pip install torch==2.3.0
-pip install faiss-cpu==1.9.0
-pip install torch_geometric==2.5.0
-pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
-pip install torch-sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
+conda install faiss-cpu==1.8.0 -c pytorch
+pip install torch==2.4.0
+pip install torch_geometric==2.6.0
+pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.4.0+cpu.html
+pip install torch-sparse==0.6.18 -f https://data.pyg.org/whl/torch-2.4.0+cpu.html
 
 # If need additional dataset (optional)
 pip install ogb==1.3.6
