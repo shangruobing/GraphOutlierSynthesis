@@ -18,7 +18,7 @@ def parser_add_main_args(parser):
 
     # model network
     parser.add_argument('--method', type=str, default='gnnsafe', choices=[
-        'msp', 'gnnsafe', 'OE', 'ODIN', 'Mahalanobis', 'MaxLogits', 'EnergyModel', 'EnergyProp'
+        'MSP', 'OE', 'ODIN', 'Mahalanobis', 'MaxLogits', 'EnergyModel', 'EnergyProp', 'GNNSafe', 'GNNOutlier'
     ])
     parser.add_argument('--backbone', type=str, default='gcn', choices=[
         'gcn', 'mlp', 'gat', 'mixhop', 'gcnjk', 'gatjk', 'appnp', 'sgc'
@@ -50,6 +50,8 @@ def parser_add_main_args(parser):
     parser.add_argument('--boundary_ratio', type=float, default=0.1, help='Number of ID samples to pick to define as points near the boundary')
     parser.add_argument('--boundary_sampling_ratio', type=float, default=0.5, help='Number of boundary used to generate outliers')
     parser.add_argument('--k', type=int, default=100, help='Number of nearest neighbors to return')
+
+    parser.add_argument('--T', type=float, default=1.0, help='temperature for Softmax')
 
 
 @dataclass
@@ -83,6 +85,7 @@ class Arguments:
     boundary_ratio: float
     boundary_sampling_ratio: float
     k: int
+    T: float
 
 
 def parser_parse_args(parser) -> Arguments:
@@ -116,7 +119,8 @@ def parser_parse_args(parser) -> Arguments:
         sampling_ratio=args.sampling_ratio,
         boundary_ratio=args.boundary_ratio,
         boundary_sampling_ratio=args.boundary_sampling_ratio,
-        k=args.k
+        k=args.k,
+        T=args.T,
     )
 
 

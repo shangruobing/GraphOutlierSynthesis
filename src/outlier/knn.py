@@ -136,9 +136,11 @@ def generate_outliers(
 
     # The number of edges is determined by calculating the edge-to-point ratio.
     edge_node_radio = num_edges // num_nodes
+
+    num_nodes = min(num_sample_points, len(sample_points))
     sample_edges = torch.randint(
         low=0,
-        high=num_sample_points - 1,
+        high=num_nodes - 1,
         size=(2, int(edge_node_radio * num_sample_points)),
         device=device
     )
@@ -146,10 +148,13 @@ def generate_outliers(
     sample_labels = torch.randint(
         low=0,
         high=num_classes,
-        size=(num_sample_points,),
+        size=(num_nodes,),
         device=device
     )
 
+    print(f"Shape of OOD sample points: {sample_points.shape}")
+    print(f"Shape of OOD sample edges: {sample_edges.shape}")
+    print(f"Shape of OOD sample labels: {sample_labels.shape}")
     print(f"Time taken to generate outliers {round(time.time() - begin_time, 2)}s")
     print(f"{'End Generate Outliers':=^80}")
 
@@ -183,13 +188,14 @@ def search_max_distance(
     """
     Find the k neighbors of each element in the dataset,
     then select the farthest (Kth) neighbor of each element,
-    and finally select the farthest num_selects neighbors from the neighbors
+    and finally select the neighbors with the max distance neighbors from the Kth neighbors.
 
     Such as:
-    k = 2
-                        [[B,C],           [[C],
-    [[A,B,C]]   =>       [A,C]       =>    [C],     => [B,C]
-                         [A,B]]            [B]]
+    k = 2, top = 2
+    Elements   =>   Nearest neighbors  =>  Farthest neighbors  =>  Max distance neighbors
+                        [[B, C],                [[C],
+    [A, B, C]  =>        [C, A],       =>        [A],          =>  [C, A]
+                         [A, B]]                 [B]]
     Args:
         dataset: the target of the search
         index: The index structure used for the search.

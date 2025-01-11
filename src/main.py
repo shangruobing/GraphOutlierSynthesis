@@ -14,6 +14,7 @@ from src.common.logger import DetectLogger
 from src.common.parse import init_parser_args, Arguments
 from src.common.utils import get_device, fix_seed, get_now_datetime
 from src.common.recorder import Recorder
+from src.model.model import GNNOutlier
 from src.model.baselines import MSP, OE, ODIN, Mahalanobis, MaxLogits, EnergyModel, EnergyProp, GNNSafe
 from src.model.data_utils import evaluate_detect, eval_acc
 from src.model.dataset import load_dataset, create_knn_dataset
@@ -64,10 +65,8 @@ def setup_dataset(args: Arguments, device: torch.device):
 
 
 def setup_model(args: Arguments, num_features: int, num_classes: int, device: torch.device):
-    if args.method == 'msp':
+    if args.method == 'MSP':
         model = MSP(num_features, num_classes, args)
-    elif args.method == 'gnnsafe':
-        model = GNNSafe(num_features, num_classes, args)
     elif args.method == 'OE':
         model = OE(num_features, num_classes, args)
     elif args.method == "ODIN":
@@ -80,6 +79,10 @@ def setup_model(args: Arguments, num_features: int, num_classes: int, device: to
         model = EnergyModel(num_features, num_classes, args)
     elif args.method == 'EnergyProp':
         model = EnergyProp(num_features, num_classes, args)
+    elif args.method == 'GNNSafe':
+        model = GNNSafe(num_features, num_classes, args)
+    elif args.method == 'GNNOutlier':
+        model = GNNOutlier(num_features, num_classes, args)
     else:
         raise ValueError(f"Unknown method: {args.method}")
     print(model)
@@ -90,25 +93,36 @@ def setup_model(args: Arguments, num_features: int, num_classes: int, device: to
 
     criterion = nn.NLLLoss()
 
-    optimizer = torch.optim.Adam(
-        params=[
-            {'params': model.encoder.parameters(), 'lr': args.lr},
+    params = [
+        {'params': model.encoder.parameters(), 'lr': args.lr},
+    ]
+
+    if hasattr(model, "classifier"):
+        params.append(
             {'params': model.classifier.parameters(), 'lr': args.lr},
-        ],
+        )
+
+    optimizer = torch.optim.Adam(
+        params=params,
         lr=args.lr,
         weight_decay=args.weight_decay
     )
 
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer,
+                                                           T_max=100,
+                                                           eta_min=0.0001)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=30, gamma=0.3)
+
     logger = DetectLogger()
 
-    return model, criterion, optimizer, logger
+    return model, criterion, optimizer, scheduler, logger
 
 
 def train():
     print(f"\n{'Begin Time: ' + get_now_datetime():=^80}")
     args, device = setup_args()
     dataset_ind, dataset_ood_tr, dataset_ood_te, synthesis_ood_dataset, num_classes, num_features = setup_dataset(args=args, device=device)
-    model, criterion, optimizer, logger = setup_model(args=args, num_features=num_features, num_classes=num_classes, device=device)
+    model, criterion, optimizer, scheduler, logger = setup_model(args=args, num_features=num_features, num_classes=num_classes, device=device)
 
     for epoch in range(args.epochs):
         model.train()
@@ -116,6 +130,7 @@ def train():
         loss = model.loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, criterion, device, args)
         loss.backward()
         optimizer.step()
+        scheduler.step()
         metric = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_acc, args, device)
         logger.log(epoch, loss, *metric)
 

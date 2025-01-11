@@ -7,7 +7,7 @@
 #  Time taken to generate outliers 1.94s
 #  =============================End Generate Outliers==============================
 # Epoch: 99, Loss(↓): 1.2128, AUROC(↑): 88.96%, AUPR(↑): 89.45%, FPR95(↓): 54.10%, Accuracy(↑): 80.55%, Test Score(↑): 76.60%
-python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
+python main.py --method "GNNOutlier" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5 \
@@ -23,7 +23,7 @@ python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
 #  Time taken to generate outliers 1.54s
 #  =============================End Generate Outliers==============================
 # Epoch: 35, Loss(↓): 1.1887, AUROC(↑): 88.97%, AUPR(↑): 90.22%, FPR95(↓): 59.40%, Accuracy(↑): 73.95%, Test Score(↑): 79.50%
-python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
+python main.py --method "GNNOutlier" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5 \
@@ -39,7 +39,7 @@ python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
 #  Time taken to generate outliers 1.42s
 #  =============================End Generate Outliers==============================
 # Epoch: 31, Loss(↓): 1.1330, AUROC(↑): 88.14%, AUPR(↑): 89.48%, FPR95(↓): 62.40%, Accuracy(↑): 60.70%, Test Score(↑): 80.50%
-python main.py --method "gnnsafe" --backbone "gcn" --device 0 --epochs 100 \
+python main.py --method "GNNOutlier" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "cora" --ood_type "structure" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
   --lower_bound_id -1 --upper_bound_id -5 \

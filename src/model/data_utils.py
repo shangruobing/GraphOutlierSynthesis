@@ -130,6 +130,8 @@ def get_measures(_pos, _neg, recall_level=0.95):
     data_min = examples.min()
     data_max = examples.max()
     examples = (examples - data_min) / (data_max - data_min)
+    # assert data_min >= 0
+    # assert data_max <= 1
     auroc = roc_auc_score(labels, examples)
     accuracy = accuracy_score(labels, (examples >= 0.5).astype(int))
     aupr = average_precision_score(labels, examples)
@@ -218,9 +220,9 @@ def evaluate_detect(model, dataset_ind, dataset_ood, criterion, eval_func, args,
         with torch.no_grad():
             test_ood_score = model.detect(dataset_ood, dataset_ood.node_idx, device, args).cpu()
 
-    min_length = min(len(test_ind_score), len(test_ood_score))
-    test_ind_score = test_ind_score[:min_length]
-    test_ood_score = test_ood_score[:min_length]
+    # min_length = min(len(test_ind_score), len(test_ood_score))
+    # test_ind_score = test_ind_score[:min_length]
+    # test_ood_score = test_ood_score[:min_length]
 
     auroc, aupr, fpr, accuracy = get_measures(test_ind_score, test_ood_score)
     with torch.no_grad():

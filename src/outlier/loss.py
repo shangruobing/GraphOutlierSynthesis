@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from torch_geometric.data import Data
 
 from src.common.parse import Arguments
-from src.outlier.energy import energy_propagation
 
 __all__ = ["compute_loss"]
 
@@ -52,46 +51,55 @@ def compute_loss(
         # Get the GNN output for the OOD data
         logit_ood, penultimate_ood = encoder(dataset_ood.x, dataset_ood.edge_index)
 
+        classifier_ood_list = []
         if args.synthesis_ood:
             # Get the GNN output for the synthesised OOD data
             logit_knn_ood, penultimate_knn_ood = encoder(synthesis_ood_dataset.x, synthesis_ood_dataset.edge_index)
             logit_ood = torch.cat([logit_ood, logit_knn_ood])
-            penultimate_ood = torch.cat([penultimate_ood, penultimate_knn_ood])
+            # penultimate_ood = torch.cat([penultimate_ood, penultimate_knn_ood])
+            if args.use_classifier:
+                classifier_ood_knn = classifier(
+                    penultimate_knn_ood,
+                    synthesis_ood_dataset.x,
+                    synthesis_ood_dataset.edge_index,
+                    synthesis_ood_dataset.node_idx
+                )
+                classifier_ood_list.append(classifier_ood_knn)
 
         # Calculate the energy scores of ID and OOD output by GNN
         # temperature for Softmax
         T = 1.0
-        energy_id = - T * torch.logsumexp(logit_id / T, dim=-1)
-        energy_ood = - T * torch.logsumexp(logit_ood / T, dim=-1)
+        # energy_id = - T * torch.logsumexp(logit_id / T, dim=-1)
+        # energy_ood = - T * torch.logsumexp(logit_ood / T, dim=-1)
 
         # Complete the propagation of energy
-        if args.use_energy_propagation:
-            # number of layers for energy belief propagation
-            num_prop_layers = 1
-            # weight for residual connection in propagation
-            alpha = 0.5
-            energy_id = energy_propagation(
-                embeddings=energy_id,
-                edge_index=dataset_id.edge_index,
-                num_prop_layers=num_prop_layers,
-                alpha=alpha
-            )
-            energy_ood = energy_propagation(
-                embeddings=energy_ood,
-                edge_index=dataset_ood.edge_index,
-                num_prop_layers=num_prop_layers,
-                alpha=alpha
-            )
+        # if args.use_energy_propagation:
+        # number of layers for energy belief propagation
+        # num_prop_layers = 1
+        # weight for residual connection in propagation
+        # alpha = 0.5
+        # energy_id = energy_propagation(
+        #     embeddings=energy_id,
+        #     edge_index=dataset_id.edge_index,
+        #     num_prop_layers=num_prop_layers,
+        #     alpha=alpha
+        # )
+        # energy_ood = energy_propagation(
+        #     embeddings=energy_ood,
+        #     edge_index=dataset_ood.edge_index,
+        #     num_prop_layers=num_prop_layers,
+        #     alpha=alpha
+        # )
 
-        energy_id, energy_ood = trim_to_same_length(energy_id, energy_ood)
+        # energy_id, energy_ood = trim_to_same_length(energy_id, energy_ood)
 
         # Calculate the energy regularization loss
-        energy_regularization_loss = torch.mean(
-            torch.pow(F.relu(energy_id - args.lower_bound_id), 2)
-            +
-            torch.pow(F.relu(args.upper_bound_id - energy_ood), 2)
-        )
-        loss += args.lamda * energy_regularization_loss
+        # energy_regularization_loss = torch.mean(
+        #     torch.pow(F.relu(energy_id - args.lower_bound_id), 2)
+        #     +
+        #     torch.pow(F.relu(args.upper_bound_id - energy_ood), 2)
+        # )
+        # loss += args.lamda * energy_regularization_loss
 
         if args.use_classifier:
             # The ID data is fed into the classifier
@@ -101,37 +109,47 @@ def compute_loss(
                 dataset_id.edge_index,
                 train_id_idx
             )
-
-            # The OOD data is fed into the classifier
             classifier_ood = classifier(
                 penultimate_ood,
                 dataset_ood.x,
                 dataset_ood.edge_index,
                 train_ood_idx
             )
+            classifier_ood_list.append(classifier_ood)
 
-            if args.use_energy_filter:
-                # The classifier output is filtered using the energy score
-                classifier_id, classifier_ood = filter_by_energy(
-                    classifier_id=classifier_id,
-                    classifier_ood=classifier_ood,
-                    energy_id=energy_id,
-                    energy_ood=energy_ood,
-                    upper_bound_id=args.upper_bound_id,
-                    lower_bound_id=args.lower_bound_id
-                )
+            # The OOD data is fed into the classifier
+            classifier_ood = torch.cat(classifier_ood_list, dim=0)
+            #
+            # if args.use_energy_filter:
+            #     # The classifier output is filtered using the energy score
+            #     classifier_id, classifier_ood = filter_by_energy(
+            #         classifier_id=classifier_id,
+            #         classifier_ood=classifier_ood,
+            #         energy_id=energy_id,
+            #         energy_ood=energy_ood,
+            #         upper_bound_id=args.upper_bound_id,
+            #         lower_bound_id=args.lower_bound_id
+            #     )
 
             # Construct the classifier outputs and labels
-            min_length = min(len(classifier_id), len(classifier_ood))
-            if min_length == 0:
-                raise ValueError("No data left after filtering by energy. Adjust the upper_bound_id or lower_bound_ood.")
-            classifier_output = torch.cat([classifier_id[:min_length], classifier_ood[:min_length]])
+            # min_length = min(len(classifier_id), len(classifier_ood))
+            # if min_length == 0:
+            #     raise ValueError("No data left after filtering by energy. Adjust the upper_bound_id or lower_bound_ood.")
+            # classifier_output = torch.cat([classifier_id[:min_length], classifier_ood[:min_length]])
+            # classifier_label = torch.cat([
+            #     torch.ones(min_length, device=device),
+            #     torch.zeros(min_length, device=device)
+            # ])
+
+            classifier_output = torch.cat([classifier_id, classifier_ood])
             classifier_label = torch.cat([
-                torch.ones(min_length, device=device),
-                torch.zeros(min_length, device=device)
+                torch.ones(len(classifier_id), device=device),
+                torch.zeros(len(classifier_ood), device=device)
             ])
 
             classifier_loss = nn.BCELoss()(classifier_output, classifier_label)
+            # print("loss.item()", loss.item())
+            # print("classifier_loss.item()", classifier_loss.item())
             loss += args.delta * classifier_loss
 
     return loss

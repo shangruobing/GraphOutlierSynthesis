@@ -2,42 +2,71 @@ import numpy as np
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 from torch_geometric.data import Data
-from torch_geometric.nn.conv import GCNConv
+from torch_geometric.utils import degree
+from torch_sparse import SparseTensor, matmul
 
 from src.common.parse import Arguments
 from src.model.backbone import GCN, MLP, GAT, SGC, APPNP_Net, MixHop, GCNJK, GATJK
-from src.outlier.energy import energy_propagation
-from src.outlier.loss import compute_loss
 
 
 class MSP(nn.Module):
     def __init__(self, num_features, num_classes, args: Arguments):
         super(MSP, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=num_features,
-                               hidden_channels=args.hidden_channels,
-                               out_channels=num_classes,
-                               num_layers=args.num_layers,
-                               dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GCN(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GAT(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mixhop':
-            self.encoder = MixHop(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = MixHop(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gcnjk':
-            self.encoder = GCNJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GCNJK(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gatjk':
-            self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GATJK(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -48,40 +77,55 @@ class MSP(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        # return self.classifier(penultimate[node_idx], dataset.x, dataset.edge_index, node_idx).squeeze()
-
         logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))
         logits, penultimate = logits[node_idx], penultimate[node_idx]
         sp = torch.softmax(logits, dim=-1)
         return sp.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+        train_idx = dataset_ind.train_mask
+        logits_in, penultimate = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))
+        logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+        return loss
 
 
 class OE(nn.Module):
     def __init__(self, num_features, num_classes, args: Arguments):
         super(OE, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=num_features,
-                               hidden_channels=args.hidden_channels,
-                               out_channels=num_classes,
-                               num_layers=args.num_layers,
-                               dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GCN(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
+            self.encoder = GAT(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True,
+                heads=8,
+                out_heads=1
+            )
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -92,38 +136,61 @@ class OE(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        # return self.classifier(penultimate[node_idx]).squeeze()
         logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))
         logits, penultimate = logits[node_idx], penultimate[node_idx]
         return logits.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+        train_in_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
+
+        logits_in, penultimate = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))
+        logits_in, penultimate = logits_in[train_in_idx], penultimate[train_in_idx]
+
+        logits_out, penultimate = self.encoder(dataset_ood.x.to(device), dataset_ood.edge_index.to(device))
+        logits_out, penultimate = logits_out[train_ood_idx], penultimate[train_ood_idx]
+
+        train_idx = dataset_ind.train_mask
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+        loss += 0.5 * -(logits_out.mean(1) - torch.logsumexp(logits_out, dim=1)).mean()
+        return loss
 
 
 class ODIN(nn.Module):
     def __init__(self, num_features, num_classes, args: Arguments):
         super(ODIN, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=num_features,
-                               hidden_channels=args.hidden_channels,
-                               out_channels=num_classes,
-                               num_layers=args.num_layers,
-                               dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GCN(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
+            self.encoder = GAT(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True,
+                heads=8,
+                out_heads=1
+            )
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -176,31 +243,48 @@ class ODIN(nn.Module):
         return nnOutputs
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+        train_idx = dataset_ind.splits['train']
+        logits_in, penultimate = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))[train_idx]
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+        return loss
 
 
 class Mahalanobis(nn.Module):
     def __init__(self, num_features, num_classes, args: Arguments):
         super(Mahalanobis, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=num_features,
-                               hidden_channels=args.hidden_channels,
-                               out_channels=num_classes,
-                               num_layers=args.num_layers,
-                               dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GCN(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
+            self.encoder = GAT(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True,
+                heads=8,
+                out_heads=1
+            )
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -368,31 +452,49 @@ class Mahalanobis(nn.Module):
         return sample_class_mean, precision
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+        train_idx = dataset_ind.train_mask
+        logits_in, penultimate = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))
+        logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+        return loss
 
 
 class MaxLogits(nn.Module):
     def __init__(self, num_features, num_classes, args: Arguments):
         super(MaxLogits, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=num_features,
-                               hidden_channels=args.hidden_channels,
-                               out_channels=num_classes,
-                               num_layers=args.num_layers,
-                               dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GCN(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'appnp':
             self.encoder = APPNP_Net(num_features, args.hidden_channels, num_classes, dropout=args.dropout)
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
+            self.encoder = GAT(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True,
+                heads=8,
+                out_heads=1
+            )
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -403,39 +505,54 @@ class MaxLogits(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        # return self.classifier(penultimate[node_idx]).squeeze()
-
         logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))
         logits, penultimate = logits[node_idx], penultimate[node_idx]
         return logits.max(dim=1)[0]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+        train_idx = dataset_ind.train_mask
+        logits_in, penultimate = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))
+        logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+        return loss
 
 
 class EnergyModel(nn.Module):
     def __init__(self, num_features, num_classes, args: Arguments):
         super(EnergyModel, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=num_features,
-                               hidden_channels=args.hidden_channels,
-                               out_channels=num_classes,
-                               num_layers=args.num_layers,
-                               dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GCN(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'sgc':
             self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=2)
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
+            self.encoder = GAT(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True,
+                heads=8,
+                out_heads=1
+            )
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -446,41 +563,55 @@ class EnergyModel(nn.Module):
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        # return self.classifier(penultimate[node_idx]).squeeze()
-
         logits, penultimate = self.encoder(dataset.x.to(device), dataset.edge_index.to(device))
         logits, penultimate = logits[node_idx], penultimate[node_idx]
-
         neg_energy = args.T * torch.logsumexp(logits / args.T, dim=-1)
         return neg_energy
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+        train_in_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
+        logits_in, penultimate = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))
+        logits_in, penultimate = logits_in[train_in_idx], penultimate[train_in_idx]
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
+        return loss
 
 
 class EnergyProp(nn.Module):
     def __init__(self, num_features, num_classes, args: Arguments):
         super(EnergyProp, self).__init__()
         if args.backbone == 'gcn':
-            self.encoder = GCN(in_channels=num_features,
-                               hidden_channels=args.hidden_channels,
-                               out_channels=num_classes,
-                               num_layers=args.num_layers,
-                               dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GCN(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True)
+
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'sgc':
             self.encoder = SGC(in_channels=num_features, out_channels=num_classes, hops=2)
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout, use_bn=True, heads=8, out_heads=1)
+            self.encoder = GAT(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True,
+                heads=8,
+                out_heads=1
+            )
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -490,18 +621,39 @@ class EnergyProp(nn.Module):
         logits, penultimate = self.encoder(x, edge_index)
         return logits
 
-    def detect(self, dataset, node_idx, device, args):
+    @staticmethod
+    def propagation(e, edge_index, l=1, alpha=0.5):
+        e = e.unsqueeze(1)
+        N = e.shape[0]
+        row, col = edge_index
+        d = degree(col, N).float()
+        d_norm = 1. / d[col]
+        value = torch.ones_like(row) * d_norm
+        value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
+        adj = SparseTensor(row=col, col=row, value=value, sparse_sizes=(N, N))
+        origin_device = e.device
+        if str(e.device).startswith("mps"):
+            e = e.cpu()
+            adj = adj.cpu()
+        for _ in range(l):
+            e = e * alpha + matmul(adj, e) * (1 - alpha)
+        e = e.to(origin_device)
+        return e.squeeze(1)
 
+    def detect(self, dataset, node_idx, device, args):
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
-        logits, penultimate = logits[node_idx], penultimate[node_idx]
-
         neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1)
-        neg_energy_prop = energy_propagation(neg_energy, edge_index)
+        neg_energy_prop = self.propagation(neg_energy, edge_index)
         return neg_energy_prop[node_idx]
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+        x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
+        logits_in, penultimate = self.encoder(x_in, edge_index_in)
+        train_in_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
+        pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
+        return loss
 
 
 class GNNSafe(nn.Module):
@@ -521,21 +673,48 @@ class GNNSafe(nn.Module):
                 use_bn=True
             )
         elif args.backbone == 'mlp':
-            self.encoder = MLP(in_channels=num_features, hidden_channels=args.hidden_channels,
-                               out_channels=num_classes, num_layers=args.num_layers,
-                               dropout=args.dropout)
+            self.encoder = MLP(
+                in_channels=num_features,
+                hidden_channels=args.hidden_channels,
+                out_channels=num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout)
+
         elif args.backbone == 'gat':
-            self.encoder = GAT(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout,
-                               use_bn=True)
+            self.encoder = GAT(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout,
+                use_bn=True
+            )
         elif args.backbone == 'mixhop':
-            self.encoder = MixHop(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = MixHop(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gcnjk':
-            self.encoder = GCNJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GCNJK(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         elif args.backbone == 'gatjk':
-            self.encoder = GATJK(num_features, args.hidden_channels, num_classes, num_layers=args.num_layers, dropout=args.dropout)
+            self.encoder = GATJK(
+                num_features,
+                args.hidden_channels,
+                num_classes,
+                num_layers=args.num_layers,
+                dropout=args.dropout
+            )
         else:
             raise NotImplementedError
-        self.classifier = Classifier(in_features=args.hidden_channels)
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -546,78 +725,65 @@ class GNNSafe(nn.Module):
         logits, penultimate = self.encoder(x, edge_index)
         return logits
 
+    @staticmethod
+    def propagation(e, edge_index, prop_layers=1, alpha=0.5):
+        """energy belief propagation, return the energy after propagation"""
+        e = e.unsqueeze(1)
+        N = e.shape[0]
+        row, col = edge_index
+        d = degree(col, N).float()
+        d_norm = 1. / d[col]
+        value = torch.ones_like(row) * d_norm
+        value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
+        adj = SparseTensor(row=col, col=row, value=value, sparse_sizes=(N, N))
+        origin_device = e.device
+        if str(e.device).startswith("mps"):
+            e = e.cpu()
+            adj = adj.cpu()
+        for _ in range(prop_layers):
+            e = e * alpha + matmul(adj, e) * (1 - alpha)
+        e = e.to(origin_device)
+        return e.squeeze(1)
+
     def detect(self, dataset, node_idx, device, args):
         """return negative energy, a vector for all input nodes"""
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
-        # logits, penultimate = logits[node_idx], penultimate[node_idx]
         neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1)
-        # parser.add_argument('--K', type=int, default=2, help='number of layers for energy belief propagation')
-        K = 2
-        # parser.add_argument('--alpha', type=float, default=0.5, help='weight for residual connection in propagation')
-        alpha = 0.5
-        if args.use_energy_propagation:
-            neg_energy = energy_propagation(neg_energy, edge_index, num_prop_layers=K, alpha=alpha)
+        neg_energy = self.propagation(neg_energy, edge_index, prop_layers=2, alpha=0.5)
         return neg_energy[node_idx]
-        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
-        # return self.classifier(penultimate[node_idx], dataset.x, dataset.edge_index, node_idx).squeeze()
 
-    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
-        return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
+    def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args: Arguments):
+        x_in, edge_index_in = dataset_ind.x.to(device), dataset_ind.edge_index.to(device)
+        x_out, edge_index_out = dataset_ood.x.to(device), dataset_ood.edge_index.to(device)
 
+        # get predicted logits from gnn classifier
+        logits_in, penultimate = self.encoder(x_in, edge_index_in)
+        logits_out, penultimate = self.encoder(x_out, edge_index_out)
 
-class GCNEncoder(nn.Module):
-    """
-    An encoder for feature extraction.
-    """
+        train_in_idx, train_ood_idx = dataset_ind.train_mask, dataset_ood.node_idx
 
-    def __init__(self, in_features, in_channels):
-        """
-        Initialize a. encoder for feature extraction.
-        Args:
-            in_features: number of input features
-            in_channels: number of input channels
-        """
-        super().__init__()
-        self.convs = nn.ModuleList([
-            GCNConv(in_channels=in_channels, out_channels=in_channels // 2),
-            GCNConv(in_channels=in_channels // 2, out_channels=in_channels // 4),
-            GCNConv(in_channels=in_channels // 4, out_channels=in_features),
-        ])
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(p=0.2)
-        self.log_softmax = nn.LogSoftmax(dim=1)
+        # compute supervised training loss
+        pred_in = F.log_softmax(logits_in[train_in_idx], dim=1)
+        sup_loss = criterion(pred_in, dataset_ind.y[train_in_idx].squeeze(1).to(device))
 
-    def forward(self, x, edge_index):
-        for conv in self.convs:
-            x = conv(x, edge_index)
-            x = self.relu(x)
-            x = self.dropout(x)
-        return self.log_softmax(x)
+        energy_in = - args.T * torch.logsumexp(logits_in / args.T, dim=-1)
+        energy_out = - args.T * torch.logsumexp(logits_out / args.T, dim=-1)
 
+        energy_in = self.propagation(energy_in, edge_index_in, prop_layers=2, alpha=0.5)[train_in_idx]
+        energy_out = self.propagation(energy_out, edge_index_out, prop_layers=2, alpha=0.5)[train_ood_idx]
 
-class Classifier(nn.Module):
-    """
-    A classifier for encoder penultimate output.
-    """
+        # truncate to have the same length
+        if energy_in.shape[0] != energy_out.shape[0]:
+            min_n = min(energy_in.shape[0], energy_out.shape[0])
+            energy_in = energy_in[:min_n]
+            energy_out = energy_out[:min_n]
 
-    def __init__(self, in_features):
-        """
-        Initialize a classifier for encoder output.
-        Args:
-            in_features: number of input features
-        """
-        super().__init__()
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=in_features, out_features=in_features, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.2),
-            nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.2),
-            nn.Linear(in_features=in_features // 2, out_features=1, bias=True),
-            nn.Sigmoid()
-        )
+        # compute regularization loss
+        m_in = -5
+        m_out = -1
+        reg_loss = torch.mean(F.relu(energy_in - m_in) ** 2 + F.relu(m_out - energy_out) ** 2)
 
-    def forward(self, logit, x, edge_index, mask):
-        return self.classifier(logit).squeeze().view(-1)
+        loss = sup_loss + args.lamda * reg_loss
+
+        return loss
