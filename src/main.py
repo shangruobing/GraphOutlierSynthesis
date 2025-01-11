@@ -93,17 +93,10 @@ def setup_model(args: Arguments, num_features: int, num_classes: int, device: to
 
     criterion = nn.NLLLoss()
 
-    params = [
-        {'params': model.encoder.parameters(), 'lr': args.lr},
-    ]
-
-    if hasattr(model, "classifier"):
-        params.append(
-            {'params': model.classifier.parameters(), 'lr': args.lr},
-        )
-
     optimizer = torch.optim.Adam(
-        params=params,
+        params=[
+            {'params': model.encoder.parameters(), 'lr': args.lr},
+        ],
         lr=args.lr,
         weight_decay=args.weight_decay
     )
@@ -111,7 +104,6 @@ def setup_model(args: Arguments, num_features: int, num_classes: int, device: to
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer,
                                                            T_max=100,
                                                            eta_min=0.0001)
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=30, gamma=0.3)
 
     logger = DetectLogger()
 
@@ -124,8 +116,8 @@ def train():
     dataset_ind, dataset_ood_tr, dataset_ood_te, synthesis_ood_dataset, num_classes, num_features = setup_dataset(args=args, device=device)
     model, criterion, optimizer, scheduler, logger = setup_model(args=args, num_features=num_features, num_classes=num_classes, device=device)
 
+    model.encoder.train()
     for epoch in range(args.epochs):
-        model.train()
         optimizer.zero_grad()
         loss = model.loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, criterion, device, args)
         loss.backward()
@@ -133,6 +125,25 @@ def train():
         scheduler.step()
         metric = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_acc, args, device)
         logger.log(epoch, loss, *metric)
+
+    if hasattr(model, "classifier"):
+        classifier_criterion = nn.BCELoss()
+        classifier_optimizer = torch.optim.Adam(
+            params=[
+                {'params': model.classifier.parameters(), 'lr': args.lr}
+            ],
+            lr=args.lr,
+            weight_decay=args.weight_decay
+        )
+        model.encoder.eval()
+        model.classifier.train()
+        for epoch in range(args.epochs):
+            classifier_optimizer.zero_grad()
+            loss = model.classify_loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, classifier_criterion, device, args)
+            loss.backward()
+            classifier_optimizer.step()
+            metric = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_acc, args, device)
+            logger.log(epoch, loss, *metric)
 
     print(f"\n{'Final Statistics':=^80}")
     metrics = logger.get_statistics()

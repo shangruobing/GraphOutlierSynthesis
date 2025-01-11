@@ -1,16 +1,10 @@
-# import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch_geometric.data import Data
-from torch_geometric.nn.conv import GCNConv
 
 from src.common.parse import Arguments
 from src.model.backbone import GCN, MLP, GAT, MixHop, GCNJK, GATJK
-# from src.outlier.energy import energy_propagation
 from src.outlier.loss import compute_loss
-
-
-# from torch_geometric.utils import degree
-# from torch_sparse import SparseTensor, matmul
 
 
 class GNNOutlier(nn.Module):
@@ -78,57 +72,25 @@ class GNNOutlier(nn.Module):
         self.encoder.reset_parameters()
 
     def forward(self, dataset, device):
-        """return predicted logits"""
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
         return logits
 
     def detect(self, dataset, node_idx, device, args):
-        """return negative energy, a vector for all input nodes"""
         x, edge_index = dataset.x.to(device), dataset.edge_index.to(device)
         logits, penultimate = self.encoder(x, edge_index)
-        # logits, penultimate = logits[node_idx], penultimate[node_idx]
-        # neg_energy = 1.0 * torch.logsumexp(logits / 1.0, dim=-1)
-        # parser.add_argument('--K', type=int, default=2, help='number of layers for energy belief propagation')
-        # K = 2
-        # parser.add_argument('--alpha', type=float, default=0.5, help='weight for residual connection in propagation')
-        # alpha = 0.5
-        # if args.use_energy_propagation:
-        #     neg_energy = energy_propagation(neg_energy, edge_index, num_prop_layers=K, alpha=alpha)
-        # return neg_energy[node_idx]
-        # logits, penultimate = self.encoder(dataset.x, dataset.edge_index)
         return self.classifier(penultimate, dataset.x, dataset.edge_index, node_idx).squeeze()
 
     def loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
+        train_idx = dataset_ind.train_mask
+        logits_in, penultimate = self.encoder(dataset_ind.x.to(device), dataset_ind.edge_index.to(device))
+        logits_in, penultimate = logits_in[train_idx], penultimate[train_idx]
+        pred_in = F.log_softmax(logits_in, dim=1)
+        loss = criterion(pred_in, dataset_ind.y[train_idx].squeeze(1).to(device))
+        return loss
+
+    def classify_loss_compute(self, dataset_ind: Data, dataset_ood: Data, synthesis_ood_dataset: Data, criterion, device, args):
         return compute_loss(dataset_ind, dataset_ood, synthesis_ood_dataset, self.encoder, self.classifier, criterion, device, args)
-
-
-class GCNEncoder(nn.Module):
-    """
-    An encoder for feature extraction.
-    """
-
-    def __init__(self, in_channels):
-        """
-        Initialize a. encoder for feature extraction.
-        Args:
-            in_channels: number of input channels
-        """
-        super().__init__()
-        self.convs = nn.ModuleList([
-            GCNConv(in_channels=in_channels, out_channels=in_channels // 2),
-            GCNConv(in_channels=in_channels // 2, out_channels=in_channels // 4),
-            GCNConv(in_channels=in_channels // 4, out_channels=2),
-        ])
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(p=0.2)
-
-    def forward(self, x, edge_index):
-        for conv in self.convs:
-            x = conv(x, edge_index)
-            x = self.relu(x)
-            x = self.dropout(x)
-        return x
 
 
 class Classifier(nn.Module):
@@ -143,20 +105,16 @@ class Classifier(nn.Module):
             in_features: number of input features
         """
         super().__init__()
-        self.encoder = GCNEncoder(in_channels=in_features)
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=128, out_features=in_features, bias=True),
+            nn.Linear(in_features=in_features, out_features=in_features * 2, bias=True),
             nn.ReLU(inplace=True),
-            # nn.Dropout(p=0.2),
-            nn.Linear(in_features=in_features, out_features=in_features // 2, bias=True),
+            nn.Linear(in_features=in_features * 2, out_features=in_features // 2, bias=True),
             nn.ReLU(inplace=True),
-            # nn.Dropout(p=0.2),
             nn.Linear(in_features=in_features // 2, out_features=1, bias=True),
             nn.Sigmoid()
         )
 
     def forward(self, logits, x, edge_index, mask):
-        # logits = self.encoder(logits, edge_index)
         logits = self.classifier(logits)
         logits = logits.squeeze()
         return logits

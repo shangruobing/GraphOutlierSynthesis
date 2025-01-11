@@ -1,6 +1,7 @@
 ## twitch
 
 # Epoch: 79, Loss(↓): 0.6140, AUROC(↑): 65.51%, AUPR(↑): 70.55%, FPR95(↓): 91.41%, Accuracy(↑): 60.19%, Test Score(↑): 67.62%
+# Epoch: 69, Train Loss: 0.6008, Val Loss: 0.6626, AUROC: 51.78%, AUPR: 69.81%, FPR95: 94.23%, Accuracy: 64.07%, Test Score: 60.17%
 python src/main.py --method "GNNOutlier" --backbone "gcn" --device 0 --epochs 100 \
   --dataset "twitch" \
   --use_energy --use_energy_propagation --use_classifier --synthesis_ood \
