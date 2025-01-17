@@ -128,25 +128,39 @@ def train():
 
     if hasattr(model, "classifier"):
         classifier_criterion = nn.BCELoss()
-        classifier_optimizer = torch.optim.Adam(
+        classifier_optimizer = torch.optim.AdamW(
             params=[
                 {'params': model.classifier.parameters(), 'lr': args.lr}
             ],
             lr=args.lr,
             weight_decay=args.weight_decay
         )
+        classifier_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=classifier_optimizer,
+                                                                          T_max=100,
+                                                                          eta_min=0.0001)
+
+        for param in model.encoder.parameters():
+            param.requires_grad = False
+        for param in model.classifier.parameters():
+            param.requires_grad = True
+
         model.encoder.eval()
         model.classifier.train()
+
         for epoch in range(args.epochs):
             classifier_optimizer.zero_grad()
             loss = model.classify_loss_compute(dataset_ind, dataset_ood_tr, synthesis_ood_dataset, classifier_criterion, device, args)
             loss.backward()
             classifier_optimizer.step()
+            # classifier_scheduler.step()
             metric = evaluate_detect(model, dataset_ind, dataset_ood_te, criterion, eval_acc, args, device)
             logger.log(epoch, loss, *metric)
 
-    print(f"\n{'Final Statistics':=^80}")
-    metrics = logger.get_statistics()
+        print(f"\n{'Final Statistics':=^80}")
+        metrics = logger.get_statistics("acc_val")
+    else:
+        print(f"\n{'Final Statistics':=^80}")
+        metrics = logger.get_statistics("val_loss")
 
     Recorder.insert_row(
         args=args,

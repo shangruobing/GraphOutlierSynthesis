@@ -36,11 +36,16 @@ class DetectLogger:
     def add_epoch_info(self, info):
         self.epoch_info += info + '\n'
 
-    def get_statistics(self) -> Metrics:
+    def get_statistics(self, method: str) -> Metrics:
         result = 100 * torch.tensor(self.results)
         auroc, aupr, fpr, accuracy, test_score, valid_loss = result.T
         valid_loss = valid_loss / 100
-        min_index = valid_loss.argmin().item()
+        if method == "val_loss":
+            min_index = valid_loss.argmin().item()
+        elif method == "acc_val":
+            min_index = accuracy.argmax().item()
+        else:
+            raise NotImplementedError
         auroc_val = auroc[min_index].item()
         aupr_val = aupr[min_index].item()
         fpr_val = fpr[min_index].item()

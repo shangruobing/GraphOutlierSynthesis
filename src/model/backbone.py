@@ -9,8 +9,7 @@ from torch_sparse import SparseTensor, matmul
 
 
 class MLP(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
-                 dropout=.5):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout=.5):
         super(MLP, self).__init__()
         self.lins = nn.ModuleList()
         self.bns = nn.ModuleList()
@@ -88,31 +87,25 @@ class SGC(nn.Module):
 
 
 class GCN(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
-                 dropout=0.5, save_mem=True, use_bn=True):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2, dropout=0.5, save_mem=True, use_bn=True):
         super(GCN, self).__init__()
 
         self.convs = nn.ModuleList()
-        # self.convs.append(
-        #     GCNConv(in_channels, hidden_channels, cached=not save_mem, normalize=not save_mem))
         self.convs.append(
-            GCNConv(in_channels, hidden_channels, cached=not save_mem)
+            GCNConv(in_channels, hidden_channels, cached=not save_mem, normalize=not save_mem)
         )
 
         self.bns = nn.ModuleList()
         self.bns.append(nn.BatchNorm1d(hidden_channels))
         for _ in range(num_layers - 2):
-            # self.convs.append(
-            #     GCNConv(hidden_channels, hidden_channels, cached=not save_mem, normalize=not save_mem))
             self.convs.append(
-                GCNConv(hidden_channels, hidden_channels, cached=not save_mem)
+                GCNConv(hidden_channels, hidden_channels, cached=not save_mem, normalize=not save_mem)
             )
             self.bns.append(nn.BatchNorm1d(hidden_channels))
 
-        # self.convs.append(
-        #     GCNConv(hidden_channels, out_channels, cached=not save_mem, normalize=not save_mem))
         self.convs.append(
-            GCNConv(hidden_channels, out_channels, cached=not save_mem))
+            GCNConv(hidden_channels, out_channels, cached=not save_mem, normalize=not save_mem)
+        )
 
         self.dropout = dropout
         self.activation = F.relu
@@ -158,23 +151,25 @@ class GCN(nn.Module):
 
 
 class GAT(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
-                 dropout=0.5, use_bn=False, heads=1, out_heads=1):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2, dropout=0.5, use_bn=False, heads=1, out_heads=1):
         super(GAT, self).__init__()
 
         self.convs = nn.ModuleList()
         self.convs.append(
-            GATConv(in_channels, hidden_channels, dropout=dropout, heads=heads, concat=True))
+            GATConv(in_channels, hidden_channels, dropout=dropout, heads=heads, concat=True)
+        )
 
         self.bns = nn.ModuleList()
         self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
         for _ in range(num_layers - 2):
             self.convs.append(
-                GATConv(hidden_channels * heads, hidden_channels, dropout=dropout, heads=heads, concat=True))
+                GATConv(hidden_channels * heads, hidden_channels, dropout=dropout, heads=heads, concat=True)
+            )
             self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
 
         self.convs.append(
-            GATConv(hidden_channels * heads, out_channels, dropout=dropout, heads=out_heads, concat=False))
+            GATConv(hidden_channels * heads, out_channels, dropout=dropout, heads=out_heads, concat=False)
+        )
 
         self.dropout = dropout
         self.activation = F.elu
@@ -223,7 +218,6 @@ class GAT(nn.Module):
 
 
 class MixHopLayer(nn.Module):
-
     def __init__(self, in_channels, out_channels, hops=2):
         super(MixHopLayer, self).__init__()
         self.hops = hops
@@ -248,9 +242,7 @@ class MixHopLayer(nn.Module):
 
 
 class MixHop(nn.Module):
-
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
-                 dropout=0.5, hops=2):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2, dropout=0.5, hops=2):
         super(MixHop, self).__init__()
 
         self.convs = nn.ModuleList()
@@ -260,11 +252,13 @@ class MixHop(nn.Module):
         self.bns.append(nn.BatchNorm1d(hidden_channels * (hops + 1)))
         for _ in range(num_layers - 2):
             self.convs.append(
-                MixHopLayer(hidden_channels * (hops + 1), hidden_channels, hops=hops))
+                MixHopLayer(hidden_channels * (hops + 1), hidden_channels, hops=hops)
+            )
             self.bns.append(nn.BatchNorm1d(hidden_channels * (hops + 1)))
 
         self.convs.append(
-            MixHopLayer(hidden_channels * (hops + 1), out_channels, hops=hops))
+            MixHopLayer(hidden_channels * (hops + 1), out_channels, hops=hops)
+        )
 
         # note: uses linear projection instead of paper's attention output
         self.final_project = nn.Linear(out_channels * (hops + 1), out_channels)
@@ -294,6 +288,8 @@ class MixHop(nn.Module):
                 dtype=x.dtype)
             edge_weight = None
             adj_t = edge_index
+        else:
+            raise NotImplementedError
 
         for i, conv in enumerate(self.convs[:-1]):
             x = conv(x, adj_t)
@@ -310,23 +306,25 @@ class MixHop(nn.Module):
 
 
 class GCNJK(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
-                 dropout=0.5, save_mem=True, jk_type='max'):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2, dropout=0.5, save_mem=True, jk_type='max'):
         super(GCNJK, self).__init__()
 
         self.convs = nn.ModuleList()
         self.convs.append(
-            GCNConv(in_channels, hidden_channels, cached=not save_mem))
+            GCNConv(in_channels, hidden_channels, cached=not save_mem)
+        )
 
         self.bns = nn.ModuleList()
         self.bns.append(nn.BatchNorm1d(hidden_channels))
         for _ in range(num_layers - 2):
             self.convs.append(
-                GCNConv(hidden_channels, hidden_channels, cached=not save_mem))
+                GCNConv(hidden_channels, hidden_channels, cached=not save_mem)
+            )
             self.bns.append(nn.BatchNorm1d(hidden_channels))
 
         self.convs.append(
-            GCNConv(hidden_channels, hidden_channels, cached=not save_mem))
+            GCNConv(hidden_channels, hidden_channels, cached=not save_mem)
+        )
 
         self.dropout = dropout
         self.activation = F.relu
@@ -361,23 +359,25 @@ class GCNJK(nn.Module):
 
 
 class GATJK(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2,
-                 dropout=0.5, heads=1, jk_type='max'):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers=2, dropout=0.5, heads=1, jk_type='max'):
         super(GATJK, self).__init__()
 
         self.convs = nn.ModuleList()
         self.convs.append(
-            GATConv(in_channels, hidden_channels, heads=heads, concat=True))
+            GATConv(in_channels, hidden_channels, heads=heads, concat=True)
+        )
 
         self.bns = nn.ModuleList()
         self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
         for _ in range(num_layers - 2):
             self.convs.append(
-                GATConv(hidden_channels * heads, hidden_channels, heads=heads, concat=True))
+                GATConv(hidden_channels * heads, hidden_channels, heads=heads, concat=True)
+            )
             self.bns.append(nn.BatchNorm1d(hidden_channels * heads))
 
         self.convs.append(
-            GATConv(hidden_channels * heads, hidden_channels, heads=heads))
+            GATConv(hidden_channels * heads, hidden_channels, heads=heads)
+        )
 
         self.dropout = dropout
         self.activation = F.elu  # note: uses elu
@@ -472,7 +472,7 @@ class GPRPROP(MessagePassing):
             TEMP[-1] = (1 - alpha) ** K
         elif Init == 'NPPR':
             # Negative PPR
-            TEMP = (alpha) ** np.arange(K + 1)
+            TEMP = alpha ** np.arange(K + 1)
             TEMP = TEMP / np.sum(np.abs(TEMP))
         elif Init == 'Random':
             # Random
@@ -482,6 +482,8 @@ class GPRPROP(MessagePassing):
         elif Init == 'WS':
             # Specify Gamma
             TEMP = Gamma
+        else:
+            raise NotImplementedError
 
         self.temp = nn.Parameter(torch.tensor(TEMP))
 
@@ -499,6 +501,8 @@ class GPRPROP(MessagePassing):
             edge_index = gcn_norm(
                 edge_index, edge_weight, num_nodes=x.size(0), dtype=x.dtype)
             norm = None
+        else:
+            raise NotImplementedError
 
         hidden = x * (self.temp[0])
         for k in range(self.K):

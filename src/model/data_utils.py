@@ -130,6 +130,7 @@ def get_measures(_pos, _neg, recall_level=0.95):
     data_min = examples.min()
     data_max = examples.max()
     examples = (examples - data_min) / (data_max - data_min)
+    examples = np.nan_to_num(examples, nan=0.0, posinf=0.0, neginf=0.0)
     # assert data_min >= 0
     # assert data_max <= 1
     auroc = roc_auc_score(labels, examples)

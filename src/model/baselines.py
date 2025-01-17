@@ -784,6 +784,7 @@ class GNNSafe(nn.Module):
         m_out = -1
         reg_loss = torch.mean(F.relu(energy_in - m_in) ** 2 + F.relu(m_out - energy_out) ** 2)
 
-        loss = sup_loss + args.lamda * reg_loss
+        lamda = 1
+        loss = sup_loss + lamda * reg_loss
 
         return loss

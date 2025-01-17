@@ -24,7 +24,7 @@ def parser_add_main_args(parser):
         'gcn', 'mlp', 'gat', 'mixhop', 'gcnjk', 'gatjk', 'appnp', 'sgc'
     ])
     parser.add_argument('--hidden_channels', type=int, default=128)
-    parser.add_argument('--num_layers', type=int, default=2, help='number of layers for GNN classifiers')
+    parser.add_argument('--num_layers', type=int, default=2, help='number of layers for GNN')
 
     # training
     parser.add_argument('--weight_decay', type=float, default=0.001)
@@ -32,16 +32,16 @@ def parser_add_main_args(parser):
     parser.add_argument('--lr', type=float, default=0.01)
 
     # generate outliers
-    parser.add_argument('--use_energy', action='store_true')
-    parser.add_argument('--use_energy_propagation', action='store_true')
+    # parser.add_argument('--use_energy', action='store_true')
+    # parser.add_argument('--use_energy_propagation', action='store_true')
     parser.add_argument('--use_classifier', action='store_true')
-    parser.add_argument('--use_energy_filter', action='store_true')
+    # parser.add_argument('--use_energy_filter', action='store_true')
     parser.add_argument('--synthesis_ood', action='store_true')
 
     # hyper parameter
-    parser.add_argument('--upper_bound_id', type=float, default=-5, help='upper bound for in-distribution energy')
-    parser.add_argument('--lower_bound_id', type=float, default=-1, help='lower bound for in-distribution energy')
-    parser.add_argument('--lamda', type=float, default=1.0, help='weight for regularization')
+    # parser.add_argument('--upper_bound_id', type=float, default=-5, help='upper bound for in-distribution energy')
+    # parser.add_argument('--lower_bound_id', type=float, default=-1, help='lower bound for in-distribution energy')
+    # parser.add_argument('--lamda', type=float, default=1.0, help='weight for regularization')
     parser.add_argument('--delta', type=float, default=1.0, help='weight for classifier loss')
 
     # samping strategy
@@ -71,13 +71,13 @@ class Arguments:
     weight_decay: float
     dropout: float
     lr: float
-    use_energy: bool
-    use_energy_propagation: bool
+    # use_energy: bool
+    # use_energy_propagation: bool
     use_classifier: bool
-    use_energy_filter: bool
-    upper_bound_id: float
-    lower_bound_id: float
-    lamda: float
+    # use_energy_filter: bool
+    # upper_bound_id: float
+    # lower_bound_id: float
+    # lamda: float
     delta: float
     synthesis_ood: bool
     cov_mat: float
@@ -106,13 +106,13 @@ def parser_parse_args(parser) -> Arguments:
         weight_decay=args.weight_decay,
         dropout=args.dropout,
         lr=args.lr,
-        use_energy=args.use_energy,
-        use_energy_propagation=args.use_energy_propagation,
+        # use_energy=args.use_energy,
+        # use_energy_propagation=args.use_energy_propagation,
         use_classifier=args.use_classifier,
-        use_energy_filter=args.use_energy_filter,
-        upper_bound_id=args.upper_bound_id,
-        lower_bound_id=args.lower_bound_id,
-        lamda=args.lamda,
+        # use_energy_filter=args.use_energy_filter,
+        # upper_bound_id=args.upper_bound_id,
+        # lower_bound_id=args.lower_bound_id,
+        # lamda=args.lamda,
         delta=args.delta,
         synthesis_ood=args.synthesis_ood,
         cov_mat=args.cov_mat,
